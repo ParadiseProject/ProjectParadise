@@ -7,9 +7,9 @@
 /**
  * 
  */
-class TestClass
+class PARADISE_API Test
 {
 public:
-	TestClass();
-	~TestClass();
+	Test();
+	~Test();
 };
