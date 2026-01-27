@@ -8,6 +8,10 @@ class UAnimInstance;
 class UTexture2D;
 class UGameplayAbility;
 class UAnimMontage;
+class AAIController;
+class UBehaviorTree;
+class UBlackboardData;
+class USoundBase;
 
 USTRUCT(BlueprintType)
 struct FCharacterStats : public FTableRowBase
@@ -114,10 +118,108 @@ public:
 	TSoftObjectPtr<UAnimMontage> Montage_Dead;
 };
 
+/**
+ * @struct FEnemyAssets
+ * @brief 몬스터의 리소스(모델링, AI, 애니메이션, 사운드)를 정의하는 데이터 테이블 구조체입니다.
+ * @details 밸런스 데이터(Stats)와 분리되어 있으며, 스폰 시 외형과 행동 패턴을 결정하는 데 사용됩니다.
+ */
 USTRUCT(BlueprintType)
 struct FEnemyAssets : public FTableRowBase
 {
 	GENERATED_BODY()
+
+	// =========================================================
+	// 1. 외형 및 기본 설정 (Visual)
+	// =========================================================
+
+	/**
+	 * @brief 몬스터 외형 모델링 (Skeletal Mesh)
+	 * @details 몬스터의 뼈대가 포함된 메쉬 에셋입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
+	TSoftObjectPtr<USkeletalMesh> SkeletalMesh;
+
+	/**
+	 * @brief 몬스터 전용 애니메이션 블루프린트 클래스
+	 * @details 해당 몬스터가 사용할 AnimInstance 클래스입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
+	TSubclassOf<UAnimInstance> AnimBlueprint;
+
+	/**
+	 * @brief 몬스터 크기 배율 (Scale)
+	 * @details 기본값은 1.0입니다. 보스 몬스터 등 덩치를 키워야 할 때 1.5, 2.0 등으로 설정합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
+	float Scale = 1.0f; // [중요] 기본값을 1.0으로 설정하지 않으면 투명 몬스터가 될 수 있음
+
+	// =========================================================
+	// 2. 인공지능 (AI)
+	// =========================================================
+
+	/**
+	 * @brief 사용할 AI 컨트롤러 클래스
+	 * @details 몬스터의 두뇌 역할을 하는 컨트롤러 클래스(BP_EnemyController 등)입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	TSubclassOf<AAIController> AIController;
+
+	/**
+	 * @brief 실행할 비헤이비어 트리 에셋
+	 * @details 몬스터의 행동 패턴(추적, 공격, 순찰 등)이 정의된 BT 에셋입니다. 가장 중요합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	TSoftObjectPtr<UBehaviorTree> BehaviorTree;
+
+	/**
+	 * @brief 사용할 블랙보드 데이터 에셋
+	 * @details 비헤이비어 트리가 사용할 메모리(변수 저장소)입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	TSoftObjectPtr<UBlackboardData> Blackboard;
+
+	// =========================================================
+	// 3. 애니메이션 & 사운드 (Animation & Audio)
+	// =========================================================
+
+	/**
+	 * @brief 공격 동작 몽타주
+	 * @details 기본 공격 시 재생할 애니메이션입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	TSoftObjectPtr<UAnimMontage> AttackMontage;
+
+	/**
+	 * @brief 피격 리액션 몽타주
+	 * @details 데미지를 입었을 때 재생할 경직 애니메이션입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	TSoftObjectPtr<UAnimMontage> HitMontage;
+
+	/**
+	 * @brief 사망 애니메이션 몽타주
+	 * @details 체력이 0이 되었을 때 재생할 연출입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	TSoftObjectPtr<UAnimMontage> DeathMontage;
+
+	/**
+	 * @brief 사망 시 사운드 (SFX)
+	 * @details 몬스터가 죽을 때 재생할 효과음(Sound Cue 또는 Wave)입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	TSoftObjectPtr<USoundBase> DeathSound;
+
+	// =========================================================
+	// 4. GAS 어빌리티 (Abilities)
+	// =========================================================
+
+	/**
+	 * @brief 스폰 시 부여할 기본 어빌리티 목록
+	 * @details 몬스터가 태어날 때 ASC(AbilitySystemComponent)에 등록될 스킬들입니다. (공격, 패시브 등)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS")
+	TArray<TSubclassOf<UGameplayAbility>> AbilitySet;
 };
 
 USTRUCT(BlueprintType)
