@@ -7,6 +7,9 @@
 #include "AbilitySystemInterface.h"
 #include "PlayerBase.generated.h"
 
+
+class UInputAction;
+struct FInputActionValue;
 /**
  * 
  */
@@ -19,27 +22,57 @@ class PARADISE_API APlayerBase : public ACharacterBase, public IAbilitySystemInt
 public:
 	APlayerBase();
 
+	virtual void PossessedBy(AController* NewController) override;
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	// 스폰 직후 PlayerState가 이 함수를 호출해 외형 데이터연결
+	/*
+	 * @brief 스폰 직후 PlayerState가 이 함수를 호출해 외형등 데이터연결
+	 */
 	void InitializePlayer(APlayerData* InPlayerData);
-
-	//GAS 필수 인터페이스 
+	/*
+	 * @brief GAS 필수 인터페이스 
+	 */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+protected:
+
+	/*
+	 * \param InValue
+	 */
+	UFUNCTION()
+	void OnMoveInput(const FInputActionValue& InValue);
 
 protected:
+
+	/*
+	 * @brief 입력 액션 Move
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")
+	TObjectPtr<UInputAction> IA_Move = nullptr;
+
+	/*
+	 * @brief 스프링암 컴포넌트
+	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	TObjectPtr<class USpringArmComponent> CameraBoom;
 
+
+	/*
+	 * @brief 카메라 컴포넌트
+	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	TObjectPtr<class UCameraComponent> FollowCamera;
 
-	//클래스 타입 변경예정 //실제 데이터를 가진 액터
+	
+	/*
+	 * @brief 클래스 타입 변경예정 ,실제 데이터를 가진 액터
+	 */
 	UPROPERTY()
 	TWeakObjectPtr<class APlayerData> LinkedPlayerData;
 
-	// 무기 붙일 소켓 이름
+	/*
+	 * @brief 무기 붙일 소켓 이름
+	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	FName WeaponSocketName;
 
