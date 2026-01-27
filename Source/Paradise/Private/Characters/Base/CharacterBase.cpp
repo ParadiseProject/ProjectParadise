@@ -18,6 +18,8 @@ ACharacterBase::ACharacterBase()
 	HealthWidget->SetDrawSize(FVector2D(300.0f,50.0f));
 
 }
+
+
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();

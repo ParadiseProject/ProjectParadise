@@ -4,22 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "AbilitySystemInterface.h"
 #include "CharacterBase.generated.h"
 
+
+class APlayerData;
 UCLASS()
-class PARADISE_API ACharacterBase : public ACharacter,public IAbilitySystemInterface
+class PARADISE_API ACharacterBase : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	ACharacterBase();
-
-	// 스폰 직후 PlayerState가 이 함수를 호출해 외형 데이터연결
-	//void InitializeHero(AHeroDataActor* InHeroData);
-
-	//GAS 필수 인터페이스 
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -59,28 +54,31 @@ public:
 
 
 protected:
-	//머리위 hp위젯
+	/*
+	 * @brief 머리위 hp위젯컴포넌트
+	*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UWidgetComponent> HealthWidget = nullptr;
 
-	//데미지팝업위젯 액터 할당예정 (클래스타입도 해당 UI타입으로 변경예정)
+
+	/*
+	 * @brief 데미지팝업위젯 액터 할당예정 (클래스타입도 해당 UI타입으로 변경예정)
+	*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DamagePopupActor")
 	TSubclassOf<class AActor> DamageTextActorClass = nullptr;
 
-	//클래스 타입 변경예정 //실제 데이터를 가진 액터
-	UPROPERTY()
-	TWeakObjectPtr<class AActor> LinkedHeroData;
-
-	// 무기 붙일 소켓 이름
-	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	FName WeaponSocketName;
 
 private:
 
-	//피격 이펙트 타이머 핸들
+	/*
+	 * @brief 피격 이펙트 타이머 핸들
+	*/
 	FTimerHandle HitEffectTimerHandle;
 
-	//피격 이펙트 리셋 시간 ex) 3초후 리셋
+	
+	/*
+	 * @brief 피격 이펙트 리셋 시간 ex) 3초후 리셋
+	*/
 	float HitResetTime = 3.0f;
 
 
