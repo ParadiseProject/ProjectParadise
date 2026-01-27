@@ -1,10 +1,371 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Data/Enums/GameEnums.h"
 #include "DT_UnitStructs.generated.h"
 
+class USkeletalMesh;
+class UAnimInstance;
+class UTexture2D;
+class UGameplayAbility;
+class UAnimMontage;
+class AAIController;
+class UBehaviorTree;
+class UBlackboardData;
+class USoundBase;
+
+/**
+ * @struct FUnitBaseStats
+ * @brief 모든 유닛(플레이어, 몬스터, 소환수)의 공통 기초 능력치를 정의하는 구조체입니다.
+ * @details GAS AttributeSet의 초기화 데이터로 사용됩니다.
+ * 'Base' 접두사가 붙은 수치는 장비나 버프가 적용되지 않은 순수 스탯을 의미합니다.
+ */
 USTRUCT(BlueprintType)
-struct FCharacterStats : public FTableRowBase
+struct FUnitBaseStats : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	// =========================================================
+	//  전투 스탯 (Combat Stats)
+	// =========================================================
+
+	/**
+	 * @brief 최대 체력 (Max HP)
+	 * @details 스폰 시 Health Attribute의 초기값으로 설정됩니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float BaseMaxHP;
+
+	/**
+	 * @brief 최대 마나 (Max MP)
+	 * @details 스폰 시 Mana Attribute의 초기값으로 설정됩니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float BaseMaxMP;
+
+	/**
+	 * @brief 공격력 (Attack Power)
+	 * @details 평타 및 스킬 데미지 계산의 기초가 되는 값입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float BaseAttackPower;
+
+	/**
+	 * @brief 방어력 (Defense)
+	 * @details 데미지 감소율 계산에 사용됩니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float BaseDefense;
+
+	/**
+	 * @brief 평상시 이동 속도 (Move Speed)
+	 * @details 언리얼 단위(cm/s)입니다. 보통 걷기는 300~400, 달리기는 600 정도입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	float BaseMoveSpeed;
+
+	/**
+	 * @brief 크리티컬 확률 (CritRate)
+	 * @details 크리티컬 확률 계산에 사용됩니다. ( 단위: 0% =  0.0f, 100% = 1.0f)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float BaseCritRate;
+};
+
+/**
+ * @struct FCharacterStats
+ * @brief 플레이어 캐릭터의 '성장 규칙'과 '고유 스킬' 데이터를 정의하는 구조체입니다.
+ * @details FUnitBaseStats를 상속받아 기본 스탯을 포함하며, 레벨업 시 상승하는 수치(Per Level)와 궁극기 설정이 추가되었습니다.
+ * 로비(내 정보)와 인게임(스탯 초기화)에서 공통으로 사용되는 핵심 데이터입니다.
+ */
+USTRUCT(BlueprintType)
+struct FCharacterStats : public FUnitBaseStats
+{
+	GENERATED_BODY()
+
+	// =========================================================
+	//  성장 스탯 (Combat Stats)
+	// =========================================================
+
+	/**
+	 * @brief 레벨 업 당 최대 체력 증가량 (Growth Max HP)
+	 * @details 레벨업 시 이 수치만큼 MaxHP가 영구적으로 증가합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth")
+	float GrowthHPPerLevel;
+
+	/**
+	 * @brief 레벨 업 당 공격력 증가량 (Growth Attack)
+	 * @details 레벨업 시 이 수치만큼 기본 공격력이 증가합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth")
+	float GrowthAttackPerLevel;
+
+	/**
+	 * @brief 레벨업 당 방어력 증가량 (Growth Defense)
+	 * @details 레벨업 시 이 수치만큼 기본 방어력이 증가합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth")
+	float GrowthDefensePerLevel;
+
+	// =========================================================
+	//  스킬 스탯 (Skill Stats)
+	// =========================================================
+
+	/**
+	 * @brief 궁극기 재사용 대기시간 (Ultimate Cooldown)
+	 * @details 궁극기 (어빌리티) 의 재사용 대기시간의 값입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Ultimate")
+	float UltimateCooldown;
+
+	/**
+	 * @brief 궁극기 데미지 배율 (Ultimate Damage Rate)
+	 * @details 공격력의 몇 퍼센트로 피해를 입힐지 결정합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Ultimate")
+	float UltimateDamageRate;
+};
+
+/**
+ * @struct FAIUnitStats
+ * @brief AI가 제어하는 유닛(몬스터, 패밀리어)이 추가로 가지는 전투 정보 구조체입니다.
+ * @details 플레이어와 달리 무기(Weapon)에 의존하지 않고 자체적인 공격 주기와 사거리를 가집니다.
+ */
+USTRUCT(BlueprintType)
+struct FAIUnitStats : public FUnitBaseStats
+{
+	GENERATED_BODY()
+
+	// =========================================================
+	// 기본 정보 (Basic Info)
+	// =========================================================
+
+	/**
+	 * @brief 유닛 타입
+	 * @details 근거리, 원거리, 보스 등 AI 행동 패턴의 기준이 됩니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Info")
+	EUnitType EUnitType;
+
+	// =========================================================
+	//   AI 전투 스탯 (AI Combat)
+	// =========================================================
+
+	/**
+	 * @brief 공격 속도 / 쿨타임 (Attack Speed)
+	 * @details 초 단위(Seconds)입니다. 이 시간마다 한 번씩 공격을 시도합니다.
+	 * @note 값이 낮을수록 공격 속도가 빠릅니다. (예: 1.5 = 1.5초마다 1회 공격)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float AttackSpeed;
+
+	/**
+	 * @brief 사거리 (Attack Range)
+	 * @details 이 거리 안에 타겟이 들어오면 이동을 멈추고 공격을 시도합니다.
+	 * @note 근거리는 보통 100~150, 원거리는 600~1000 정도를 사용합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	float AttackRange;
+};
+
+USTRUCT(BlueprintType)
+struct FEnemyStats : public FAIUnitStats
+{
+	GENERATED_BODY()
+
+};
+
+USTRUCT(BlueprintType)
+struct FFamiliarStats : public FAIUnitStats
 {
 	GENERATED_BODY()
 };
+
+/**
+ * @struct FUnitBaseAssets
+ * @brief 모든 유닛(플레이어, 몬스터, 퍼밀리어)의 공통 리소스 정의
+ * @details 외형(Mesh), 기본 애니메이션(AnimBP), 생존 반응(Hit/Dead) 등 필수적인 에셋을 포함합니다.
+ */
+USTRUCT(BlueprintType)
+struct FUnitBaseAssets : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+	// =========================================================
+	//  Visual & Anim (Common)
+	// =========================================================
+
+	/**
+	 * @brief 유닛 외형 (Skeletal Mesh)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual|Common")
+	TSoftObjectPtr<USkeletalMesh> SkeletalMesh;
+
+	/**
+	 * @brief 애니메이션 블루프린트
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual|Common")
+	TSubclassOf<UAnimInstance> AnimBlueprint;
+
+	// =========================================================
+	//  GAS (Common)
+	// =========================================================
+
+	/**
+	 * @brief 평타 어빌리티 (Basic Attack)
+	 * @details 쿨타임이 없거나 매우 짧은 기본 공격입니다. AI의 경우 스킬 쿨타임일 때 사용하는 '패시브성' 공격입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Common")
+	TSubclassOf<UGameplayAbility> BasicAbility;
+
+	// =========================================================
+	//  Reaction Animation (Common)
+	// =========================================================
+
+	/**
+	 * @brief 기본 공격 몽타주
+	 * @details 가장 기초적인 공격 모션입니다. (플레이어는 콤보의 시작, AI는 기본 평타)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation|Common")
+	TSoftObjectPtr<UAnimMontage> AttackMontage;
+
+	/**
+	 * @brief 피격(Hit) 리액션 몽타주
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation|Common")
+	TSoftObjectPtr<UAnimMontage> HitMontage;
+
+	/**
+	 * @brief 사망(Dead) 연출 몽타주
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation|Common")
+	TSoftObjectPtr<UAnimMontage> DeathMontage;
+
+	/**
+	 * @brief 사망 효과음 (Dead SFX)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio|Common")
+	TSoftObjectPtr<USoundBase> DeathSound;
+};
+
+/**
+ * @struct FCharacterAssets
+ * @brief 플레이어 캐릭터 전용 리소스 (UI, 스킬 슬롯 등)
+ */
+USTRUCT(BlueprintType)
+struct FCharacterAssets : public FUnitBaseAssets
+{
+	GENERATED_BODY()
+public:
+	// =========================================================
+	//  UI (Player Only)
+	// =========================================================
+
+	/**
+	 * @brief 인게임 HUD용 얼굴 아이콘.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSoftObjectPtr<UTexture2D> FaceIcon;
+
+	/**
+	 * @brief 캐릭터 선택/가챠 화면용 전신 일러스트.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSoftObjectPtr<UTexture2D> BodyIcon;
+
+	// =========================================================
+	//  GAS & Skill (Player Only)
+	// =========================================================
+
+	/**
+	 * @brief 궁극기 어빌리티 클래스 (Ultimate Ability)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS")
+	TSubclassOf<UGameplayAbility> UltimateAbility;
+
+	/**
+	 * @brief 궁극기 연출 몽타주 (Ultimate Montage)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation|Skill")
+	TSoftObjectPtr<UAnimMontage> UltimateMontage;
+};
+
+/**
+ * @struct FAIUnitAssets
+ * @brief AI 제어 유닛(적, 퍼밀리어) 공통 리소스
+ */
+USTRUCT(BlueprintType)
+struct FAIUnitAssets : public FUnitBaseAssets
+{
+	GENERATED_BODY()
+
+	// =========================================================
+	//  Visual (AI Specific)
+	// =========================================================
+
+	/**
+	 * @brief 몬스터 크기 배율 (Scale)
+	 * @details 기본값은 1.0입니다. 보스 몬스터 등 덩치를 키워야 할 때 1.5, 2.0 등으로 설정합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
+	float Scale = 1.0f; // 초기화 필수
+
+	// =========================================================
+	//  인공지능 (AI)
+	// =========================================================
+
+	/**
+	 * @brief 사용할 AI 컨트롤러 클래스
+	 * @details 몬스터의 두뇌 역할을 하는 컨트롤러 클래스(BP_EnemyController 등)입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	TSubclassOf<AAIController> AIController;
+
+	/**
+	 * @brief 실행할 비헤이비어 트리 에셋
+	 * @details 몬스터의 행동 패턴(이동, 공격, 스킬 사용 등)이 정의된 BT 에셋입니다
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	TSoftObjectPtr<UBehaviorTree> BehaviorTree;
+
+	/**
+	 * @brief 사용할 블랙보드 데이터 에셋
+	 * @details 비헤이비어 트리가 사용할 메모리(변수 저장소)입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	TSoftObjectPtr<UBlackboardData> Blackboard;
+
+	// =========================================================
+	//  GAS 어빌리티 (Abilities)
+	// =========================================================
+
+	/**
+	 * @brief 스폰 시 부여할 기본 어빌리티 목록
+	 * @details 몬스터가 태어날 때 ASC(AbilitySystemComponent)에 등록될 스킬들입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS")
+	TArray<TSubclassOf<UGameplayAbility>> SkillAbilities;
+};
+
+/**
+ * @struct FEnemyAssets
+ * @brief 몬스터 전용 에셋 테이블 구조체
+ */
+USTRUCT(BlueprintType)
+struct FEnemyAssets : public FAIUnitAssets
+{
+	GENERATED_BODY()
+};
+
+/**
+ * @struct FFamiliarAssets
+ * @brief 퍼밀리어(소환수) 전용 에셋 테이블 구조체
+ */
+USTRUCT(BlueprintType)
+struct FFamiliarAssets : public FAIUnitAssets
+{
+	GENERATED_BODY()
+};
+
