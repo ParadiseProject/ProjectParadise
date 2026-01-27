@@ -34,6 +34,8 @@ public:
 	 */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+	virtual void Die() override;
+
 protected:
 
 	/*

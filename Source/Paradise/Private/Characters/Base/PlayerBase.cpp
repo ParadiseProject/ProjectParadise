@@ -103,6 +103,17 @@ UAbilitySystemComponent* APlayerBase::GetAbilitySystemComponent() const
 	return LinkedPlayerData.IsValid() ? LinkedPlayerData->GetAbilitySystemComponent() : nullptr;
 }
 
+void APlayerBase::Die()
+{
+    if (LinkedPlayerData.IsValid())
+    {
+        LinkedPlayerData->OnDeath();
+    }
+
+    Super::Die();
+
+}
+
 void APlayerBase::OnMoveInput(const FInputActionValue& InValue)
 {
     //입력값 가져오기 (X: 좌우, Y: 위아래)

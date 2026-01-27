@@ -12,7 +12,7 @@ class UAttributeSet;
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable)
 class PARADISE_API APlayerData : public AInfo ,public IAbilitySystemInterface
 {
 	GENERATED_BODY()
@@ -31,9 +31,17 @@ public:
 	 */
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
-	
+	/*
+	 * @brief 죽으면 호출 될 함수 
+	 */
+	UFUNCTION()
+	void OnDeath();
 
-
+	/*
+	 * @brief 리스폰 타이머 끝나면 호출될 함수
+	 */
+	UFUNCTION()
+	void OnRespawnFinished();
 public:
 
 	/*
@@ -68,9 +76,18 @@ protected:
 	 */
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
-	
 
-	//실제 어트리뷰트셋 클래스로 형식 변경예정
+	/*
+	 * @brief 실제 어트리뷰트셋 클래스로 형식 변경예정
+	 */
 	UPROPERTY()
 	TObjectPtr<UAttributeSet> AttributeSet;
+
+private:
+
+	/*
+	 * @brief 리스폰 타이머 핸들
+	 */
+	FTimerHandle RespawnTimerHandle;
+
 };
