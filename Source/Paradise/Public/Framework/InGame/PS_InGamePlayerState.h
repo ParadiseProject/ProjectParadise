@@ -28,6 +28,7 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	UAttributeSet* GetAttributeSet() const { return CommanderAttributeSet; }
 
+
 	//  스쿼드 관리 (Squad Management)
 public:
 	/*
