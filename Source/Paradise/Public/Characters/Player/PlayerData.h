@@ -59,7 +59,7 @@ public:
 	 * @details 인게임에서 착용 중인 장비의 로직과 데이터를 처리합니다.
 	 */
 	UPROPERTY(VisibleAnywhere, Category = "Equipment")
-	TObjectPtr<class UCMP_Equipment> EquipmentComponent = nullptr;
+	TObjectPtr<class UEquipmentComponent> EquipmentComponent = nullptr;
 
 
 	/* * 현재 빙의 중인 육체 (약한 참조)

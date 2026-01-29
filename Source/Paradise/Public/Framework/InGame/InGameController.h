@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "PC_InGameController.generated.h"
+#include "InGameController.generated.h"
 
 
 class APlayerBase;
@@ -18,7 +18,7 @@ struct FInputActionValue;
  * @details 영웅 교체(Switching), 스쿼드 명령, UI 인터랙션을 담당합니다.
  */
 UCLASS()
-class PARADISE_API APC_InGameController : public APlayerController
+class PARADISE_API AInGameController : public APlayerController
 {
 	GENERATED_BODY()
 
@@ -90,4 +90,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> IA_SwitchHero3 = nullptr;
+
+	/* * @brief 테스트용 캐릭터 클래스 (BP_PlayerBase 할당용)
+	 * @details 여기에 에디터에서 만든 캐릭터 블루프린트를 넣어주세요.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Test")
+	TSubclassOf<APlayerBase> TestPlayerClass; // [추가됨]
 };

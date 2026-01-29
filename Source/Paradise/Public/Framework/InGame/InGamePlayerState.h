@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
 #include "AbilitySystemInterface.h"
-#include "PS_InGamePlayerState.generated.h"
+#include "InGamePlayerState.generated.h"
 
 class UAttributeSet;
 class UAbilitySystemComponent;
@@ -17,12 +17,12 @@ class UHeroDataAsset; //제대로된 클래스 구현시 변경예정
  * @details 스쿼드(보유 영웅 3명) 데이터와, 전역 자원(코스트, 골드 등)을 GAS로 관리합니다.
  */
 UCLASS()
-class PARADISE_API APS_InGamePlayerState : public APlayerState, public IAbilitySystemInterface
+class PARADISE_API AInGamePlayerState : public APlayerState, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
-	APS_InGamePlayerState();
+	AInGamePlayerState();
 
 	//  GAS 인터페이스 (지휘관 전용: 코스트/골드 관리)
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
@@ -43,7 +43,7 @@ public:
 	APlayerData* GetSquadMemberData(int32 Index) const;
 
 	/*
-	 * @brief 현재 스쿼드 멤버 수 반환
+	 * @brief 현재 스                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            쿼드 멤버 수 반환
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Squad")
 	int32 GetSquadSize() const { return SquadMembers.Num(); }
@@ -57,8 +57,6 @@ protected:
 	TArray<TObjectPtr<APlayerData>> SquadMembers;
 
 	//  GAS 컴포넌트 (Commander Resources)
-protected:
-
 	/* 지휘관용 ASC (코스트/쿨타임/패시브 효과 관리용) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;

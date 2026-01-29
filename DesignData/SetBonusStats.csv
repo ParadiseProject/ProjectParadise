@@ -1,0 +1,2 @@
+,SetName,Slot1_Count,Slot1_AttributeTag,Slot1_Value,Slot1_Desc,Slot2_Count,Slot2_AttributeTag,Slot2_Value,Slot2_Desc,Slot3_Count,Slot3_Value,Slot3_Desc
+Set_Fire,화염 세트,2,SetBonus.Stat.AttackPower,10,화염 2세트입니다.,3,SetBonus.Stat.AttackPower,20,화염 3세트입니다.,4,10,화염 4세트입니다.

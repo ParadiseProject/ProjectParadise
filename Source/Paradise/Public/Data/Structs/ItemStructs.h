@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "GameplayTagContainer.h"
 #include "Data/Enums/GameEnums.h"
 #include "ItemStructs.generated.h"
 
@@ -340,7 +341,7 @@ public:
 
 /**
  * @struct FSetBonusStats
- * @brief 세트 효과의 수치 및 규칙 데이터 (DT_SetBonusStats)
+ * @brief 세트 효과의 수치 및 규칙 데이터
  * @details 기획자가 밸런싱을 위해 수정하는 테이블입니다. (리소스 경로 없음)
  */
 USTRUCT(BlueprintType)
@@ -363,6 +364,11 @@ public:
 	/** @brief 적용할 스탯 (예: AttackPower) */
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slot 1")
 	//FGameplayAttribute Slot1_Attribute;
+	/* @brief 적용할 스탯 태그
+	 * @details "SetBonus.Stat" 하위 태그만 선택 가능하도록 필터링됨
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slot 1", meta = (Categories = "SetBonus.Stat"))
+	FGameplayTag Slot1_AttributeTag;
 
 	/** @brief 적용 수치 (GAS의 SetByCaller로 넘길 값) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slot 1")
@@ -383,6 +389,11 @@ public:
 	/** @brief 적용할 스탯 (예: AttackPower) */
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slot 2")
 	//FGameplayAttribute Slot2_Attribute;
+	/* @brief 적용할 스탯 태그
+	 * @details "SetBonus.Stat" 하위 태그만 선택 가능하도록 필터링됨
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slot 2", meta = (Categories = "SetBonus.Stat"))
+	FGameplayTag Slot2_AttributeTag;
 
 	/** @brief 적용 수치 (GAS의 SetByCaller로 넘길 값) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slot 2")
@@ -456,5 +467,5 @@ public:
 	 * @details Stats 테이블의 Slot3 조건 만족 시 적용됩니다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS Logic")
-	TSoftClassPtr<UGameplayAbility> Slot3_Abilityt;
+	TSoftClassPtr<UGameplayAbility> Slot3_Ability;
 };
