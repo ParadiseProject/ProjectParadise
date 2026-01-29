@@ -72,10 +72,10 @@ UENUM(BlueprintType)
 UENUM(BlueprintType)
 	enum class EWeaponType : uint8
 {
-	/** @brief 한손검 (오른손 소켓, 방패 착용 가능) */
+	/** @brief 한손검 (오른손 소켓) */
 	Sword		UMETA(DisplayName = "One Hand Sword"),
 
-	/** @brief 대검 (양손 소켓, 공격 속도 느림) */
+	/** @brief 대검 (양손 소켓) */
 	GreatSword	UMETA(DisplayName = "Two Hand Sword"),
 
 	/** @brief 활 (왼손 소켓, 화살 발사체 로직 필요) */
@@ -84,7 +84,7 @@ UENUM(BlueprintType)
 	/** @brief 마법 지팡이 (오른손 소켓, 원거리 마법 투사체) */
 	Staff		UMETA(DisplayName = "Magic Staff"),
 
-	/** @brief 단검 (양손 쌍수 가능 여부 체크 필요, 빠른 공속) */
+	/** @brief 단검 () */
 	Dagger		UMETA(DisplayName = "Dagger")
 };
 
@@ -96,15 +96,15 @@ UENUM(BlueprintType)
 UENUM(BlueprintType)
 	enum class EArmorType : uint8
 {
-	/** @brief 머리 방어구 (Head Socket or Mesh Replacement) */
+	/** @brief 머리 방어구 */
 	Helmet		UMETA(DisplayName = "Helmet"),
 
-	/** @brief 상체 갑옷 (Torso/UpperBody Mesh Replacement) */
+	/** @brief 상체 갑옷 */
 	Chest		UMETA(DisplayName = "Chest Armor"),
 
-	/** @brief 장갑 (Hand/Arm Mesh Replacement) */
+	/** @brief 장갑 */
 	Gloves		UMETA(DisplayName = "Gloves"),
 
-	/** @brief 신발 (Foot/Leg Mesh Replacement) */
+	/** @brief 신발 */
 	Boots		UMETA(DisplayName = "Boots")
 };

@@ -33,42 +33,42 @@ struct FUnitBaseStats : public FTableRowBase
 	 * @brief 최대 체력 (Max HP)
 	 * @details 스폰 시 Health Attribute의 초기값으로 설정됩니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", meta = (ClampMin = "1.0"))
 	float BaseMaxHP;
 
 	/**
 	 * @brief 최대 마나 (Max MP)
 	 * @details 스폰 시 Mana Attribute의 초기값으로 설정됩니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", meta = (ClampMin = "0.0"))
 	float BaseMaxMP;
 
 	/**
 	 * @brief 공격력 (Attack Power)
 	 * @details 평타 및 스킬 데미지 계산의 기초가 되는 값입니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", meta = (ClampMin = "0.0"))
 	float BaseAttackPower;
 
 	/**
 	 * @brief 방어력 (Defense)
 	 * @details 데미지 감소율 계산에 사용됩니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", meta = (ClampMin = "0.0"))
 	float BaseDefense;
 
 	/**
 	 * @brief 평상시 이동 속도 (Move Speed)
 	 * @details 언리얼 단위(cm/s)입니다. 보통 걷기는 300~400, 달리기는 600 정도입니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI", meta = (ClampMin = "0.0"))
 	float BaseMoveSpeed;
 
 	/**
 	 * @brief 크리티컬 확률 (CritRate)
 	 * @details 크리티컬 확률 계산에 사용됩니다. ( 단위: 0% =  0.0f, 100% = 1.0f)
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float BaseCritRate;
 };
 
@@ -91,21 +91,21 @@ struct FCharacterStats : public FUnitBaseStats
 	 * @brief 레벨 업 당 최대 체력 증가량 (Growth Max HP)
 	 * @details 레벨업 시 이 수치만큼 MaxHP가 영구적으로 증가합니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth", meta = (ClampMin = "0.0"))
 	float GrowthHPPerLevel;
 
 	/**
 	 * @brief 레벨 업 당 공격력 증가량 (Growth Attack)
 	 * @details 레벨업 시 이 수치만큼 기본 공격력이 증가합니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth", meta = (ClampMin = "0.0"))
 	float GrowthAttackPerLevel;
 
 	/**
 	 * @brief 레벨업 당 방어력 증가량 (Growth Defense)
 	 * @details 레벨업 시 이 수치만큼 기본 방어력이 증가합니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats|Growth", meta = (ClampMin = "0.0"))
 	float GrowthDefensePerLevel;
 
 	// =========================================================
@@ -116,14 +116,15 @@ struct FCharacterStats : public FUnitBaseStats
 	 * @brief 궁극기 재사용 대기시간 (Ultimate Cooldown)
 	 * @details 궁극기 (어빌리티) 의 재사용 대기시간의 값입니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Ultimate")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Ultimate", meta = (ClampMin = "0.0"))
 	float UltimateCooldown;
 
 	/**
 	 * @brief 궁극기 데미지 배율 (Ultimate Damage Rate)
 	 * @details 공격력의 몇 퍼센트로 피해를 입힐지 결정합니다.
+	 * 예: 1.5 = 150% 데미지 (기본 100 + 추가 50). 2.0 = 200% 데미지.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Ultimate")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Ultimate", meta = (ClampMin = "1.0"))
 	float UltimateDamageRate;
 };
 
@@ -157,15 +158,15 @@ struct FAIUnitStats : public FUnitBaseStats
 	 * @details 초 단위(Seconds)입니다. 이 시간마다 한 번씩 공격을 시도합니다.
 	 * @note 값이 낮을수록 공격 속도가 빠릅니다. (예: 1.5 = 1.5초마다 1회 공격)
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	float AttackSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", meta = (ClampMin = "0.0"))
+	float AttackInterval;
 
 	/**
 	 * @brief 사거리 (Attack Range)
 	 * @details 이 거리 안에 타겟이 들어오면 이동을 멈추고 공격을 시도합니다.
 	 * @note 근거리는 보통 100~150, 원거리는 600~1000 정도를 사용합니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI", meta = (ClampMin = "0.0"))
 	float AttackRange;
 };
 
@@ -317,7 +318,7 @@ struct FAIUnitAssets : public FUnitBaseAssets
 	 * @brief 몬스터 크기 배율 (Scale)
 	 * @details 기본값은 1.0입니다. 보스 몬스터 등 덩치를 키워야 할 때 1.5, 2.0 등으로 설정합니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visual", meta = (ClampMin = "0.1"))
 	float Scale = 1.0f; // 초기화 필수
 
 	// =========================================================
