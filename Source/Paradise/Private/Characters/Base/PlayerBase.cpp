@@ -3,7 +3,7 @@
 
 #include "Characters/Base/PlayerBase.h"
 #include "Characters/Player/PlayerData.h"
-#include "Components/CMP_Equipment.h"
+#include "Components/EquipmentComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
@@ -88,12 +88,13 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
 
     //외형 업데이트 (장비 동기화)
     //영혼이 가진 장비 컴포넌트를 확인해서 내 몸에 메시를 입힘
-    if (UCMP_Equipment* EquipComp = InPlayerData->EquipmentComponent)
+    if (UEquipmentComponent* EquipComp = InPlayerData->EquipmentComponent)
     {
         //장비컴포넌트에 장착된 장비 비쥬얼적으로 보이게 하는 함수 구현해야함
         //EquipComp->UpdateVisualsForPawn(this);
     }
 
+    UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 육체 초기화 완료!"));
   
 	
 }
