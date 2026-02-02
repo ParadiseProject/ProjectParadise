@@ -1,0 +1,2 @@
+---,AttackTypeTag,RoleTypeTag,RankTypeTag,AttackInterval,AttackRange,BaseMaxHP,BaseMaxMP,BaseAttackPower,BaseDefense,BaseMoveSpeed,BaseCritRate
+Zombie,Unit.Attack.Melee,Unit.Role.Dealer,Unit.Rank.Normal,1,100,10,10,10,10,1000,0.1

@@ -1,0 +1,2 @@
+---,SummonCost,AttackTypeTag,RoleTypeTag,AttackInterval,AttackRange,BaseMaxHP,BaseMaxMP,BaseAttackPower,BaseDefense,BaseMoveSpeed,BaseCritRate
+test1,10,Unit.Attack.Melee,Unit.Role.Dealer,1,100,10,10,10,10,1000,0.1

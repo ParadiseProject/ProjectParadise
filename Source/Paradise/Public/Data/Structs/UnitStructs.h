@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Data/Enums/GameEnums.h"
+#include "GameplayTagContainer.h"
 #include "UnitStructs.generated.h"
 
 class USkeletalMesh;
@@ -24,6 +25,18 @@ USTRUCT(BlueprintType)
 struct FUnitBaseStats : public FTableRowBase
 {
 	GENERATED_BODY()
+
+	// =========================================================
+	//  기본 정보 (Basic Info) 
+	// =========================================================
+
+	/**
+	 * @brief 소속 진영 (Faction)
+	 * @details 피아식별(아군/적군)의 기준이 되는 핵심 태그입니다.
+	 * 예: Unit.Faction.Friendly.Player, Unit.Faction.Enemy, Unit.Faction.Friendly.Familiar
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Base Info", meta = (Categories = "Unit.Faction"))
+	FGameplayTag FactionTag;
 
 	// =========================================================
 	//  전투 스탯 (Combat Stats)
@@ -82,6 +95,16 @@ USTRUCT(BlueprintType)
 struct FCharacterStats : public FUnitBaseStats
 {
 	GENERATED_BODY()
+
+public:
+
+	/**
+	*@brief 캐릭터 전용 : 태그를 자동으로 'Friendly.Character'로 설정함
+	*/
+	FCharacterStats()
+	{
+		FactionTag = FGameplayTag::RequestGameplayTag(FName("Unit.Faction.Friendly.Player"));
+	}
 
 	// =========================================================
 	//  성장 스탯 (Combat Stats)
@@ -151,11 +174,28 @@ struct FAIUnitStats : public FUnitBaseStats
 	// =========================================================
 
 	/**
-	 * @brief 유닛 타입
-	 * @details 근거리, 원거리, 보스 등 AI 행동 패턴의 기준이 됩니다.
+	 * @brief 공격 타입 (Attack Type)
+	 * @details AI의 사거리 판단 및 상성 로직에 사용됩니다.
+	 * 예: Unit.Attack.Melee (근접), Unit.Attack.Range (원거리)
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Info")
-	EUnitType EUnitType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Type", meta = (Categories = "Unit.Attack"))
+	FGameplayTag AttackTypeTag;
+
+	/**
+	 * @brief 역할군 (Role)
+	 * @details 어그로 수준 및 AI 우선순위 결정에 사용됩니다.
+	 * 예: Unit.Role.Tanker, Unit.Role.Dealer, Unit.Role.Support
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Type", meta = (Categories = "Unit.Role"))
+	FGameplayTag RoleTypeTag;
+
+	/**
+	 * @brief 등급 (Rank)
+	 * @details 보스 UI 표시 여부 및 CC기 면역 로직에 사용됩니다.
+	 * 예: Unit.Rank.Normal, Unit.Rank.Elite, Unit.Rank.Boss
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Type", meta = (Categories = "Unit.Rank"))
+	FGameplayTag RankTypeTag;
 
 	// =========================================================
 	//   AI 전투 스탯 (AI Combat)
@@ -179,7 +219,7 @@ struct FAIUnitStats : public FUnitBaseStats
 };
 
 /**
- * @struct FFamiliarAssets
+ * @struct FEnemyStats
  * @brief 몬스터 전용 스탯 테이블 구조체
  */
 USTRUCT(BlueprintType)
@@ -187,16 +227,40 @@ struct FEnemyStats : public FAIUnitStats
 {
 	GENERATED_BODY()
 
+public:
+
+	/**
+	*@brief 적 전용 : 태그를 자동으로 'Friendly.Familiar'로 설정함
+	*/
+	FEnemyStats()
+	{
+		FactionTag = FGameplayTag::RequestGameplayTag(FName("Unit.Faction.Enemy"));
+	}
 };
 
 /**
- * @struct FFamiliarAssets
+ * @struct FFamiliarStats
  * @brief 퍼밀리어 전용 스탯 테이블 구조체
  */
 USTRUCT(BlueprintType)
 struct FFamiliarStats : public FAIUnitStats
 {
 	GENERATED_BODY()
+
+public:
+
+	/**
+	*@brief 패밀리어 전용 : 태그를 자동으로 'Friendly.Familiar'와 Rank.Normal로 설정함
+	*/
+	FFamiliarStats()
+	{
+		FactionTag = FGameplayTag::RequestGameplayTag(FName("Unit.Faction.Friendly.Familiar"));
+		RankTypeTag = FGameplayTag::RequestGameplayTag(FName("Unit.Rank.Normal"));
+	}
+
+	/** @brief 소환 코스트 (재화) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0"))
+	int32 SummonCost;
 };
 
 /**
