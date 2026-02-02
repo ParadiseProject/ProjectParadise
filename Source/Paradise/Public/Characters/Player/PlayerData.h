@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
+#include "Engine/DataTable.h"
 #include "AbilitySystemInterface.h"
 #include "PlayerData.generated.h"
 
@@ -32,13 +33,11 @@ public:
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
 	/*
-	 * @brief 데이터 에셋(혹은 테이블)을 받아 스탯과 스킬을 초기화하는 함수
-	 * @details [변경 예정] 현재는 범용 UPrimaryDataAsset을 받고 있지만,
-	 * 추후 기획 확정에 따라 'FDataTableRowHandle(데이터 테이블)' 또는 구체적인 DataAsset타입으로 변경될 수 있습니다.
-	 * @param InData 초기화에 사용할 데이터 원본
+	 * @brief 데이터 테이블 Row 를 통해 초기화하는 함수
+	 * @param InDataHandle : 데이터 테이블과 RowName이 담긴 핸들
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Init")
-	void InitFromDataAsset(UPrimaryDataAsset* InData);
+	void InitFromDataTable(const FDataTableRowHandle& InDataHandle);
 
 
 	/*
@@ -68,11 +67,12 @@ public:
 	UPROPERTY()
 	TWeakObjectPtr<class ACharacterBase> CurrentAvatar = nullptr;
 
-	/* * 원본 데이터 에셋 (캐싱용)
-	 * @details InitFromDataAsset으로 들어온 원본 데이터를 저장해둡니다.
+	/* * @brief 캐릭터 데이터 식별자 (Data Table + Row Name)
+	 * @details 에디터에서 드롭다운으로 선택 가능합니다.
 	 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
-	TObjectPtr<UPrimaryDataAsset> SourceDataAsset;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data", meta = (RowType = "CharacterStats"))
+	FDataTableRowHandle CharacterDataHandle;
+	// meta = (RowType="...")을 넣으면 해당 구조체를 쓰는 테이블만 필터링해서 보여줍니다
 
 	/*
 	 * @brief 죽었는지 Bool값
