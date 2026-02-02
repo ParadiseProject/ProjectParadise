@@ -1,0 +1,2 @@
+---,LevelUpCostId,GrowthHPPerLevel,GrowthAttackPerLevel,GrowthDefensePerLevel,UltimateCooldown,UltimateDamageRate,BaseMaxHP,BaseMaxMP,BaseAttackPower,BaseDefense,BaseMoveSpeed,BaseCritRate
+TestChar,,,,,100,5,10,10,10,10,300,0.5

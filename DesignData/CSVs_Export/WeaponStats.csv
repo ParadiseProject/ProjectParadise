@@ -1,0 +1,2 @@
+---,WeaponTag,AttackPower,AttackSpeed,CritRate,CritDamage,Range,Cooldown,DisplayName,Description,Rarity,SetID,LevelUpCostId
+Iron_Sword,Item.Type.Weapon.Melee.Sword,10,1,0.5,1.1,1,0.2,철검,철검이다,Common,,

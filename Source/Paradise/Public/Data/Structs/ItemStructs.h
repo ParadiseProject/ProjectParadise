@@ -52,13 +52,6 @@ public:
 	FName SetID;
 
 	/**
-	 * @brief 아이템 타입 (필터링 용도)
-	 * @details 인벤토리 정렬이나 장착 슬롯 제한 확인에 사용됩니다. (예: Weapon, Armor)
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Base Info")
-	EItemMainType ItemType;
-
-	/**
 	 * @brief 레벨업 비용 ID (Upgrade Cost ID)
 	 * @details 아이템 레벨 업 시 필요한 재화 정보를 담고 있는 테이블의 RowName입니다.
 	 * DT_LevelUpCost 테이블을 참조합니다. (None일 경우 강화 불가)
@@ -80,21 +73,11 @@ struct FWeaponStats : public FItemBaseStats
 public:
 
 	/**
-	 * @brief 무기 스탯 생성자
-	 * @details 생성 시 ItemType을 자동으로 'Weapon'으로 초기화하여, 
-	 * 데이터 테이블 작성 시 타입을 일일이 지정하는 번거로움을 줄입니다.
-	 */
-	FWeaponStats()
-	{
-		ItemType = EItemMainType::Weapon;
-	}
-
-	/**
-	 * @brief 무기 세부 타입
-	 * @details 한손검, 활, 지팡이 등의 종류를 구분합니다.
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Type")
-	EWeaponType WeaponType;
+	* @brief 무기 분류 태그
+	* @details 예: Item.Type.Weapon.Melee.Sword, Item.Type.Weapon.Range.Staff
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Type", meta = (Categories = "Item.Type.Weapon"))
+	FGameplayTag WeaponTag;
 
 	// -----------------------------------------------------------------
 	// [Combat Stats] 전투 관련 수치
@@ -160,22 +143,13 @@ struct FArmorStats : public FItemBaseStats
 	GENERATED_BODY()
 
 public:
-	/**
-	* @brief 방어구 스탯 생성자
-	* @details 생성 시 ItemType을 자동으로 'Armor'로 초기화하여,
-	* 데이터 테이블 작성 시 타입을 일일이 지정하는 번거로움을 줄입니다.
-	*/
-	FArmorStats()
-	{
-		ItemType = EItemMainType::Armor;
-	}
 
 	/**
-	* @brief 방어구 장착 부위
-	* @details 투구(Helmet), 갑옷(Chest), 장갑(Gloves) 등의 부위를 결정합니다
+	* @brief 방어구 부위 태그
+	* @details 예: Item.Type.Armor.Helmet, Item.Type.Armor.Chest
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Armor Type")
-	EArmorType ArmorType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Categories = "Item.Type.Armor"))
+	FGameplayTag ArmorTag;
 
 	// -----------------------------------------------------------------
 	// [Survival Stats] 방어 관련 수치 
@@ -186,7 +160,7 @@ public:
 	 * @details 적의 공격 데미지를 감소시키는 수치입니다.
 	 * GameplayEffectExecutionCalculation(ExecCalc)에서 데미지 공식의 감산(Subtraction) 혹은 비율 감소 인자로 활용됩니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Survival Stats", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Survival Stats")
 	float DefensePower;
 
 	/**
