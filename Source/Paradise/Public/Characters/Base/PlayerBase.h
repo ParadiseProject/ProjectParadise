@@ -28,30 +28,6 @@ public:
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-	/** * @brief [옵션 1] 2.5D Default
-	 * @details 멀리서 망원 렌즈로 당겨 찍는 느낌. 원근 왜곡이 적어 거리 재기가 편함.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Camera|Preset")
-	void SetCamera_Default();
-
-	/** * @brief [옵션 2] 클래식
-	 * @details 적당한 거리감과 하이 앵글. 깊이감이 잘 느껴지는 스탠다드 횡스크롤.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Camera|Preset")
-	void SetCamera_Classic();
-
-	/** * @brief [옵션 3] 다이나믹
-	 * @details 가까운 거리, 광각 렌즈. 캐릭터 동작이 크고 시원하게 보임.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Camera|Preset")
-	void SetCamera_Dynamic();
-
-	/** * @brief 카메라 모드를 순차적으로 변경합니다. (0 -> 1 -> 2 -> 0 loop)
-	 * @details Default -> Classic -> Dynamic 순서로 변경됩니다.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Camera|Control")
-	void SwitchCameraMode();
-
 	/*
 	* @brief 플레이어가 죽은후 플레이어 데이터 액터에게 알림
 	*/
@@ -83,9 +59,6 @@ protected:
 	void OnAttackInput(const FInputActionValue& InValue);
 
 protected:
-
-	/** 현재 카메라 모드 인덱스 (0: Default, 1: Classic, 2: Dynamic) */
-	int32 CurrentCameraIndex = 0;
 
 	/*
 	 * @brief 입력 액션 Move
