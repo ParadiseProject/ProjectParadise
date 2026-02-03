@@ -121,10 +121,10 @@ public:
 	 * 근거리 무기의 경우 충돌(Trace) 검사 길이로 사용됩니다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Stats", meta = (ClampMin = "0.0"))
-	float Range;
+	float AttackRange;
 
 	/**
-	 * @brief 스킬/공격 재사용 대기시간 (Cooldown)
+	 * @brief 스킬 재사용 대기시간 (Cooldown)
 	 * @details 단위: 초 (Seconds).
 	 * GAS의 Cooldown GameplayEffect(GE_Cooldown)에 적용될 지속 시간(Duration)입니다.
 	 */

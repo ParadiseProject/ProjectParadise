@@ -202,20 +202,28 @@ struct FAIUnitStats : public FUnitBaseStats
 	// =========================================================
 
 	/**
-	 * @brief 공격 속도 / 쿨타임 (Attack Speed)
-	 * @details 초 단위(Seconds)입니다. 이 시간마다 한 번씩 공격을 시도합니다.
-	 * @note 값이 낮을수록 공격 속도가 빠릅니다. (예: 1.5 = 1.5초마다 1회 공격)
+	 * @brief 공격 속도 배율 (Attack Speed Multiplier)
+	 * @details 기본값 1.0을 기준으로, 높을수록 공격 속도가 빨라집니다.
+	 * 예: 1.2 = 20% 더 빠름. 애니메이션 재생 속도(PlayRate)에 곱해집니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", meta = (ClampMin = "0.0"))
-	float AttackInterval;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI Combat", meta = (ClampMin = "0.1", UIMin = "0.1"))
+	float AttackSpeed;
 
 	/**
 	 * @brief 사거리 (Attack Range)
 	 * @details 이 거리 안에 타겟이 들어오면 이동을 멈추고 공격을 시도합니다.
 	 * @note 근거리는 보통 100~150, 원거리는 600~1000 정도를 사용합니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI Combat", meta = (ClampMin = "0.0"))
 	float AttackRange;
+
+	/**
+	 * @brief 스킬 재사용 대기시간 (Cooldown)
+	 * @details 단위: 초 (Seconds).
+	 * GAS의 Cooldown GameplayEffect(GE_Cooldown)에 적용될 지속 시간(Duration)입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI Combat", meta = (ClampMin = "0.0"))
+	float Cooldown;
 };
 
 /**

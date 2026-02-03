@@ -37,7 +37,14 @@ public:
 	 * @param InDataHandle : 데이터 테이블과 RowName이 담긴 핸들
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Init")
-	void InitFromDataTable(const FDataTableRowHandle& InDataHandle);
+	void InitStatsFromDataTable(const FDataTableRowHandle& InDataHandle);
+
+	/** * @brief 에셋 데이터 테이블 핸들을 받아 초기화하는 함수
+	 * @param InDataHandle : 데이터 테이블과 RowName이 담긴 핸들
+	 * @details 테이블에서 SoftPtr을 읽어와 미리 로딩(Load)까지 수행합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Init")
+	void InitAssetsFromDataTable(const FDataTableRowHandle& InAssetHandle);
 
 
 	/*
@@ -53,6 +60,16 @@ public:
 	UFUNCTION()
 	void OnRespawnFinished();
 public:
+	/** * @brief 미리 로드된 스켈레탈 메시
+	 * @details APlayerBase가 스폰될 때 다시 로드할 필요 없이 이 포인터를 바로 사용합니다.
+	 */
+	UPROPERTY(Transient, VisibleAnywhere, Category = "Cached")
+	TObjectPtr<USkeletalMesh> CachedMesh;
+
+	/** @brief 미리 로드된 애니메이션 블루프린트 클래스 */
+	UPROPERTY(Transient, VisibleAnywhere, Category = "Cached")
+	TSubclassOf<UAnimInstance> CachedAnimBP;
+
 
 	/* * 장비 관리 컴포넌트
 	 * @details 인게임에서 착용 중인 장비의 로직과 데이터를 처리합니다.
@@ -71,8 +88,13 @@ public:
 	 * @details 에디터에서 드롭다운으로 선택 가능합니다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data", meta = (RowType = "CharacterStats"))
-	FDataTableRowHandle CharacterDataHandle;
-	// meta = (RowType="...")을 넣으면 해당 구조체를 쓰는 테이블만 필터링해서 보여줍니다
+	FDataTableRowHandle CharacterStatsDataHandle;
+	
+	/** * @brief 캐릭터 에셋 식별자 (Data Table + Row Name)
+	 * @details FCharacterAssets 구조체를 사용하는 테이블만 필터링
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data", meta = (RowType = "CharacterAssets"))
+	FDataTableRowHandle CharacterAssetsDataHandle;
 
 	/*
 	 * @brief 죽었는지 Bool값
