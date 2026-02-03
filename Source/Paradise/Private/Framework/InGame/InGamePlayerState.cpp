@@ -2,32 +2,45 @@
 
 
 #include "Framework/InGame/InGamePlayerState.h"
+#include "Engine/DataTable.h"
 #include "Characters/Player/PlayerData.h"
 
 AInGamePlayerState::AInGamePlayerState()
 {
 }
 
-void AInGamePlayerState::InitSquad(const TArray<UHeroDataAsset*>& StartingHeroes)
+void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
 {
-    // [더미 구현] 인자(StartingHeroes)는 무시하고 강제로 3명 생성
-    UE_LOG(LogTemp, Warning, TEXT("🏛️ [PlayerState] 스쿼드 초기화 시작..."));
+    UE_LOG(LogTemp, Warning, TEXT("[PlayerState] 스쿼드 초기화 시작"));
 
-    for (int32 i = 0; i < 3; i++)
+    //전달받은 ID 개수만큼 반복 (없으면 생성 안 함)
+    for (const FName& HeroID : StartingHeroIDs)
     {
-        // 1. 영혼(PlayerData) 액터 스폰
+        if (HeroID.IsNone()) continue;
+
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = this;
         APlayerData* NewSoul = GetWorld()->SpawnActor<APlayerData>(APlayerData::StaticClass(), SpawnParams);
 
         if (NewSoul)
         {
-            // 2. 더미 데이터로 초기화
-            NewSoul->InitFromDataAsset(nullptr); // nullptr 전달하여 더미 로직 실행
+            //핸들 생성 및 ID 주입
+            FDataTableRowHandle DataHandle;
+            DataHandle.DataTable = PlayerDataTable; //에디터에서 지정한 테이블 사용
+            DataHandle.RowName = HeroID;
 
-            // 3. 관리 목록에 추가
+            //PlayerData 초기화
+            NewSoul->InitFromDataTable(DataHandle);
+
+            //관리 목록 추가
             SquadMembers.Add(NewSoul);
         }
+    }
+
+    //전달 받은 멤버 숫자가 아무도없으면 로그
+    if (SquadMembers.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("⚠️ 전달된 유효한 ID가 없어 스쿼드가 비어 있습니다. 더미 데이터를 생성하지 않습니다."));
     }
 
     UE_LOG(LogTemp, Warning, TEXT("✅ [PlayerState] 스쿼드 생성 완료! (멤버 수: %d)"), SquadMembers.Num());

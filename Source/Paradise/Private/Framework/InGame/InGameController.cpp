@@ -27,10 +27,13 @@ void AInGameController::BeginPlay()
     AInGamePlayerState* PS = GetPlayerState<AInGamePlayerState>();
     if (PS)
     {
-        TArray<UHeroDataAsset*> EmptyAssets; // 더미용 빈 배열
-        PS->InitSquad(EmptyAssets); // 영혼 3개 생성됨
+        TArray<FName> TestHeroIDs;
+        TestHeroIDs.Add(TEXT("Test1"));
+        TestHeroIDs.Add(TEXT("Test2"));
+        TestHeroIDs.Add(TEXT("Test3"));
+        PS->InitSquad(TestHeroIDs); 
 
-        // 3. 육체 소환
+        //육체 소환
         InitializeSquadPawns();
     }
 

@@ -32,9 +32,9 @@ public:
 public:
 	/*
 	 * @brief 게임 시작 시 스쿼드 데이터를 생성하는 함수
-	 * @param StartingHeroes 로비에서 선택한 영웅 데이터 에셋 목록
+	 * @param StartingHeroIDs : 로비나 저장 데이터에서 넘어온 영웅들의 ID 목록 (예: "Arthur", "Merlin")
 	 */
-	void InitSquad(const TArray<UHeroDataAsset*>& StartingHeroes);
+	void InitSquad(const TArray<FName>& StartingHeroIDs);
 
 	/*
 	 * @brief 인덱스에 해당하는 영웅 데이터(영혼) 반환
@@ -55,6 +55,10 @@ protected:
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Squad")
 	TArray<TObjectPtr<APlayerData>> SquadMembers;
+
+	/*영웅 생성에 사용할 데이터 테이블 */
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player")
+	TObjectPtr<class UDataTable> PlayerDataTable;
 
 	//  GAS 컴포넌트 (Commander Resources)
 	/* 지휘관용 ASC (코스트/쿨타임/패시브 효과 관리용) */
