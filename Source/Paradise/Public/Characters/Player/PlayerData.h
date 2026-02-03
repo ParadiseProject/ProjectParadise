@@ -37,7 +37,7 @@ public:
 	 * @param InDataHandle : 데이터 테이블과 RowName이 담긴 핸들
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Init")
-	void InitFromDataTable(const FDataTableRowHandle& InDataHandle);
+	void InitStatsFromDataTable(const FDataTableRowHandle& InDataHandle);
 
 	/** * @brief 에셋 데이터 테이블 핸들을 받아 초기화하는 함수
 	 * @param InDataHandle : 데이터 테이블과 RowName이 담긴 핸들
@@ -88,13 +88,13 @@ public:
 	 * @details 에디터에서 드롭다운으로 선택 가능합니다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data", meta = (RowType = "CharacterStats"))
-	FDataTableRowHandle CharacterDataHandle;
+	FDataTableRowHandle CharacterStatsDataHandle;
 	
 	/** * @brief 캐릭터 에셋 식별자 (Data Table + Row Name)
 	 * @details FCharacterAssets 구조체를 사용하는 테이블만 필터링
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data", meta = (RowType = "CharacterAssets"))
-	FDataTableRowHandle CharacterAssetHandle;
+	FDataTableRowHandle CharacterAssetsDataHandle;
 
 	/*
 	 * @brief 죽었는지 Bool값

@@ -31,11 +31,11 @@ void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
 
             //에셋데이터핸들 생성 및 ID 주입
             FDataTableRowHandle AssetDataHandle;
-            AssetDataHandle.DataTable = PlayerAssetDataTable;
+            AssetDataHandle.DataTable = PlayerAssetDataTable; //에디터에서 지정한 테이블 사용
             AssetDataHandle.RowName = HeroID;
 
             //PlayerData 초기화
-            NewSoul->InitFromDataTable(StatDataHandle);
+            NewSoul->InitStatsFromDataTable(StatDataHandle);
             NewSoul->InitAssetsFromDataTable(AssetDataHandle);
             //관리 목록 추가
             SquadMembers.Add(NewSoul);
