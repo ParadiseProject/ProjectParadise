@@ -56,9 +56,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Squad")
 	TArray<TObjectPtr<APlayerData>> SquadMembers;
 
-	/*영웅 생성에 사용할 데이터 테이블 */
-	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player")
-	TObjectPtr<class UDataTable> PlayerDataTable;
+	/*영웅 생성에 사용할 스탯 데이터 테이블 */
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player", meta = (RowType = "CharacterStats"))
+	TObjectPtr<class UDataTable> PlayerStatDataTable;
+
+	/*영웅 생성에 사용할 에셋 데이터 테이블 */
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player", meta = (RowType = "CharacterAssets"))
+	TObjectPtr<class UDataTable> PlayerAssetDataTable;
 
 	//  GAS 컴포넌트 (Commander Resources)
 	/* 지휘관용 ASC (코스트/쿨타임/패시브 효과 관리용) */

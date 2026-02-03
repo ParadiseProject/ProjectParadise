@@ -50,12 +50,11 @@ void ACharacterBase::PlayHitFlash()
 	{
 		//0번인덱스의 커스텀 프리미티브 데이터 1.0f 로 변경 //intensity
 		MyMesh->SetCustomPrimitiveDataFloat(0, 1.0f);
-
 		//1~3번인덱스의 벡터값 변경 //Red로 변하게
 		MyMesh->SetCustomPrimitiveDataVector3(1, FVector(1.0f, 0.0f, 0.0f));
 
 		//4번인덱스의 float값 변경 //투명도
-		MyMesh->SetCustomPrimitiveDataFloat(4, 10.0f);
+		MyMesh->SetCustomPrimitiveDataFloat(4, 100.0f);
 	}
 
 	//3초후 이펙트 리셋 함수호출
