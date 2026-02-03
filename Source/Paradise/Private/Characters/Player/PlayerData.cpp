@@ -12,7 +12,7 @@ APlayerData::APlayerData()
 	bReplicates = false; 
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-	AbilitySystemComponent->SetIsReplicated(false); // 싱글이므로 false
+	AbilitySystemComponent->SetIsReplicated(false);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	
