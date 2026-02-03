@@ -24,8 +24,10 @@ public class Paradise : ModuleRules
 
         // UI (UMG & Slate)
         PublicDependencyModuleNames.AddRange(new string[] {
-			"UMG"
-			});
+			"UMG",
+            "CommonUI", 
+			"CommonInput"
+            });
 
 
         // AI & Navigation
