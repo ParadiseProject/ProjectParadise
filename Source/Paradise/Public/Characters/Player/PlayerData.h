@@ -9,6 +9,8 @@
 #include "PlayerData.generated.h"
 
 class UAttributeSet;
+class UBaseAttributeSet;
+struct FCharacterStats;
 
 /**
  * 
@@ -27,17 +29,34 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent()const override { return AbilitySystemComponent; }
 
 	/*
-	 * @brief 어트리뷰트셋 Getter함수
+	 * @brief 어트리뷰트셋 (UBaseAttributeSet) Getter함수
 	 * @return 어트리뷰트셋 반환
 	 */
-	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	UBaseAttributeSet* GetAttributeSet() const { return CombatAttributeSet; }
 
 	/*
 	 * @brief 데이터 테이블 Row 를 통해 초기화하는 함수
 	 * @param InDataHandle : 데이터 테이블과 RowName이 담긴 핸들
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Init")
-	void InitFromDataTable(const FDataTableRowHandle& InDataHandle);
+	void InitStatsFromDataTable(const FDataTableRowHandle& InDataHandle);
+
+
+	/**
+	 * @brief FCharacterStats 구조체 데이터를 기반으로 전투 관련 어트리뷰트를 초기화합니다.
+	 * * 데이터 테이블에서 로드된 기본 스탯값을 사용하여
+	 * 체력(Health), 마나(Mana), 공격력, 방어력 등의 초기값을 설정합니다.
+	 * * @param Stats 데이터 테이블에서 가져온 캐릭터 스탯 구조체 포인터 (유효성 검사 필요)
+	 * @note MaxHealth/MaxMana 설정 후, 현재 Health/Mana도 해당 Max 값으로 즉시 동기화됩니다.
+	 */
+	void InitCombatAttributes(FCharacterStats* Stats);
+
+	/** * @brief 에셋 데이터 테이블 핸들을 받아 초기화하는 함수
+	 * @param InDataHandle : 데이터 테이블과 RowName이 담긴 핸들
+	 * @details 테이블에서 SoftPtr을 읽어와 미리 로딩(Load)까지 수행합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Init")
+	void InitAssetsFromDataTable(const FDataTableRowHandle& InAssetHandle);
 
 
 	/*
@@ -53,6 +72,16 @@ public:
 	UFUNCTION()
 	void OnRespawnFinished();
 public:
+	/** * @brief 미리 로드된 스켈레탈 메시
+	 * @details APlayerBase가 스폰될 때 다시 로드할 필요 없이 이 포인터를 바로 사용합니다.
+	 */
+	UPROPERTY(Transient, VisibleAnywhere, Category = "Cached")
+	TObjectPtr<USkeletalMesh> CachedMesh = nullptr;
+
+	/** @brief 미리 로드된 애니메이션 블루프린트 클래스 */
+	UPROPERTY(Transient, VisibleAnywhere, Category = "Cached")
+	TSubclassOf<UAnimInstance> CachedAnimBP = nullptr;
+
 
 	/* * 장비 관리 컴포넌트
 	 * @details 인게임에서 착용 중인 장비의 로직과 데이터를 처리합니다.
@@ -71,8 +100,13 @@ public:
 	 * @details 에디터에서 드롭다운으로 선택 가능합니다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data", meta = (RowType = "CharacterStats"))
-	FDataTableRowHandle CharacterDataHandle;
-	// meta = (RowType="...")을 넣으면 해당 구조체를 쓰는 테이블만 필터링해서 보여줍니다
+	FDataTableRowHandle CharacterStatsDataHandle;
+	
+	/** * @brief 캐릭터 에셋 식별자 (Data Table + Row Name)
+	 * @details FCharacterAssets 구조체를 사용하는 테이블만 필터링
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data", meta = (RowType = "CharacterAssets"))
+	FDataTableRowHandle CharacterAssetsDataHandle;
 
 	/*
 	 * @brief 죽었는지 Bool값
@@ -91,15 +125,14 @@ protected:
 	/*
 	 * @brief 플레이어 ASC 컴포넌트
 	 */
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
 
 	/* * GAS 스탯 관리용 어트리뷰트 셋
-	 * @details [변경 예정] 현재는 기본 UAttributeSet이지만,
-	 * 추후 구체적인 커스텀 클래스로 타입을 변경할 예정입니다.
+	 * @details UBaseAttributeSet 전체 스탯 관리 어트리뷰트셋
 	 */
 	UPROPERTY()
-	TObjectPtr<UAttributeSet> AttributeSet;
+	TObjectPtr<UBaseAttributeSet> CombatAttributeSet = nullptr;
 
 private:
 

@@ -3,6 +3,7 @@
 
 #include "Characters/Player/PlayerData.h"
 #include "Characters/Base/CharacterBase.h"
+#include "GAS/Attributes/BaseAttributeSet.h"
 #include "Data/Structs/UnitStructs.h"
 #include "AbilitySystemComponent.h"
 #include "Components/EquipmentComponent.h"
@@ -12,11 +13,11 @@ APlayerData::APlayerData()
 	bReplicates = false; 
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-	AbilitySystemComponent->SetIsReplicated(false); // 싱글이므로 false
+	AbilitySystemComponent->SetIsReplicated(false);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	
-	AttributeSet = CreateDefaultSubobject<UAttributeSet>(TEXT("AttributeSet"));
+    CombatAttributeSet = CreateDefaultSubobject<UBaseAttributeSet>(TEXT("CombatAttributeSet"));
 
 
 	EquipmentComponent = CreateDefaultSubobject<UEquipmentComponent>(TEXT("EquipmentComponent"));
@@ -24,38 +25,80 @@ APlayerData::APlayerData()
 
 
 
-void APlayerData::InitFromDataTable(const FDataTableRowHandle& InDataHandle)
+void APlayerData::InitStatsFromDataTable(const FDataTableRowHandle& InDataHandle)
 {
     //핸들 저장 (나중에 참조 가능)
-    CharacterDataHandle = InDataHandle;
+    CharacterStatsDataHandle = InDataHandle;
 
     //유효성 검사
-    if (CharacterDataHandle.IsNull())
+    if (CharacterStatsDataHandle.IsNull())
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] 데이터 핸들이 비어있습니다!"));
+        UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] CharacterStatsDataHandle : 데이터 핸들이 비어있습니다!"));
         return;
     }
 
     //테이블에서 Row 가져오기
     //GetRow<구조체타입>(ContextString)
     static const FString ContextString(TEXT("PlayerData::InitFromDataTable"));
-    FCharacterStats* Stats = CharacterDataHandle.GetRow<FCharacterStats>(ContextString);
+    FCharacterStats* Stats = CharacterStatsDataHandle.GetRow<FCharacterStats>(ContextString);
 
     if (Stats)
     {
-        // 3. 스탯 적용 (예시)
-        // this->MaxHP = Stats->BaseMaxHP;
-        // this->AttackPower = Stats->BaseAttackPower;
+        InitCombatAttributes(Stats);
+        UE_LOG(LogTemp, Log, TEXT("✅ [PlayerData] 초기화 완료: %s"), *CharacterStatsDataHandle.RowName.ToString());
 
-        // 이름 설정 (디버그용)
-        // SetActorLabel(CharacterDataHandle.RowName.ToString()); 
-
-        UE_LOG(LogTemp, Log, TEXT("✅ [PlayerData] 초기화 완료: %s (HP: %f)"), *CharacterDataHandle.RowName.ToString(), Stats->BaseMaxHP);
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] %s 행을 찾을 수 없거나 타입이 일치하지 않습니다."), *CharacterDataHandle.RowName.ToString());
+        UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] %s 행을 찾을 수 없거나 타입이 일치하지 않습니다."), *CharacterStatsDataHandle.RowName.ToString());
     }
+}
+
+void APlayerData::InitCombatAttributes(FCharacterStats* Stats)
+{
+    if (Stats)
+    {
+        //체력
+        CombatAttributeSet->InitMaxHealth(Stats->BaseMaxHP);
+        CombatAttributeSet->InitHealth(CombatAttributeSet->GetMaxHealth());
+        //마나
+        CombatAttributeSet->InitMaxMana(Stats->BaseMaxMP);
+        CombatAttributeSet->InitMana(CombatAttributeSet->GetMaxMana());
+        //공격력
+        CombatAttributeSet->InitAttackPower(Stats->BaseAttackPower);
+        //방어력
+        CombatAttributeSet->InitDefense(Stats->BaseDefense);
+        //크리티컬 확률
+        CombatAttributeSet->InitCritRate(Stats->BaseCritRate);
+        //이동 속도
+        CombatAttributeSet->InitMoveSpeed(Stats->BaseMoveSpeed);
+        //재사용 대기시간
+        CombatAttributeSet->InitCooldown(Stats->UltimateCooldown);
+    }
+}
+
+void APlayerData::InitAssetsFromDataTable(const FDataTableRowHandle& InAssetHandle)
+{
+    CharacterAssetsDataHandle = InAssetHandle;
+
+    if (CharacterAssetsDataHandle.IsNull())
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] CharacterAssetsDataHandle : 데이터 핸들이 비어있습니다!"));
+        return;
+    }
+
+    //테이블에서 Row 가져오기
+    //GetRow<구조체타입>(ContextString)
+    static const FString ContextString(TEXT("PlayerData::InitAssetsFromDataTable"));
+    FCharacterAssets* Assets = CharacterAssetsDataHandle.GetRow<FCharacterAssets>(ContextString);
+
+    if (Assets)
+    {
+        this->CachedMesh = Assets->SkeletalMesh.LoadSynchronous();
+        this->CachedAnimBP = Assets->AnimBlueprint;
+    }
+
+
 }
 
 void APlayerData::OnDeath()

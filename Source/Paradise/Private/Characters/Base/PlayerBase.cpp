@@ -86,8 +86,19 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
         ASC->InitAbilityActorInfo(InPlayerData, this);
     }
 
+    //캐릭터 에셋 외형 업데이트
+    //APlayerData의 장비 외형 데이터 테이블의 한줄을 읽어서 외형 업데이트
+    if (USkeletalMeshComponent* Mymesh = GetMesh())
+    {
+        Mymesh->SetSkeletalMesh(LinkedPlayerData->CachedMesh);
+
+        Mymesh->SetAnimClass(LinkedPlayerData->CachedAnimBP);
+    }
+    
+
+
     //외형 업데이트 (장비 동기화)
-    //영혼이 가진 장비 컴포넌트를 확인해서 내 몸에 메시를 입힘
+    //APlayerData가 가진 장비 컴포넌트를 확인해서 내 몸에 메시를 입힘
     if (UEquipmentComponent* EquipComp = InPlayerData->EquipmentComponent)
     {
         //장비컴포넌트에 장착된 장비 비쥬얼적으로 보이게 하는 함수 구현해야함

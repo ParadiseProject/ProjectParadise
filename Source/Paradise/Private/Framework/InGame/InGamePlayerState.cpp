@@ -20,18 +20,36 @@ void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
 
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = this;
-        APlayerData* NewSoul = GetWorld()->SpawnActor<APlayerData>(APlayerData::StaticClass(), SpawnParams);
+
+        UClass* SpawnClass = nullptr;
+        if(PlayerDataClass) {
+            SpawnClass = PlayerDataClass;
+            UE_LOG(LogTemp, Warning, TEXT("⚠️ [PlayerState] PlayerDataClass로 스폰되었습니다."));
+        }
+        else {
+            SpawnClass= APlayerData::StaticClass();
+            UE_LOG(LogTemp, Warning, TEXT("⚠️ [PlayerState] PlayerDataClass가 설정되지 않았습니다. 기본 C++ 클래스로 스폰합니다."));
+        }
+
+        APlayerData* NewSoul = GetWorld()->SpawnActor<APlayerData>(
+            SpawnClass,
+            SpawnParams);
 
         if (NewSoul)
         {
-            //핸들 생성 및 ID 주입
-            FDataTableRowHandle DataHandle;
-            DataHandle.DataTable = PlayerDataTable; //에디터에서 지정한 테이블 사용
-            DataHandle.RowName = HeroID;
+            //스탯데이터핸들 생성 및 ID 주입
+            FDataTableRowHandle StatDataHandle;
+            StatDataHandle.DataTable = PlayerStatDataTable; //에디터에서 지정한 테이블 사용
+            StatDataHandle.RowName = HeroID;
+
+            //에셋데이터핸들 생성 및 ID 주입
+            FDataTableRowHandle AssetDataHandle;
+            AssetDataHandle.DataTable = PlayerAssetDataTable; //에디터에서 지정한 테이블 사용
+            AssetDataHandle.RowName = HeroID;
 
             //PlayerData 초기화
-            NewSoul->InitFromDataTable(DataHandle);
-
+            NewSoul->InitStatsFromDataTable(StatDataHandle);
+            NewSoul->InitAssetsFromDataTable(AssetDataHandle);
             //관리 목록 추가
             SquadMembers.Add(NewSoul);
         }

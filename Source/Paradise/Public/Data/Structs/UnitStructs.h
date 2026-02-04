@@ -90,6 +90,7 @@ struct FUnitBaseStats : public FTableRowBase
  * @brief 플레이어 캐릭터의 '성장 규칙'과 '고유 스킬' 데이터를 정의하는 구조체
  * @details FUnitBaseStats를 상속받아 기본 스탯을 포함하며, 레벨업 시 상승하는 수치(Per Level)와 궁극기 설정이 추가되었습니다.
  * 로비(내 정보)와 인게임(스탯 초기화)에서 공통으로 사용되는 핵심 데이터입니다.
+ * 플레이어 캐릭터는 무기(Weapon)에 공격 속도와 사거리가 존재합니다.
  */
 USTRUCT(BlueprintType)
 struct FCharacterStats : public FUnitBaseStats
