@@ -40,7 +40,7 @@ public:
 	 * @param MemberIndex : 부활시킬 멤버의 인덱스 (0~2)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Squad|Command")
-	void RespawnSquadMember(int32 MemberIndex);
+	void RespawnSquadPlayer(int32 MemberIndex);
 
 	/** @brief 캐릭터 사망 시 호출되어 다음 생존 캐릭터로 자동 교체합니다. */
 	void OnPlayerDied(APlayerBase* DeadPlayer);
