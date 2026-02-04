@@ -111,21 +111,26 @@ void AInGameController::RequestSwitchPlayer(int32 PlayerIndex)
 
 void AInGameController::OnPlayerDied(APlayerBase* DeadPlayer)
 {
-    //방금 죽은 게 내가 조종하던 캐릭터인지 확인
-    if (DeadPlayer == GetPawn())
+    bool bIsMyCharacter = false;
+    if (ActiveSquadPawns.IsValidIndex(CurrentControlledIndex))
     {
-        UE_LOG(LogTemp, Warning, TEXT("🚨 [Controller] 플레이어 사망! 다음 생존자를 찾습니다..."));
+        bIsMyCharacter = (ActiveSquadPawns[CurrentControlledIndex] == DeadPlayer);
+    }
+
+    if (bIsMyCharacter)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("🚨 [Controller] 플레이어 사망 확인! (Index: %d) -> 다음 생존자 탐색 시작"), CurrentControlledIndex);
 
         int32 NextAliveIndex = -1;
         int32 SquadSize = ActiveSquadPawns.Num();
 
-        //현재 인덱스 다음부터 한 바퀴 돌면서 생존 플레이어 탐색
+        // 현재 인덱스 다음부터 한 바퀴 돌면서 생존 플레이어 탐색
         for (int32 i = 1; i < SquadSize; i++)
         {
             int32 CheckIndex = (CurrentControlledIndex + i) % SquadSize;
             APlayerBase* Candidate = ActiveSquadPawns[CheckIndex];
 
-            // 살아있는 동료 발견!
+            // 살아있는 동료 발견! (Candidate가 있고, 죽지 않았어야 함)
             if (Candidate && !Candidate->IsDead())
             {
                 NextAliveIndex = CheckIndex;
@@ -133,15 +138,16 @@ void AInGameController::OnPlayerDied(APlayerBase* DeadPlayer)
             }
         }
 
-        //생존자가 있으면 교체, 없으면 게임 오버
+        // 생존자가 있으면 교체, 없으면 게임 오버
         if (NextAliveIndex != -1)
         {
+            // 바로 교체 요청
             RequestSwitchPlayer(NextAliveIndex);
         }
     }
     else
     {
-        // (AI 동료가 죽은 경우) - 로그만 찍거나 별도 처리
+        // (AI 동료가 죽은 경우)
         UE_LOG(LogTemp, Warning, TEXT("🤖 [Controller] 동료(AI)가 사망했습니다."));
     }
 }
