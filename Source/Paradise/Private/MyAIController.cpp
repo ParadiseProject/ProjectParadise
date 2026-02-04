@@ -5,9 +5,29 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "MonsterAI.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
 
 AMyAIController::AMyAIController()
 {
+    // 1. 퍼셉션 컴포넌트 생성
+    AIPerception = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerception"));
+    SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
+
+    // 2. 시야 설정
+    SightConfig->SightRadius = 2000.f;          // 감지 거리
+    SightConfig->LoseSightRadius = 2500.f;      // 놓치는 거리
+    SightConfig->PeripheralVisionAngleDegrees = 90.f; // 시야각
+    SightConfig->DetectionByAffiliation.bDetectEnemies = true;
+    SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+    SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+
+    // 3. 컴포넌트에 설정 적용
+    AIPerception->ConfigureSense(*SightConfig);
+    AIPerception->SetDominantSense(SightConfig->GetSenseImplementation());
+
+    // 4. 감지 이벤트 연결
+    AIPerception->OnTargetPerceptionUpdated.AddDynamic(this, &AMyAIController::OnTargetDetected);
 }
 
 /**
@@ -32,5 +52,19 @@ void AMyAIController::OnPossess(APawn* InPawn)
             // 3. 결정된 데이터를 바탕으로 비헤이비어 트리 가동
             RunBehaviorTree(BTAsset);
         }
+    }
+}
+
+void AMyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
+{
+    if (Blackboard == nullptr) return;
+
+    if (Stimulus.WasSuccessfullySensed())
+    {
+        Blackboard->SetValueAsObject(BB_KEYS::TargetActor, Actor);
+    }
+    else
+    {
+        Blackboard->ClearValue(BB_KEYS::TargetActor);
     }
 }
