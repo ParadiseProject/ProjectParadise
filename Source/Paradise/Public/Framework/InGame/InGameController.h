@@ -28,6 +28,14 @@ public:
 
 	//  스쿼드 제어 (Squad Control)
 public:
+
+	/**
+	 * @brief 자동 전투 모드를 활성화하거나 비활성화합니다.
+	 * @param bEnable true일 경우 전체 뷰 시점으로 전환하고 AI 로직을 강화합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Squad|Control")
+	void SetAutoBattleMode(bool bEnable);
+
 	/*
 	 * @brief 요청된 인덱스의 영웅으로 직접 조작 대상을 변경(빙의)하는 함수
 	 * @details 기존 영웅에는 AI를 다시 심어주고, 새 영웅의 제어권을 가져옵니다.
@@ -44,6 +52,12 @@ public:
 
 	/** @brief 캐릭터 사망 시 호출되어 다음 생존 캐릭터로 자동 교체합니다. */
 	void OnPlayerDied(APlayerBase* DeadPlayer);
+
+	/**
+	 * @brief 카메라 시점을 현재 상태(전멸 여부, 자동 모드 여부)에 따라 갱신합니다.
+	 * @details SetViewTargetWithBlend를 사용하여 부드러운 시점 전환을 처리합니다.
+	 */
+	void UpdateCameraSystem();
 
 private:
 	/*
@@ -104,5 +118,24 @@ protected:
 	 * @details 여기에 에디터에서 만든 캐릭터 블루프린트를 넣어주세요.
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Squad|Test")
-	TSubclassOf<APlayerBase> TestPlayerClass; // [추가됨]
+	TSubclassOf<APlayerBase> TestPlayerClass = nullptr;
+
+	/** @brief 전장을 조망하는 전체 뷰 전용 카메라 액터 (에디터에서 할당) */
+	UPROPERTY(EditAnywhere, Category = "Squad|Camera")
+	TObjectPtr<AActor> OverviewCameraActor = nullptr;
+
+	/** @brief 전체 뷰 카메라를 찾기 위한 태그 (기본값: "Camera.Overview") */
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Camera")
+	FName OverviewCameraTag = TEXT("Camera.Overview");
+
+	/** @brief 현재 자동 전투 모드 활성화 여부 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Squad|Status")
+	bool bIsAutoMode = false;
+
+	/** @brief 모든 영웅이 사망했는지 여부 */
+	bool bIsSquadWipedOut = false;
+
+	/** @brief 카메라 전환 시 걸리는 블렌딩 시간 */
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Camera")
+	float CameraBlendTime = 1.5f;
 };

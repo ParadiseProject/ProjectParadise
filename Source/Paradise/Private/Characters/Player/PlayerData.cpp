@@ -72,8 +72,6 @@ void APlayerData::InitCombatAttributes(FCharacterStats* Stats)
         CombatAttributeSet->InitCritRate(Stats->BaseCritRate);
         //이동 속도
         CombatAttributeSet->InitMoveSpeed(Stats->BaseMoveSpeed);
-        //재사용 대기시간
-        CombatAttributeSet->InitCooldown(Stats->UltimateCooldown);
     }
 }
 

@@ -23,6 +23,16 @@ void AInGameController::BeginPlay()
         }
     }
 
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), OverviewCameraTag, FoundActors);
+    UE_LOG(LogTemp, Warning, TEXT("🔍 [Camera] 태그로 찾은 액터 수: %d개"), FoundActors.Num());
+    if (FoundActors.Num() > 0)
+    {
+        OverviewCameraActor = FoundActors[0];
+        UE_LOG(LogTemp, Log, TEXT("✅ [Camera] 태그 '%s'로 카메라 액터(%s)를 찾았습니다."),
+            *OverviewCameraTag.ToString(), *OverviewCameraActor->GetName());
+    }
+
     //[더미 테스트] 스쿼드 초기화 요청
     // 실제로는 GameMode나 로비에서 넘겨받은 데이터로 호출해야 함
     AInGamePlayerState* PS = GetPlayerState<AInGamePlayerState>();
@@ -62,6 +72,17 @@ void AInGameController::SetupInputComponent()
 
 }
 
+void AInGameController::SetAutoBattleMode(bool bEnable)
+{
+    bIsAutoMode = bEnable;
+
+ 
+    UE_LOG(LogTemp, Warning, TEXT("🤖 [Controller] 자동 전투 모드: %s"), bEnable ? TEXT("ON") : TEXT("OFF"));
+    UpdateCameraSystem(); //카메라시점 전체시점으로 변경
+
+    //TODO: 이 아래에 자동모드 AI 전환 함수 구현
+}
+
 void AInGameController::RequestSwitchPlayer(int32 PlayerIndex)
 {
     if (!ActiveSquadPawns.IsValidIndex(PlayerIndex))
@@ -73,7 +94,7 @@ void AInGameController::RequestSwitchPlayer(int32 PlayerIndex)
     APlayerBase* NewPlayer = ActiveSquadPawns[PlayerIndex];
     APlayerBase* OldPlayer = Cast<APlayerBase>(GetPawn());
 
-    // 이미 조종 중이거나 대상이 없으면 리턴
+    //이미 조종 중이거나 대상이 없으면 리턴
     if (!NewPlayer || NewPlayer == OldPlayer) return;
     //죽어있는 플레이어 Base는 리턴
     if (NewPlayer && NewPlayer->IsDead()) return;
@@ -82,7 +103,7 @@ void AInGameController::RequestSwitchPlayer(int32 PlayerIndex)
     //요청된 캐릭터에 AI가 붙어있었다면 제거
     if (AController* NewPawnController = NewPlayer->GetController())
     {
-        // AI 컨트롤러라면 제거 (PlayerController가 빙의하면 자동으로 UnPossess되지만, 액터는 남으므로 파괴 필요)
+        // AI 컨트롤러라면 제거
         if (NewPawnController != this)
         {
             NewPawnController->UnPossess();
@@ -176,15 +197,28 @@ void AInGameController::RespawnSquadPlayer(int32 PlayerIndex)
         //상태 초기화
         Soul->bIsDead = false; // PlayerData에 별도 Setter가 있다면 그걸 사용하세요.
 
-        //AI 빙의 (내가 직접 조종하는 번호가 아니면 무조건 AI)
-        if (PlayerIndex != CurrentControlledIndex)
+        //전멸상태거나 , 조종중인 Player이 없을때
+        if (bIsSquadWipedOut || GetPawn() == nullptr)
         {
-            PossessAI(NewBody);
+            UE_LOG(LogTemp, Warning, TEXT("✨ [Respawn] 전멸 위기에서 %s 부활! 제어권을 획득합니다."), *NewBody->GetName());
+
+            // 전멸 플래그 해제
+            bIsSquadWipedOut = false;
+
+            //Possess 및 인덱스 초기화
+            Possess(NewBody);
+            CurrentControlledIndex = PlayerIndex;
+
+            // 카메라 시점을 이 캐릭터로 갱신
+            UpdateCameraSystem();
         }
         else
         {
-            // 만약 내가 조종하던 번호였다면 바로 빙의 (선택 사항)
-            Possess(NewBody);
+            // 이미 다른 캐릭터를 조종 중이라면, 부활한 캐릭터는 AI에게 맡김
+            if (PlayerIndex != CurrentControlledIndex)
+            {
+                PossessAI(NewBody);
+            }
         }
     }
 }
@@ -224,11 +258,43 @@ void AInGameController::OnPlayerDied(APlayerBase* DeadPlayer)
             // 바로 교체 요청
             RequestSwitchPlayer(NextAliveIndex);
         }
+        else {
+            UE_LOG(LogTemp, Error, TEXT("💀 [Controller] 모든 스쿼드 멤버가 사망했습니다."));
+            bIsSquadWipedOut = true;
+            GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+                {
+                    UpdateCameraSystem();
+                });
+          
+        }
     }
     else
     {
         // (AI 동료가 죽은 경우)
         UE_LOG(LogTemp, Warning, TEXT("🤖 [Controller] 동료(AI)가 사망했습니다."));
+    }
+}
+
+void AInGameController::UpdateCameraSystem()
+{
+    // 우선순위 1: 전멸했거나 자동 모드일 때 -> Overview 카메라
+    if ((bIsSquadWipedOut || bIsAutoMode) && OverviewCameraActor)
+    {
+        // 현재 타겟이 이미 Overview라면 블렌딩 다시 안 함 (최적화)
+        if (GetViewTarget() != OverviewCameraActor)
+        {
+            SetViewTargetWithBlend(OverviewCameraActor, CameraBlendTime, VTBlend_Cubic);
+            UE_LOG(LogTemp, Log, TEXT("📷 [Camera] Overview 모드로 전환"));
+        }
+    }
+    // 우선순위 2: 조종 가능한 캐릭터가 있을 때 -> 캐릭터 카메라
+    else if (GetPawn())
+    {
+        if (GetViewTarget() != GetPawn())
+        {
+            SetViewTargetWithBlend(GetPawn(), CameraBlendTime, VTBlend_Cubic);
+            UE_LOG(LogTemp, Log, TEXT("📷 [Camera] 캐릭터 모드로 복귀"));
+        }
     }
 }
 
