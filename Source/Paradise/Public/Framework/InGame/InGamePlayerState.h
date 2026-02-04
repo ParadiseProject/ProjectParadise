@@ -43,7 +43,7 @@ public:
 	APlayerData* GetSquadMemberData(int32 Index) const;
 
 	/*
-	 * @brief 현재 스                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            쿼드 멤버 수 반환
+	 * @brief 현재 스쿼드 멤버 수 반환
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Squad")
 	int32 GetSquadSize() const { return SquadMembers.Num(); }
@@ -72,4 +72,10 @@ protected:
 	/* 지휘관용 어트리뷰트 (Cost, MaxCost, Gold, RegenRate 등) */
 	UPROPERTY()
 	TObjectPtr<UAttributeSet> CommanderAttributeSet;
+
+	/** * @brief 스폰할 영혼(PlayerData)의 클래스 (BP_PlayerData 할당용)
+	 * @details 이 값이 비어있으면 기본 C++ 클래스로 스폰됩니다.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Config")
+	TSubclassOf<APlayerData> PlayerDataClass;
 };

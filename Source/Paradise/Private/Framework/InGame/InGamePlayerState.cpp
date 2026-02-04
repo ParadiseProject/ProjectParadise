@@ -20,7 +20,20 @@ void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
 
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = this;
-        APlayerData* NewSoul = GetWorld()->SpawnActor<APlayerData>(APlayerData::StaticClass(), SpawnParams);
+
+        UClass* SpawnClass = nullptr;
+        if(PlayerDataClass) {
+            SpawnClass = PlayerDataClass;
+            UE_LOG(LogTemp, Warning, TEXT("⚠️ [PlayerState] PlayerDataClass로 스폰되었습니다."));
+        }
+        else {
+            SpawnClass= APlayerData::StaticClass();
+            UE_LOG(LogTemp, Warning, TEXT("⚠️ [PlayerState] PlayerDataClass가 설정되지 않았습니다. 기본 C++ 클래스로 스폰합니다."));
+        }
+
+        APlayerData* NewSoul = GetWorld()->SpawnActor<APlayerData>(
+            SpawnClass,
+            SpawnParams);
 
         if (NewSoul)
         {
