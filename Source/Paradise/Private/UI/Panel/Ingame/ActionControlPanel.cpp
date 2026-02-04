@@ -23,19 +23,15 @@ void UActionControlPanel::NativeConstruct()
 #pragma region 외부 인터페이스 구현
 void UActionControlPanel::UpdateSkillCooldown(int32 SkillIndex, float CurrentTime, float MaxTime)
 {
-	/**
-	 * @brief 스킬 쿨타임 비율 계산 및 하위 슬롯 전달
-	 * @details 판넬은 데이터 전달만 담당하고 시각화는 슬롯 위젯이 담당합니다.
-	 */
-	const float Ratio = (MaxTime > 0.f) ? (CurrentTime / MaxTime) : 0.f;
-
+	// 기본 스킬 쿨타임 정보 호출
 	if (SkillIndex == 0 && SkillSlot_Active)
 	{
-		SkillSlot_Active->SetCooldownStatus(Ratio, CurrentTime);
+		SkillSlot_Active->SetCooldownStatus(CurrentTime, MaxTime);
 	}
+	// 궁극기 쿨타임 정보 호출
 	else if (SkillIndex == 1 && SkillSlot_Ultimate)
 	{
-		SkillSlot_Ultimate->SetCooldownStatus(Ratio, CurrentTime);
+		SkillSlot_Ultimate->SetCooldownStatus(CurrentTime, MaxTime);
 	}
 }
 
