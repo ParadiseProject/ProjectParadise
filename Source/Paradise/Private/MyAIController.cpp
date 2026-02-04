@@ -1,36 +1,98 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "MyAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "MonsterAI.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
+#include "BaseUnit.h"
+#include "HomeBase.h"
+#include "Kismet/GameplayStatics.h"
 
 AMyAIController::AMyAIController()
 {
+    AIPerception = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerception"));
+    SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
+
+    if (SightConfig)
+    {
+        SightConfig->SightRadius = 800.f;
+        SightConfig->LoseSightRadius = 1000.f;
+        SightConfig->PeripheralVisionAngleDegrees = 90.f;
+
+        SightConfig->DetectionByAffiliation.bDetectEnemies = true;
+        SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+        SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+
+        if (AIPerception)
+        {
+            AIPerception->ConfigureSense(*SightConfig);
+            AIPerception->SetDominantSense(SightConfig->GetSenseImplementation());
+        }
+    }
+
+    if (AIPerception)
+    {
+        AIPerception->OnTargetPerceptionUpdated.AddDynamic(this, &AMyAIController::OnTargetDetected);
+    }
 }
 
-/**
- * @brief 몬스터(Pawn)가 스폰되어 컨트롤러가 빙의(Possess)될 때 실행됩니다.
- */
 void AMyAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
     if (BTAsset && BBAsset)
     {
-        UBlackboardComponent* BBComp = Blackboard;
-
-        if (UseBlackboard(BBAsset, BBComp))
+        UBlackboardComponent* BBRawPtr = Blackboard.Get();
+        if (UseBlackboard(BBAsset, BBRawPtr))
         {
-            // 1. 초기 목적지 설정 (예: X=2000 지점의 적진)
-            Blackboard->SetValueAsVector(BB_KEYS::TargetLocation, FVector(2000.f, 0.f, 0.f));
+            ABaseUnit* SelfUnit = Cast<ABaseUnit>(InPawn);
 
-            // 2. 초기 상태를 Idle(대기)로 설정
-            Blackboard->SetValueAsEnum(BB_KEYS::AIState, static_cast<uint8>(EMonsterState::Idle));
+            TArray<AActor*> FoundBases;
+            UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHomeBase::StaticClass(), FoundBases);
 
-            // 3. 결정된 데이터를 바탕으로 비헤이비어 트리 가동
+            UE_LOG(LogTemp, Warning, TEXT("[%s] Found %d Bases in World"), *InPawn->GetName(), FoundBases.Num());
+
+            for (AActor* Actor : FoundBases)
+            {
+                AHomeBase* HomeBase = Cast<AHomeBase>(Actor);
+                if (HomeBase && SelfUnit && HomeBase->TeamID != SelfUnit->TeamID && Actor->ActorHasTag(TEXT("Base")))
+                {
+                    Blackboard->SetValueAsObject(TEXT("HomeBaseActor"), Actor);
+                    UE_LOG(LogTemp, Warning, TEXT("[%s] Target Base Set: %s"), *InPawn->GetName(), *Actor->GetName());
+                    break;
+                }
+            }
+
             RunBehaviorTree(BTAsset);
+        }
+    }
+}
+
+void AMyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
+{
+    if (Blackboard == nullptr) return;
+
+    AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(BB_KEYS::TargetActor));
+
+    if (CurrentTarget && CurrentTarget->IsValidLowLevel())
+    {
+        if (CurrentTarget == Actor && !Stimulus.WasSuccessfullySensed())
+        {
+            Blackboard->ClearValue(BB_KEYS::TargetActor);
+        }
+        return;
+    }
+
+    if (Stimulus.WasSuccessfullySensed())
+    {
+        ABaseUnit* TargetUnit = Cast<ABaseUnit>(Actor);
+        ABaseUnit* SelfUnit = Cast<ABaseUnit>(GetPawn());
+
+        if (TargetUnit && SelfUnit && TargetUnit->TeamID != SelfUnit->TeamID)
+        {
+            Blackboard->SetValueAsObject(BB_KEYS::TargetActor, Actor);
         }
     }
 }
