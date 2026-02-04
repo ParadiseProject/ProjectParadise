@@ -1,0 +1,70 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Blueprint/UserWidget.h"
+#include "SummonControlPanel.generated.h"
+
+#pragma region 전방 선언
+class USummonSlotWidget;
+class UTexture2D;
+#pragma endregion 전방 선언
+
+/**
+ * @class USummonControlPanel
+ * @brief 하단 중앙에 배치되는 소환수 슬롯들의 컨테이너입니다.
+ * @details 배열을 사용해 슬롯을 관리하며, 확장성을 고려했습니다.
+ */
+UCLASS()
+class PARADISE_API USummonControlPanel : public UUserWidget
+{
+	GENERATED_BODY()
+
+protected:
+	virtual void NativeConstruct() override;
+
+#pragma region 외부 인터페이스
+public:
+	/**
+	 * @brief 특정 인덱스의 소환수 슬롯 데이터를 갱신합니다.
+	 * @param SlotIndex 슬롯 번호 (0 ~ N)
+	 * @param Icon 아이콘 텍스처
+	 * @param MaxCooldown 최대 쿨타임
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
+	void SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown);
+
+	/**
+	 * @brief 특정 슬롯의 쿨타임 상태를 업데이트합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
+	void UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime);
+#pragma endregion 외부 인터페이스
+
+#pragma region 위젯 바인딩
+private:
+	// 슬롯 위젯을 개별 바인딩합니다 (WBP에서 이름 일치 필수)
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USummonSlotWidget> SummonSlot_0 = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USummonSlotWidget> SummonSlot_1 = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USummonSlotWidget> SummonSlot_2 = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USummonSlotWidget> SummonSlot_3 = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USummonSlotWidget> SummonSlot_4 = nullptr;
+#pragma endregion 위젯 바인딩
+
+#pragma region 내부 데이터
+private:
+	/** @brief 슬롯 위젯의 빠른 접근을 위한 캐싱 배열 */
+	UPROPERTY()
+	TArray<TObjectPtr<USummonSlotWidget>> SummonSlots;
+#pragma endregion 내부 데이터
+};
