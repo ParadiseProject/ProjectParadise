@@ -40,8 +40,27 @@ void ACharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ACharacterBase::AttachWeapon(AActor* NewWeapon, FName SocketName)
 {
-	//무기 실제 메쉬 부착 진행
-	//Attach
+	//기존 무기 정리
+	if (CurrentWeaponActor)
+	{
+		CurrentWeaponActor->Destroy();
+		CurrentWeaponActor = nullptr;
+	}
+
+	if (!NewWeapon || !GetMesh()) return;
+
+	//새 무기 등록
+	CurrentWeaponActor = NewWeapon;
+
+	//소켓에 부착 (SnapToTarget: 위치/회전/크기 모두 소켓 기준)
+	FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+	CurrentWeaponActor->AttachToComponent(GetMesh(), AttachRules, SocketName);
+
+	//소유자 설정 (GAS 데미지 계산 시 Instigator로 활용됨)
+	CurrentWeaponActor->SetOwner(this);
+
+	UE_LOG(LogTemp, Warning, TEXT("⚔️ [CharacterBase] 무기 장착 완료: %s -> 소켓: %s"),
+		*NewWeapon->GetName(), *SocketName.ToString());
 }
 
 void ACharacterBase::PlayHitFlash()
