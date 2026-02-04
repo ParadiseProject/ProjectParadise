@@ -11,6 +11,7 @@
 class UAttributeSet;
 class UBaseAttributeSet;
 struct FCharacterStats;
+class UEquipmentComponent;
 
 /**
  * 
@@ -33,6 +34,12 @@ public:
 	 * @return 어트리뷰트셋 반환
 	 */
 	UBaseAttributeSet* GetAttributeSet() const { return CombatAttributeSet; }
+
+	/*
+	 * @brief 장비컴포넌트 (UEquipmentComponent) Getter함수
+	 * @return 장비컴포넌트 반환
+	 */
+	UEquipmentComponent* GetEquipmentComponent() const { return EquipmentComponent2; }
 
 	/*
 	 * @brief 데이터 테이블 Row 를 통해 초기화하는 함수
@@ -87,7 +94,7 @@ public:
 	 * @details 인게임에서 착용 중인 장비의 로직과 데이터를 처리합니다.
 	 */
 	UPROPERTY(VisibleAnywhere, Category = "Equipment")
-	TObjectPtr<class UEquipmentComponent> EquipmentComponent = nullptr;
+	TObjectPtr<UEquipmentComponent> EquipmentComponent2 = nullptr;
 
 
 	/* * 현재 빙의 중인 육체 (약한 참조)

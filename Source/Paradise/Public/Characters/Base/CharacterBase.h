@@ -24,10 +24,6 @@ public:
 	 */
 	virtual void Die();
 
-protected:
-	virtual void BeginPlay() override;
-
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	/*
 	 * @brief 외부에서 생성된 무기 액터를 이 캐릭터의 손(Socket)에 부착하는 함수
 	 * @param NewWeapon 부착할 무기 액터
@@ -36,6 +32,18 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void AttachWeapon(AActor* NewWeapon, FName SocketName);
 
+	/** * @brief [디버그용] 강제로 Die() 함수를 호출하여 사망 처리 로직을 테스트합니다.
+	 * @details 콘솔 명령어(~) 창에서 "TestKillSelf"를 입력하여 실행할 수 있습니다.
+	 */
+	UFUNCTION(BlueprintCallable, Exec, Category = "Debug")
+	void TestKillSelf();
+
+protected:
+	virtual void BeginPlay() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+	
 	/*
 	 * @brief Hit 이펙트를 적용 시키는 함수 (마테리얼 변화)
 	 */
@@ -66,6 +74,11 @@ public:
 	uint8 TeamID = 0;
 
 protected:
+	/*
+	 * @brief 사망 여부 체크 플래그
+	*/
+	bool bIsDead = false;
+
 	/*
 	 * @brief 머리위 hp위젯컴포넌트
 	*/

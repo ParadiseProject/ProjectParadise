@@ -28,6 +28,10 @@ public:
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+	/** @brief 캐릭터 사망 여부 반환 (컨트롤러 확인용) */
+	UFUNCTION(BlueprintPure, Category = "Status")
+	bool IsDead() const { return bIsDead; }
+
 	/** * @brief [옵션 1] 2.5D Default
 	 * @details 멀리서 망원 렌즈로 당겨 찍는 느낌. 원근 왜곡이 적어 거리 재기가 편함.
 	 */
