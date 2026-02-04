@@ -9,6 +9,9 @@
 #include "Characters/Base/PlayerBase.h"
 #include "AIController.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/HUD/Ingame/InGameHUDWidget.h"
+#include "Blueprint/UserWidget.h"
+
 void AInGameController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -19,6 +22,27 @@ void AInGameController::BeginPlay()
         if (DefaultMappingContext)
         {
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
+        }
+    }
+
+    // [추가] 26/02/04, 담당자: 최지원, [UI 생성] 로컬 플레이어인 경우에만 HUD 생성 (서버/AI 제외)
+    if (IsLocalController() && InGameHUDClass)
+    {
+        // 위젯 생성
+        InGameHUDInstance = CreateWidget<UInGameHUDWidget>(this, InGameHUDClass);
+        if (InGameHUDInstance)
+        {
+            // 화면에 부착
+            InGameHUDInstance->AddToViewport();
+
+            // HUD 내부 초기화 함수 호출 (연결 고리)
+            InGameHUDInstance->InitializeHUD();
+
+            UE_LOG(LogTemp, Log, TEXT("✅ [Controller] InGameHUD 생성 및 초기화 완료"));
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("❌ [Controller] InGameHUD 생성 실패!"));
         }
     }
 

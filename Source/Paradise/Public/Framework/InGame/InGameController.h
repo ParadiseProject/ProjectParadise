@@ -12,6 +12,7 @@ class AAIController;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class UInGameHUDWidget; //[추가] 26/02/04, 담당자 : 최지원 
 
 /**
  * @brief 인게임 플레이어 컨트롤러
@@ -48,6 +49,27 @@ private:
 	 */
 	void PossessAI(APlayerBase* TargetCharacter);
 
+#pragma region UI 제어 (추가, 26/02/04, 담당자 : 최지원)
+public:
+	/** 
+	 * @brief 생성된 HUD 위젯 인스턴스를 반환합니다.
+	 * @return UInGameHUDWidget* 
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
+	UInGameHUDWidget* GetInGameHUD() const { return InGameHUDInstance; }
+
+protected:
+	/** 
+	 * @brief 생성할 HUD 위젯 클래스 (BP_InGameHUD 할당용)
+	 * @details 에디터에서 WBP_InGameHUD를 할당하세요.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Paradise|UI")
+	TSubclassOf<UInGameHUDWidget> InGameHUDClass;
+
+	/** @brief 생성된 HUD 위젯 인스턴스 (메모리 관리용 UPROPERTY) */
+	UPROPERTY(BlueprintReadOnly, Category = "Paradise|UI")
+	TObjectPtr<UInGameHUDWidget> InGameHUDInstance = nullptr;
+#pragma endregion UI 제어
 
 	//  입력 핸들러 (Input Handlers)
 private:
