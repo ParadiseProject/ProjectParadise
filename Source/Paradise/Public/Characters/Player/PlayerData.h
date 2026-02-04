@@ -125,7 +125,7 @@ protected:
 	/*
 	 * @brief 플레이어 ASC 컴포넌트
 	 */
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
 
 	/* * GAS 스탯 관리용 어트리뷰트 셋
