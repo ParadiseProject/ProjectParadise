@@ -53,6 +53,12 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<USummonSlotWidget> SummonSlot_2 = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USummonSlotWidget> SummonSlot_3 = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USummonSlotWidget> SummonSlot_4 = nullptr;
 #pragma endregion 위젯 바인딩
 
 #pragma region 내부 데이터

@@ -61,11 +61,7 @@ private:
 
 #pragma region 위젯 바인딩
 private:
-	/** @brief 좌측 상단 캐릭터 상태창 */
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UCharacterStatusWidget> CharacterStatusWidget = nullptr;
-
-	/** @brief 좌측 파티원 목록 패널 */
+	/** @brief 좌측 상단 파티 목록 패널 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UPartyStatusPanel> PartyStatusPanel = nullptr;
 
