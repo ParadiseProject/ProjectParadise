@@ -36,6 +36,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Squad")
 	void RequestSwitchPlayer(int32 PlayerIndex);
 
+	/** * @brief 특정 인덱스의 스쿼드 멤버를 부활(재소환) 시킵니다.
+	 * @param MemberIndex : 부활시킬 멤버의 인덱스 (0~2)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Squad|Command")
+	void RespawnSquadMember(int32 MemberIndex);
+
 	/** @brief 캐릭터 사망 시 호출되어 다음 생존 캐릭터로 자동 교체합니다. */
 	void OnPlayerDied(APlayerBase* DeadPlayer);
 

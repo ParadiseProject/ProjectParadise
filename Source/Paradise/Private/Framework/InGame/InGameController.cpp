@@ -8,6 +8,7 @@
 #include "InputMappingContext.h"
 #include "AIController.h"
 #include "Characters/Base/PlayerBase.h"
+#include "Characters/Player/PlayerData.h"
 #include "Kismet/GameplayStatics.h"
 void AInGameController::BeginPlay()
 {
@@ -107,6 +108,85 @@ void AInGameController::RequestSwitchPlayer(int32 PlayerIndex)
         OldPlayer ? *OldPlayer->GetName() : TEXT("None"), // <-- 수정됨
         *NewPlayer->GetName());
 	
+}
+
+void AInGameController::RespawnSquadPlayer(int32 PlayerIndex)
+{
+    //유효성 검사
+    AInGamePlayerState* PS = GetPlayerState<AInGamePlayerState>();
+    if (!PS || !ActiveSquadPawns.IsValidIndex(PlayerIndex))
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ [Respawn] 잘못된 인덱스거나 PS가 없습니다."));
+        return;
+    }
+
+    APlayerData* Soul = PS->GetSquadMemberData(PlayerIndex);
+    if (!Soul) return;
+
+    // 이미 살아있는지 확인
+    // ActiveSquadPawns[MemberIndex]가 유효하고, IsDead()가 false라면 리턴
+    if (ActiveSquadPawns[PlayerIndex] && !ActiveSquadPawns[PlayerIndex]->IsDead())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("⚠️ [Respawn] 해당 멤버는 이미 살아있습니다."));
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("✨ [Respawn] 멤버 %d (%s) 부활 시퀀스 시작!"), PlayerIndex, *Soul->GetName());
+
+    //소환 위치 결정 (현재 조종 중인 캐릭터 주변)
+    //위치 수정 예정
+    FVector PlayerSpawnLocation = FVector::ZeroVector;
+    FRotator PlayerSpawnRotation = FRotator::ZeroRotator;
+
+    if (APawn* LeaderPawn = GetPawn())
+    {
+        // 내 캐릭터의 뒤쪽 1.5미터, 위로 0.5미터 지점
+        PlayerSpawnLocation = LeaderPawn->GetActorLocation() - (LeaderPawn->GetActorForwardVector() * 150.0f) + FVector(0, 0, 50.0f);
+        PlayerSpawnRotation = LeaderPawn->GetActorRotation();
+    }
+    else
+    {
+        // 전멸 상태라면 PlayerStart 위치 등 기본값 사용
+        SpawnLocation = FVector(0, 0, 200.0f);
+    }
+
+    //육체(Body) 스폰
+    UClass* SpawnClass = nullptr;
+
+    if (TestPlayerClass) {
+        SpawnClass = TestPlayerClass;
+    }
+    else {
+        SpawnClass = APlayerBase::StaticClass();
+    }
+
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+    APlayerBase* NewBody = GetWorld()->SpawnActor<APlayerBase>(SpawnClass, PlayerSpawnLocation, PlayerSpawnRotation, SpawnParams);
+
+    if (NewBody)
+    {
+        //데이터 연동 (영혼 주입)
+        NewBody->InitializePlayer(Soul);
+
+        //관리 목록 갱신 (죽은 시체 포인터를 새 몸으로 교체)
+        ActiveSquadPawns[PlayerIndex] = NewBody;
+
+        //상태 초기화
+        Soul->bIsDead = false; // PlayerData에 별도 Setter가 있다면 그걸 사용하세요.
+
+        //AI 빙의 (내가 직접 조종하는 번호가 아니면 무조건 AI)
+        if (PlayerIndex != CurrentControlledIndex)
+        {
+            PossessAI(NewBody);
+        }
+        else
+        {
+            // 만약 내가 조종하던 번호였다면 바로 빙의 (선택 사항)
+            Possess(NewBody);
+        }
+    }
 }
 
 void AInGameController::OnPlayerDied(APlayerBase* DeadPlayer)
