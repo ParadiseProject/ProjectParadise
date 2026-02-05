@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
-#include "TestKMJ.generated.h"
+#include "Characters/AIUnit/BaseUnit.h"
+#include "HomeBase.generated.h"
 
 UCLASS()
-class PARADISE_API ATestGameMode : public AGameModeBase
+class PARADISE_API AHomeBase : public ABaseUnit
 {
     GENERATED_BODY()
 
 public:
-    ATestGameMode();
+    AHomeBase();
 };

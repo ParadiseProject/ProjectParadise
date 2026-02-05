@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "BTTask_MoveToTarget.h"
+#include "AI/BTTask_MoveToTarget.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Navigation/PathFollowingComponent.h"

@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "MyAIController.h"
+#include "Framework/InGame/MyAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
-#include "MonsterAI.h"
+#include "AI/MonsterAI.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
-#include "BaseUnit.h"
-#include "HomeBase.h"
+#include "Characters/AIUnit/BaseUnit.h"
+#include "Objects/HomeBase.h"
 #include "Kismet/GameplayStatics.h"
 
 AMyAIController::AMyAIController()
