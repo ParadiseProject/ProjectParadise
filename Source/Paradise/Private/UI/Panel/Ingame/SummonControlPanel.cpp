@@ -4,6 +4,7 @@
 #include "UI/Panel/Ingame/SummonControlPanel.h"
 
 #include "UI/Widgets/Ingame/SummonSlotWidget.h"
+#include "UI/Widgets/Ingame/SummonCostWidget.h"
 
 #pragma region 생명주기
 void USummonControlPanel::NativeConstruct()
@@ -34,6 +35,13 @@ void USummonControlPanel::UpdateSummonCooldown(int32 SlotIndex, float CurrentTim
 	if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
 	{
 		SummonSlots[SlotIndex]->RefreshCooldown(CurrentTime, MaxTime);
+	}
+}
+void USummonControlPanel::UpdateCostDisplay(float CurrentCost, float MaxCost)
+{
+	if (CostWidget)
+	{
+		CostWidget->UpdateCost(CurrentCost, MaxCost);
 	}
 }
 #pragma endregion 외부 인터페이스 구현
