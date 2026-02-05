@@ -7,6 +7,7 @@
 void ATitlePlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+<<<<<<< HEAD
 
 	// 1. 타이틀 위젯 생성 및 부착
 	if (TitleHUDClass)
@@ -29,4 +30,6 @@ void ATitlePlayerController::BeginPlay()
 
 	SetInputMode(InputMode);
 	bShowMouseCursor = true;
+=======
+>>>>>>> middle
 }

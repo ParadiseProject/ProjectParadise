@@ -1,23 +1,23 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Framework/InGame/InGameGameState.h"
 
 /**
- * @details »óÅÂ Áßº¹ Ã¼Å© ÈÄ °ªÀ» °»½ÅÇÏ¸ç, µ¨¸®°ÔÀÌÆ®¿¡ ¹ÙÀÎµùµÈ UI ¹× ½Ã½ºÅÛ¿¡ »óÅÂ º¯È­¸¦ ¾Ë¸³´Ï´Ù.
- * UI: °á°úÃ¢ Ç¥½Ã ¹× Å¸ÀÌ¸Ó È°¼ºÈ­
- * Ä³¸¯ÅÍ: ÆäÀÌÁî¿¡ µû¸¥ ÀÔ·Â Á¦¾î(Ready/Result) ¹× ¾Ö´Ï¸ŞÀÌ¼Ç Àç»ı(Victory/Defeat)
- * ½Ã½ºÅÛ: ¸ó½ºÅÍ ½ºÆù ½ÃÀÛ/ÁßÁö ¹× BGM ±³Ã¼
+ * @details ìƒíƒœ ì¤‘ë³µ ì²´í¬ í›„ ê°’ì„ ê°±ì‹ í•˜ë©°, ë¸ë¦¬ê²Œì´íŠ¸ì— ë°”ì¸ë”©ëœ UI ë° ì‹œìŠ¤í…œì— ìƒíƒœ ë³€í™”ë¥¼ ì•Œë¦½ë‹ˆë‹¤.
+ * UI: ê²°ê³¼ì°½ í‘œì‹œ ë° íƒ€ì´ë¨¸ í™œì„±í™”
+ * ìºë¦­í„°: í˜ì´ì¦ˆì— ë”°ë¥¸ ì…ë ¥ ì œì–´(Ready/Result) ë° ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ(Victory/Defeat)
+ * ì‹œìŠ¤í…œ: ëª¬ìŠ¤í„° ìŠ¤í° ì‹œì‘/ì¤‘ì§€ ë° BGM êµì²´
  */
 void AInGameGameState::SetCurrentPhase(EGamePhase NewPhase)
 {
-    // 1. Áßº¹ È£Ãâ ¹æÁö
+    // 1. ì¤‘ë³µ í˜¸ì¶œ ë°©ì§€
     if (CurrentPhase == NewPhase) return;
 
-    // 2. »óÅÂ °ª °»½Å
+    // 2. ìƒíƒœ ê°’ ê°±ì‹ 
     CurrentPhase = NewPhase;
 
-    // 3. »óÅÂ º¯°æ ¾Ë¸² (UI ¹× ±âÅ¸ ½Ã½ºÅÛ)
+    // 3. ìƒíƒœ ë³€ê²½ ì•Œë¦¼ (UI ë° ê¸°íƒ€ ì‹œìŠ¤í…œ)
     if (OnGamePhaseChanged.IsBound())
     {
         OnGamePhaseChanged.Broadcast(CurrentPhase);

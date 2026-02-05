@@ -3,7 +3,9 @@
 
 #include "GAS/Abilities/BaseGameplayAbility.h"
 #include "AbilitySystemComponent.h"
-#include "GameplayEffectTypes.h"
+#include "AbilitySystemGlobals.h"
+#include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 
 UBaseGameplayAbility::UBaseGameplayAbility()
 {
@@ -11,23 +13,48 @@ UBaseGameplayAbility::UBaseGameplayAbility()
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 }
 
-FGameplayEffectSpecHandle UBaseGameplayAbility::MakeTargetEffectSpec(const FGameplayEventData& EventData)
+ACharacter* UBaseGameplayAbility::GetPlayerCharacterFromActorInfo() const
 {
-	// TargetEffectClass가 비어있으면 빈 핸들 반환
-	if (!TargetEffectClass)
+	if (!CurrentActorInfo || !CurrentActorInfo->AvatarActor.IsValid())
 	{
-		return FGameplayEffectSpecHandle();
+		return nullptr;
 	}
+	return Cast<ACharacter>(CurrentActorInfo->AvatarActor.Get());
+}
+
+AController* UBaseGameplayAbility::GetPlayerControllerFromActorInfo() const
+{
+	if (!CurrentActorInfo) return nullptr;
+	return CurrentActorInfo->PlayerController.Get();
+}
+
+FGameplayEffectSpecHandle UBaseGameplayAbility::MakeSpecHandle(TSubclassOf<UGameplayEffect> EffectClass, float Level)
+{
+	if (!EffectClass) return FGameplayEffectSpecHandle();
 
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	if (!SourceASC) return FGameplayEffectSpecHandle();
 
-	// 컨텍스트 생성
-	FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
-	ContextHandle.AddSourceObject(this);
+	// Context 생성: 이펙트의 출처(Instigator/Causer)를 기록
+	FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+	Context.AddSourceObject(this); // 이 어빌리티가 원인임을 명시
 
 	// Spec 생성
-	FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(TargetEffectClass, GetAbilityLevel(), ContextHandle);
+	return SourceASC->MakeOutgoingSpec(EffectClass, Level, Context);
+}
 
-	return SpecHandle;
+void UBaseGameplayAbility::ApplySpecHandleToTarget(AActor* TargetActor, const FGameplayEffectSpecHandle& SpecHandle)
+{
+	if (!TargetActor || !SpecHandle.IsValid()) return;
+
+	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+	if (!SourceASC) return;
+
+	// Target의 ASC를 안전하게 찾기 (Interface 혹은 Component 검색)
+	UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor);
+
+	if (TargetASC)
+	{
+		SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+	}
 }
