@@ -25,6 +25,9 @@ void AInGameGameMode::BeginPlay()
 	SetGamePhase(EGamePhase::Ready);
 }
 
+/**
+ * @details Tick에서는 전투 중일 때만 타이머를 감소시키며, 0초 도달 시 패배 처리를 수행합니다.
+ */
 void AInGameGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -46,6 +49,10 @@ void AInGameGameMode::Tick(float DeltaSeconds)
 	}
 }
 
+/**
+ * @details 페이즈를 변경하고, GameState에 전파하여 UI/캐릭터 등이 반응하게 합니다.
+ * 이후 switch문을 통해 각 단계별 초기화 함수(OnPhase::)를 호출합니다.
+ */
 void AInGameGameMode::SetGamePhase(EGamePhase NewPhase)
 {
 	if (CurrentPhase == NewPhase) return;
@@ -147,6 +154,7 @@ void AInGameGameMode::OnPhaseCombat()
 	//2. 타이머 작동시작
 	if (CachedGameState) CachedGameState->bIsTimerActive = true;
 }
+
 
 void AInGameGameMode::OnPhaseVictory()
 {
