@@ -68,6 +68,7 @@ protected:
 	void InitCombatAttributes(FCharacterStats* Stats);
 	/** @brief 플레이어 에셋 데이터테이블 기반 초기화 (GI 이용)*/
 	void InitPlayerAssets(FCharacterAssets* Assets);
+
 public:
 	/** * @brief 미리 로드된 스켈레탈 메시
 	 * @details APlayerBase가 스폰될 때 다시 로드할 필요 없이 이 포인터를 바로 사용합니다.
@@ -78,14 +79,6 @@ public:
 	/** @brief 미리 로드된 애니메이션 블루프린트 클래스 */
 	UPROPERTY(Transient, VisibleAnywhere, Category = "Cached")
 	TSubclassOf<UAnimInstance> CachedAnimBP = nullptr;
-
-
-	/* * 장비 관리 컴포넌트
-	 * @details 인게임에서 착용 중인 장비의 로직과 데이터를 처리합니다.
-	 */
-	UPROPERTY(VisibleAnywhere, Category = "Equipment")
-	TObjectPtr<UEquipmentComponent> EquipmentComponent2 = nullptr;
-
 
 	/* * 현재 빙의 중인 육체 (약한 참조)
 	 * @details PlayerBase는 언제든 파괴될 수 있으므로 WeakPtr로 참조합니다.
@@ -100,24 +93,33 @@ public:
 	bool bIsDead =false;
 
 	
-	/*
-	 * @brief 리스폰 대기시간
-	 */
-	UPROPERTY()
-	float RespawnTimer = 5.0f;
 
 protected:
+	
+
 	/*
 	 * @brief 플레이어 ASC 컴포넌트
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
 
+	/* * 장비 관리 컴포넌트
+	 * @details 인게임에서 착용 중인 장비의 로직과 데이터를 처리합니다.
+	 */
+	UPROPERTY(VisibleAnywhere, Category = "Equipment")
+	TObjectPtr<UEquipmentComponent> EquipmentComponent2 = nullptr;
+
 	/* * GAS 스탯 관리용 어트리뷰트 셋
 	 * @details UBaseAttributeSet 전체 스탯 관리 어트리뷰트셋
 	 */
 	UPROPERTY()
 	TObjectPtr<UBaseAttributeSet> CombatAttributeSet = nullptr;
+
+	/*
+	 * @brief 리스폰 대기시간
+	 */
+	UPROPERTY()
+	float RespawnTimer = 5.0f;
 
 private:
 
