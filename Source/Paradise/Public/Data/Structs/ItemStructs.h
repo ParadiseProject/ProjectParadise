@@ -24,6 +24,7 @@ struct FItemBaseStats : public FTableRowBase
 	GENERATED_BODY()
 
 public:
+
 	/**
 	 * @brief 인게임 UI에 표시될 아이템의 이름
 	 */
@@ -71,14 +72,6 @@ struct FWeaponStats : public FItemBaseStats
 	GENERATED_BODY()
 
 public:
-
-	/**
-	* @brief 무기 분류 태그
-	* @details 예: Item.Type.Weapon.Melee.Sword, Item.Type.Weapon.Range.Staff
-	*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Type", meta = (Categories = "Item.Type.Weapon"))
-	FGameplayTag WeaponTag;
-
 	// -----------------------------------------------------------------
 	// [Combat Stats] 전투 관련 수치
 	// -----------------------------------------------------------------
@@ -224,6 +217,14 @@ struct FWeaponAssets : public FItemBaseAssets
 	GENERATED_BODY()
 
 public:
+
+	/**
+	* @brief 무기 분류 태그
+	* @details 예: Item.Type.Weapon.Melee.Sword, Item.Type.Weapon.Range.Staff
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Type", meta = (Categories = "Item.Type.Weapon"))
+	FGameplayTag WeaponTag;
+
 	// -----------------------------------------------------------------
 	// [Animation] 공격 및 동작
 	// -----------------------------------------------------------------
@@ -270,7 +271,7 @@ public:
 	 * @brief 휘두르는 소리 (Swing Sound)
 	 * @details 공격 허공에 휘두를 때 재생되는 사운드 큐입니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Basic")
 	TSoftObjectPtr<USoundBase> SwingSound;
 
 	/**
@@ -278,15 +279,22 @@ public:
 	 * @details 적을 맞췄을 때 재생되는 사운드 큐입니다.
 	 * @note 물리 재질(Physical Material)에 따라 달라져야 한다면 별도 로직이 필요할 수 있습니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Basic")
 	TSoftObjectPtr<USoundBase> HitSound;
 
 	/**
 	 * @brief 공격 궤적 이펙트 (Trail Effect)
 	 * @details 무기를 휘두를 때 칼날을 따라 나오는 나이아가라(Niagara) 효과입니다.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Basic")
 	TSoftObjectPtr<UNiagaraSystem> TrailEffect;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Skill")
+	TSoftObjectPtr<USoundBase> SkillSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Skill")
+	TSoftObjectPtr<UNiagaraSystem> SkillEffect;
 };
 
 /**

@@ -15,15 +15,15 @@ class PARADISE_API AInGameGameState : public AGameStateBase
 	GENERATED_BODY()
 	
 public:
-	//½ºÅ×ÀÌÁö ID
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ID
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage Data")
 	FString DisplayStageName;
 
-	//½ºÅ×ÀÌÁö Å¸ÀÌ¸Ó ½Ã°£(UI Å¸ÀÌ¸Ó¿ë)
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ì¸ï¿½ ï¿½Ã°ï¿½(UI Å¸ï¿½Ì¸Ó¿ï¿½)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage Data")
 	float RemainingTime;
 
-	//½ºÅ×ÀÌÁö Å¸ÀÌ¸Ó ÀÛµ¿ ¿©ºÎ
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ì¸ï¿½ ï¿½Ûµï¿½ ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage Data")
 	bool bIsTimerActive = false;
 

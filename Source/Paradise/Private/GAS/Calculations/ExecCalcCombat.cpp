@@ -101,7 +101,7 @@ void UExecCalcCombat::Execute_Implementation(const FGameplayEffectCustomExecutio
 
 		CurrentDamage *= CritDamage; // 배율 적용
 
-		// (옵션) 디버그 로그
+		// 디버그 로그
 		// UE_LOG(LogTemp, Warning, TEXT("CRITICAL HIT! Damage: %f"), CurrentDamage);
 	}
 
