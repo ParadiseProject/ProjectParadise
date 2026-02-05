@@ -9,6 +9,7 @@
 #pragma region 전방 선언
 class UTextBlock;
 class UButton;
+class UWidget;
 #pragma endregion 전방 선언
 
 /**
@@ -42,6 +43,10 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_Title = nullptr;
 
+	/** @brief [중요] 보상 정보(골드, 경험치)를 묶는 컨테이너 (패배 시 숨김 용도) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UWidget> Container_RewardInfo = nullptr;
+
 	/** @brief 획득 골드 텍스트 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_Gold = nullptr;
@@ -57,6 +62,10 @@ private:
 	/** @brief 다시하기 버튼 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Retry = nullptr;
+
+	/** @brief 다음 스테이지 이동 버튼 (승리 시에만 보임) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_NextStage = nullptr;
 #pragma endregion 위젯 바인딩
 
 #pragma region 내부 로직
@@ -66,5 +75,8 @@ private:
 
 	UFUNCTION()
 	void OnRetryClicked();
+
+	UFUNCTION()
+	void OnNextStageClicked();
 #pragma endregion 내부 로직
 };
