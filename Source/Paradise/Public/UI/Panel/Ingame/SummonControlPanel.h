@@ -8,6 +8,7 @@
 
 #pragma region 전방 선언
 class USummonSlotWidget;
+class USummonCostWidget;
 class UTexture2D;
 #pragma endregion 전방 선언
 
@@ -40,10 +41,21 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
 	void UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime);
+
+	/** 
+	 * @brief 현재 코스트 상태를 패널 내의 코스트 위젯에 전달합니다.
+	 * @details Controller나 PlayerState에서 (성능상 Tick보다는 Timer가 나음) 호출하여 부드럽게 갱신할 것을 권장합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
+	void UpdateCostDisplay(float CurrentCost, float MaxCost);
 #pragma endregion 외부 인터페이스
 
 #pragma region 위젯 바인딩
 private:
+	/** @brief 소환 코스트 표시 위젯 (상단에 배치 예정) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USummonCostWidget> CostWidget = nullptr;
+
 	// 슬롯 위젯을 개별 바인딩합니다 (WBP에서 이름 일치 필수)
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<USummonSlotWidget> SummonSlot_0 = nullptr;

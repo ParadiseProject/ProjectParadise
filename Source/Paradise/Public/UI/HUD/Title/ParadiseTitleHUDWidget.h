@@ -1,0 +1,81 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "CommonActivatableWidget.h"
+#include "ParadiseTitleHUDWidget.generated.h"
+
+#pragma region 전방 선언
+class UButton;
+class UWidgetAnimation;
+#pragma endregion 전방 선언
+
+/**
+ * @class UParadiseTitleHUDWidget
+ * @brief 게임 타이틀 화면(Touch to Start)을 관리하는 메인 HUD 위젯입니다.
+ * @details
+ * 1. 전체 화면 터치 버튼을 통해 게임 시작 입력을 받습니다.
+ * 2. 'Press Any Key 또는 Touch to Start' 텍스트 깜빡임 애니메이션을 재생합니다.
+ * 3. ParadiseGameInstance를 통해 로비(Lobby) 레벨로 비동기 로딩을 요청합니다.
+ * 4. 종료 및 설정 버튼 기능을 제공합니다.
+ */
+UCLASS()
+class PARADISE_API UParadiseTitleHUDWidget : public UCommonActivatableWidget
+{
+	GENERATED_BODY()
+	
+protected:
+	virtual void NativeConstruct() override;
+
+#pragma region 설정 데이터 (Data-Driven)
+protected:
+	/** 
+	 * @brief 로비로 이동할 때 미리 로딩할 에셋 목록 (Soft Reference).
+	 * @details 기획자가 에디터에서 텍스처, 데이터 테이블 등을 등록하면 로딩 바 진행률에 반영됩니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Paradise|Config")
+	TArray<TSoftObjectPtr<UObject>> PreloadAssets;
+
+	/** @brief 이동할 레벨의 이름 (기본값: CJWTestLobby/ 일단 테스트용) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Paradise|Config")
+	FName NextLevelName = FName("CJWTestLobby");
+#pragma endregion 설정 데이터 (Data-Driven)
+
+#pragma region 위젯 바인딩
+private:
+	/** @brief 화면 전체를 덮는 투명 버튼 (Touch Input) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_ScreenTouch = nullptr;
+
+	/** @brief 게임 종료 버튼 (최우측 상단 등 배치 예정) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_Quit = nullptr;
+
+	/** @brief 설정 버튼 (종료 버튼 왼쪽에 배치 예정) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_Settings = nullptr;
+
+	/** @brief 'Touch to Start' 텍스트 깜빡임 애니메이션 */
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	TObjectPtr<UWidgetAnimation> Anim_BlinkText = nullptr;
+#pragma endregion 위젯 바인딩
+
+#pragma region 내부 로직
+private:
+	/** @brief 화면 터치 시 호출되는 핸들러 */
+	UFUNCTION()
+	void OnScreenTouched();
+
+	/** @brief 종료 버튼 클릭 시 호출되는 핸들러 */
+	UFUNCTION()
+	void OnQuitButtonClicked();
+
+	/** @brief 설정 버튼 클릭 시 호출되는 핸들러 */
+	UFUNCTION()
+	void OnSettingsButtonClicked();
+
+	/** @brief 중복 로딩 방지용 플래그 */
+	bool bIsLoadingStarted = false;
+#pragma endregion 내부 로직
+};

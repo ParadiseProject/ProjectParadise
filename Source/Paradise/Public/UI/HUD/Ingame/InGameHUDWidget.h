@@ -12,6 +12,7 @@ class UCharacterStatusWidget;
 class UPartyStatusPanel;
 class USummonControlPanel;
 class UParadiseCommonButton;
+class UGameTimerWidget;
 class UVirtualJoystickWidget;
 #pragma endregion 전방 선언
 
@@ -77,6 +78,10 @@ private:
 	/** @brief 우측 하단 스킬/공격 조작 패널 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UActionControlPanel> ActionControlPanel = nullptr;
+
+	/** @brief 중앙 상단 게임 타이머 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UGameTimerWidget> GameTimerWidget = nullptr;
 
 	/** @brief 하단 중앙 소환수 패널 */
 	UPROPERTY(meta = (BindWidget))

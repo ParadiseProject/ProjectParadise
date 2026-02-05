@@ -38,7 +38,8 @@ FReply UVirtualJoystickWidget::NativeOnTouchStarted(const FGeometry& InGeometry,
 	CenterPosition = InGeometry.GetLocalSize() * 0.5f; // 위젯의 중앙을 기준점으로 잡음
 	ProcessInput(InGeometry.AbsoluteToLocal(InGestureEvent.GetScreenSpacePosition()));
 
-	return FReply::Handled();
+	// [핵심 수정] 터치 시작 시 위젯이 입력을 확실히 '캡처'하도록 강제합니다.
+	return FReply::Handled().CaptureMouse(TakeWidget());
 }
 
 FReply UVirtualJoystickWidget::NativeOnTouchMoved(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
@@ -54,7 +55,8 @@ FReply UVirtualJoystickWidget::NativeOnTouchMoved(const FGeometry& InGeometry, c
 FReply UVirtualJoystickWidget::NativeOnTouchEnded(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
 {
 	ResetJoystick();
-	return FReply::Handled();
+	// [핵심 수정] 캡처를 풀어줍니다.
+	return FReply::Handled().ReleaseMouseCapture();
 }
 
 FReply UVirtualJoystickWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -90,6 +92,11 @@ FReply UVirtualJoystickWidget::NativeOnMouseMove(const FGeometry& InGeometry, co
 		return FReply::Handled();
 	}
 	return FReply::Unhandled();
+}
+void UVirtualJoystickWidget::NativeOnMouseCaptureLost(const FCaptureLostEvent& CaptureLostEvent)
+{
+	Super::NativeOnMouseCaptureLost(CaptureLostEvent);
+	ResetJoystick();
 }
 #pragma endregion 입력 이벤트 오버라이드
 

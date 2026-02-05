@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseUnit.h"
+#include "Characters/AIUnit/BaseUnit.h"
 #include "HomeBase.generated.h"
 
 UCLASS()
