@@ -15,15 +15,15 @@ class PARADISE_API AInGameGameState : public AGameStateBase
 	GENERATED_BODY()
 	
 public:
-	//�������� ID
+	// 현재 스테이지 표시 이름 (예: "1-1", "Boss Room")
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage Data")
 	FString DisplayStageName;
 
-	//�������� Ÿ�̸� �ð�(UI Ÿ�̸ӿ�)
+	// 남은 스테이지 시간 (UI 타이머 표시용)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage Data")
 	float RemainingTime;
 
-	//�������� Ÿ�̸� �۵� ����
+	// 타이머 작동 여부 (일시정지 등 확인)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage Data")
 	bool bIsTimerActive = false;
 
