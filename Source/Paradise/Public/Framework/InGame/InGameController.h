@@ -28,7 +28,14 @@ public:
 	virtual void SetupInputComponent() override;
 
 	//  스쿼드 제어 (Squad Control)
+
 public:
+
+
+	/**
+	 * @brief OverViewCamera를 찾아서 초기화해두는 함수
+	 */
+	void InitializeOverviewCamera();
 
 	/**
 	 * @brief 자동 전투 모드를 활성화하거나 비활성화합니다.
@@ -119,7 +126,7 @@ protected:
 	/*
 	 * @brief 동료(AI) 영웅에게 할당할 AI 컨트롤러 클래스
 	 */
-	UPROPERTY(EditDefaultsOnly, Category = "Squad")
+	UPROPERTY(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        EditDefaultsOnly, Category = "Squad")
 	TSubclassOf<AAIController> SquadAIControllerClass = nullptr;
 
 	//  입력 에셋 (Input Assets)
@@ -160,4 +167,10 @@ protected:
 	/** @brief 카메라 전환 시 걸리는 블렌딩 시간 */
 	UPROPERTY(EditDefaultsOnly, Category = "Squad|Camera")
 	float CameraBlendTime = 1.5f;
+
+	/** @brief  전멸 직전 마지막 시점 위치 기억용 */
+	FVector LastDeathLocation = FVector::ZeroVector;
+
+	/** @brief  전멸 직전 마지막 시점 회전 기억용 */
+	FRotator LastDeathRotation = FRotator::ZeroRotator;
 };

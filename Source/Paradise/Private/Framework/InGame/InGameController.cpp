@@ -26,15 +26,8 @@ void AInGameController::BeginPlay()
         }
     }
 
-    TArray<AActor*> FoundActors;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), OverviewCameraTag, FoundActors);
-    UE_LOG(LogTemp, Warning, TEXT("🔍 [Camera] 태그로 찾은 액터 수: %d개"), FoundActors.Num());
-    if (FoundActors.Num() > 0)
-    {
-        OverviewCameraActor = FoundActors[0];
-        UE_LOG(LogTemp, Log, TEXT("✅ [Camera] 태그 '%s'로 카메라 액터(%s)를 찾았습니다."),
-            *OverviewCameraTag.ToString(), *OverviewCameraActor->GetName());
-    }
+    InitializeOverviewCamera();
+
     // [추가] 26/02/04, 담당자: 최지원, [UI 생성] 로컬 플레이어인 경우에만 HUD 생성 (서버/AI 제외)
     if (IsLocalController() && InGameHUDClass)
     {
@@ -71,6 +64,19 @@ void AInGameController::BeginPlay()
         InitializeSquadPawns();
     }
 
+}
+
+void AInGameController::InitializeOverviewCamera()
+{
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), OverviewCameraTag, FoundActors);
+    UE_LOG(LogTemp, Warning, TEXT("🔍 [Camera] 태그로 찾은 액터 수: %d개"), FoundActors.Num());
+    if (FoundActors.Num() > 0)
+    {
+        OverviewCameraActor = FoundActors[0];
+        UE_LOG(LogTemp, Log, TEXT("✅ [Camera] 태그 '%s'로 카메라 액터(%s)를 찾았습니다."),
+            *OverviewCameraTag.ToString(), *OverviewCameraActor->GetName());
+    }
 }
 
 void AInGameController::SetupInputComponent()
@@ -151,7 +157,8 @@ void AInGameController::RequestSwitchPlayer(int32 PlayerIndex)
     UE_LOG(LogTemp, Warning, TEXT("🔄 [Controller] 캐릭터 교체 완료 (%s -> %s)"),
         OldPlayer ? *OldPlayer->GetName() : TEXT("None"), // <-- 수정됨
         *NewPlayer->GetName());
-	
+        
+    UpdateCameraSystem();
 }
 
 void AInGameController::RespawnSquadPlayer(int32 PlayerIndex)
@@ -267,7 +274,7 @@ void AInGameController::OnPlayerDied(APlayerBase* DeadPlayer)
             int32 CheckIndex = (CurrentControlledIndex + i) % SquadSize;
             APlayerBase* Candidate = ActiveSquadPawns[CheckIndex];
 
-            // 살아있는 동료 발견! (Candidate가 있고, 죽지 않았어야 함)
+            //생존 플레이어가 있으면  (Candidate가 있고, 죽지 않았어야 함)
             if (Candidate && !Candidate->IsDead())
             {
                 NextAliveIndex = CheckIndex;
@@ -275,7 +282,7 @@ void AInGameController::OnPlayerDied(APlayerBase* DeadPlayer)
             }
         }
 
-        // 생존자가 있으면 교체, 없으면 게임 오버
+        // 생존 플레이어가 있으면 교체, 없으면 게임 오버
         if (NextAliveIndex != -1)
         {
             // 바로 교체 요청
@@ -283,11 +290,23 @@ void AInGameController::OnPlayerDied(APlayerBase* DeadPlayer)
         }
         else {
             UE_LOG(LogTemp, Error, TEXT("💀 [Controller] 모든 스쿼드 멤버가 사망했습니다."));
+
+            if (PlayerCameraManager)
+            {
+                LastDeathLocation = PlayerCameraManager->GetCameraLocation();
+                LastDeathRotation = PlayerCameraManager->GetCameraRotation();
+            }
+            else {
+                UE_LOG(LogTemp, Error, TEXT("💀 [Controller] PlayerCameraManager가 없습니다."));
+            }
+
             bIsSquadWipedOut = true;
-            GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
-                {
-                    UpdateCameraSystem();
-                });
+
+            //타이밍상 다음 틱에 UpdateCameraSystem 실행
+            GetWorld()->GetTimerManager().SetTimerForNextTick(
+                this, 
+                &AInGameController::UpdateCameraSystem
+            );
           
         }
     }
@@ -300,14 +319,33 @@ void AInGameController::OnPlayerDied(APlayerBase* DeadPlayer)
 
 void AInGameController::UpdateCameraSystem()
 {
+    if (PlayerCameraManager)
+    {
+        if (PlayerCameraManager->BlendTimeToGo > 0.0f)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("⏳ [Camera] 엔진이 블렌딩 처리 중입니다. (남은 시간: %.2f)"), PlayerCameraManager->BlendTimeToGo);
+            return;
+        }
+    }
+
     // 우선순위 1: 전멸했거나 자동 모드일 때 -> Overview 카메라
     if ((bIsSquadWipedOut || bIsAutoMode) && OverviewCameraActor)
     {
-        // 현재 타겟이 이미 Overview라면 블렌딩 다시 안 함 (최적화)
+        if (bIsSquadWipedOut)
+        {
+            //컨트롤러(나 자신)를 마지막 사망 위치로 이동시킴
+            ClientSetLocation(LastDeathLocation, LastDeathRotation);
+
+            //뷰 타겟을 this 컨트롤러로 즉시 고정
+            //전멸시 카메라 시점 이상한것 해결
+            SetViewTarget(this);
+        }
+
+        //Overview로 부드럽게 이동
         if (GetViewTarget() != OverviewCameraActor)
         {
-            SetViewTargetWithBlend(OverviewCameraActor, CameraBlendTime, VTBlend_Cubic);
-            UE_LOG(LogTemp, Log, TEXT("📷 [Camera] Overview 모드로 전환"));
+            SetViewTargetWithBlend(OverviewCameraActor, 1.5f, VTBlend_Cubic);
+            UE_LOG(LogTemp, Log, TEXT("📷 [Camera] Overview 모드로 전환 (From Death Pos)"));
         }
     }
     // 우선순위 2: 조종 가능한 캐릭터가 있을 때 -> 캐릭터 카메라
