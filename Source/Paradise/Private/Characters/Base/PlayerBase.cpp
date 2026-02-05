@@ -104,7 +104,7 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
 
     //외형 업데이트 (장비 동기화)
     //APlayerData가 가진 장비 컴포넌트를 확인해서 내 몸에 메시를 입힘
-    if (UEquipmentComponent* EquipComp = InPlayerData->EquipmentComponent2)
+    if (UEquipmentComponent* EquipComp = InPlayerData->GetEquipmentComponent())
     {
         //장비컴포넌트에 장착된 장비 비쥬얼적으로 보이게 하는 함수 구현해야함
         //EquipComp->UpdateVisuals(this);
