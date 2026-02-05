@@ -3,3 +3,7 @@
 
 #include "Framework/Title/TitlePlayerController.h"
 
+void ATitlePlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+}
