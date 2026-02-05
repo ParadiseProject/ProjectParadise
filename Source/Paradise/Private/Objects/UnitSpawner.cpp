@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "UnitSpawner.h"
-#include "BaseUnit.h"
+#include "Objects/UnitSpawner.h"
+#include "Characters/AIUnit/BaseUnit.h"
 #include "BrainComponent.h"
 #include "AIController.h"
 #include "Data/Structs/UnitStructs.h"
