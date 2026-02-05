@@ -4,6 +4,7 @@
 #include "Characters/Player/PlayerData.h"
 #include "Characters/Base/CharacterBase.h"
 #include "GAS/Attributes/BaseAttributeSet.h"
+#include "Framework/Core/ParadiseGameInstance.h"
 #include "Data/Structs/UnitStructs.h"
 #include "AbilitySystemComponent.h"
 #include "Components/EquipmentComponent.h"
@@ -21,36 +22,6 @@ APlayerData::APlayerData()
 
 
 	EquipmentComponent2 = CreateDefaultSubobject<UEquipmentComponent>(TEXT("EquipmentComponent"));
-}
-
-
-
-void APlayerData::InitStatsFromDataTable(const FDataTableRowHandle& InDataHandle)
-{
-    //핸들 저장 (나중에 참조 가능)
-    CharacterStatsDataHandle = InDataHandle;
-
-    //유효성 검사
-    if (CharacterStatsDataHandle.IsNull())
-    {
-        UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] CharacterStatsDataHandle : 데이터 핸들이 비어있습니다!"));
-        return;
-    }
-
-    //테이블에서 Row 가져오기
-    //GetRow<구조체타입>(ContextString)
-    static const FString ContextString(TEXT("PlayerData::InitFromDataTable"));
-    FCharacterStats* Stats = CharacterStatsDataHandle.GetRow<FCharacterStats>(ContextString);
-
-    if (Stats)
-    {
-        InitCombatAttributes(Stats);
-        UE_LOG(LogTemp, Log, TEXT("✅ [PlayerData] 초기화 완료: %s"), *CharacterStatsDataHandle.RowName.ToString());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] %s 행을 찾을 수 없거나 타입이 일치하지 않습니다."), *CharacterStatsDataHandle.RowName.ToString());
-    }
 }
 
 void APlayerData::InitCombatAttributes(FCharacterStats* Stats)
@@ -74,28 +45,51 @@ void APlayerData::InitCombatAttributes(FCharacterStats* Stats)
     }
 }
 
-void APlayerData::InitAssetsFromDataTable(const FDataTableRowHandle& InAssetHandle)
+void APlayerData::InitPlayerAssets(FCharacterAssets* Assets)
 {
-    CharacterAssetsDataHandle = InAssetHandle;
-
-    if (CharacterAssetsDataHandle.IsNull())
-    {
-        UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] CharacterAssetsDataHandle : 데이터 핸들이 비어있습니다!"));
-        return;
-    }
-
-    //테이블에서 Row 가져오기
-    //GetRow<구조체타입>(ContextString)
-    static const FString ContextString(TEXT("PlayerData::InitAssetsFromDataTable"));
-    FCharacterAssets* Assets = CharacterAssetsDataHandle.GetRow<FCharacterAssets>(ContextString);
-
-    if (Assets)
-    {
-        this->CachedMesh = Assets->SkeletalMesh.LoadSynchronous();
-        this->CachedAnimBP = Assets->AnimBlueprint;
-    }
+	if (Assets)
+	{
+		this->CachedMesh = Assets->SkeletalMesh.LoadSynchronous();
+		this->CachedAnimBP = Assets->AnimBlueprint;
+	}
+}
 
 
+void APlayerData::InitPlayerData(FName HeroID)
+{
+	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] GameInstance를 찾을 수 없습니다."));
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("🔄 [PlayerData] 영웅 초기화 시작: %s"), *HeroID.ToString());
+
+	//스탯 데이터 조회 및 적용
+	FCharacterStats* Stats = GI->GetDataTableRow<FCharacterStats>(GI->PlayerStatsDataTable, HeroID);
+	if (Stats)
+	{
+		InitCombatAttributes(Stats);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ 스탯 데이터를 찾을 수 없습니다: %s"), *HeroID.ToString());
+	}
+
+	//에셋 데이터 조회 및 적용
+	FCharacterAssets* Assets = GI->GetDataTableRow<FCharacterAssets>(GI->PlayerAssetsDataTable, HeroID);
+	if (Assets)
+	{
+		//에셋 로드
+		if (!Assets->SkeletalMesh.IsNull())
+		{
+			this->CachedMesh = Assets->SkeletalMesh.LoadSynchronous();
+		}
+		this->CachedAnimBP = Assets->AnimBlueprint;
+
+		UE_LOG(LogTemp, Log, TEXT("✅ [PlayerData] 데이터 로드 완료"));
+	}
 }
 
 void APlayerData::OnDeath()

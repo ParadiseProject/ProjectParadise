@@ -2,9 +2,7 @@
 
 
 #include "Framework/Core/ParadiseGameInstance.h"
-
 #include "UI/Widgets/Loading/LoadingWidget.h"
-
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 #include "TimerManager.h"
