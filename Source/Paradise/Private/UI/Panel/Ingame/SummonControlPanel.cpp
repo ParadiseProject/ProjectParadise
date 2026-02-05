@@ -22,11 +22,11 @@ void USummonControlPanel::NativeConstruct()
 #pragma endregion 생명주기
 
 #pragma region 외부 인터페이스 구현
-void USummonControlPanel::SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown, float Cost)
+void USummonControlPanel::SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown)
 {
 	if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
 	{
-		SummonSlots[SlotIndex]->UpdateSummonData(Icon, MaxCooldown, Cost);
+		SummonSlots[SlotIndex]->UpdateSummonData(Icon, MaxCooldown);
 	}
 }
 
@@ -42,14 +42,6 @@ void USummonControlPanel::UpdateCostDisplay(float CurrentCost, float MaxCost)
 	if (CostWidget)
 	{
 		CostWidget->UpdateCost(CurrentCost, MaxCost);
-	}
-	// 각 슬롯에게 코스트 소모 가능한지 체크용
-	for (USummonSlotWidget* SummonSlot : SummonSlots)
-	{
-		if (SummonSlot)
-		{
-			SummonSlot->UpdateCostState(CurrentCost);
-		}
 	}
 }
 #pragma endregion 외부 인터페이스 구현

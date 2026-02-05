@@ -36,10 +36,9 @@ public:
 	 * @brief 소환수 데이터를 설정하고 UI를 초기화합니다.
 	 * @param IconTexture 표시할 소환수 아이콘 (nullptr일 경우 빈 슬롯 처리)
 	 * @param InMaxCooldown 해당 소환수의 최대 쿨타임
-	 * @param InCost 소환에 필요한 코스트
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown, float InCost);
+	void UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown);
 
 	/**
 	 * @brief 쿨타임 상태를 갱신합니다. (GAS로부터 호출 권장)
@@ -48,13 +47,6 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
 	void RefreshCooldown(float CurrentTime, float MaxTime);
-
-	/**
-	 * @brief 현재 보유 코스트에 따라 버튼 활성/비활성 상태를 갱신합니다.
-	 * @details 쿨타임이 아닐 때만 코스트 체크를 합니다.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void UpdateCostState(float CurrentPlayerCost);
 #pragma endregion 외부 인터페이스
 
 #pragma region 내부 로직
@@ -96,10 +88,6 @@ private:
 	/** @brief 남은 시간을 표시할 텍스트 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_CooldownTime = nullptr;
-
-	/** @brief [추가] 필요 코스트를 표시할 텍스트 (예: "30") */
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock> Text_CostValue = nullptr;
 #pragma endregion 위젯 바인딩
 
 #pragma region 데이터
@@ -111,9 +99,6 @@ private:
 	/** @brief 현재 쿨타임 변수 */
 	UPROPERTY()
 	float CurrentCooldownTime = 0.0f;
-
-	/** @brief [추가] 이 유닛을 소환하기 위한 필요 코스트 */
-	float RequiredCost = 0.0f;
 
 	/** @brief 쿨타임  */
 	UPROPERTY()

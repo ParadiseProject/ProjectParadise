@@ -32,10 +32,9 @@ public:
 	 * @param SlotIndex 슬롯 번호 (0 ~ N)
 	 * @param Icon 아이콘 텍스처
 	 * @param MaxCooldown 최대 쿨타임
-	 * @param Cost 코스트
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown, float Cost);
+	void SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown);
 
 	/**
 	 * @brief 특정 슬롯의 쿨타임 상태를 업데이트합니다.

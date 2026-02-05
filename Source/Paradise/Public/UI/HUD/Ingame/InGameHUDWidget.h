@@ -48,9 +48,6 @@ public:
 
 	/** @brief 파티 상태 패널 반환 */
 	FORCEINLINE UPartyStatusPanel* GetPartyStatusPanel() const { return PartyStatusPanel; }
-
-	/** @brief 타이머 위젯 반환 (Controller에서 시간 갱신용) */
-	FORCEINLINE UGameTimerWidget* GetGameTimerWidget() const { return GameTimerWidget; }
 #pragma endregion 하위 패널 접근 (Getters)
 
 #pragma region 내부 로직
