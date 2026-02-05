@@ -5,22 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Engine/DataTable.h"
+#include "Data/Enums/GameEnums.h"
 #include "Data/Structs/StageStructs.h"
 #include "InGameGameMode.generated.h"
 
-//1. 게임 상태 정의
-UENUM(BlueprintType)
-enum class EGamePhase : uint8
-{
-	Ready,		//스테이지 진입 후 카운트다운(준비)
-	Combat,		//본격적인 전투 및 타이머 작동
-	Victory,	//승리(보상 지급)
-	Defeat,		//패배(타임오버 또는 사망)
-	Result		//결과창 표시 후 로비 이동 대기
-};
-
 /**
- * 
+ * @class AInGameGameMode
+ * @brief 게임의 규칙, 스테이지 진행, 페이즈 전환 로직을 총괄하는 클래스입니다.
+ * @details 데이터 테이블에서 스테이지 정보를 로드하고, GameState와 협력하여 게임 흐름을 제어합니다.
  */
 UCLASS()
 class PARADISE_API AInGameGameMode : public AGameModeBase
@@ -35,40 +27,52 @@ public:
 	
 public:
 
-	//게임상태 변경하는 함수
+	/**
+	 * @brief 게임 페이즈를 변경하고 관련 이벤트를 트리거합니다.
+	 * @param NewPhase 변경할 새로운 게임 단계
+	 */
 	UFUNCTION(BlueprintCallable, Category = "State")
 	void SetGamePhase(EGamePhase NewPhase);
 
-public:
+	/**
+	 * @brief 게임 승패가 결정되었을 때 호출하는 함수
+	 * @details 타임오버, 기지 파괴 등 모든 게임 종료 상황에서 이 함수를 호출합니다.
+	 * @param bIsVictory true: 플레이어 승리 / false: 플레이어 패배
+	 */
 	UFUNCTION(BlueprintCallable, Category = "GameRules")
 	void EndStage(bool bIsVictory);
 
 protected:
-	//데이터테이블 읽어 스테이지 정보 초기화
+	/**
+	 * @brief 데이터 테이블로부터 스테이지 정보를 읽어와 초기화합니다.
+	 * @param StageID 로드할 스테이지의 고유 ID
+	 */
 	void InitializeStageData(FName StageID);
 
-	//각 단계에 진입할 떄 호출되는 함수들
-	void OnPhaseReady();
-	void OnPhaseCombat();
-	void OnPhaseVictory();
-	void OnPhaseDefeat();
-	void OnPhaseResult();
-
+	/** @name Phase Transition Handlers
+	 * 각 페이즈 진입 시 내부 로직을 처리하는 함수군입니다.
+	 * @{ */
+	void OnPhaseReady();	///< [준비] 카운트다운 처리
+	void OnPhaseCombat();	///< [전투] 몬스터 스폰 및 전투 진행
+	void OnPhaseVictory();	///< [승리] 승리 처리 및 결과창 준비
+	void OnPhaseDefeat();	///< [패배] 패배 처리 및 결과창 준비
+	void OnPhaseResult();	///< [결과] 결과창 표시 및 레벨 이동 준비
+	/** @} */
 
 
 protected:
-	//에디터에 스테이지 정보 할당 
+	/** @brief [설정] 스테이지 정보가 저장된 데이터 테이블 */
 	UPROPERTY(EditDefaultsOnly, Category = "Data")
 	UDataTable* StageInfoTable;
 
-	//캐싱된 게임스테이트 포인터
+	/** @brief [캐싱] 전역 상태 관리를 위한 GameState 포인터 */
 	UPROPERTY()
 	class AInGameGameState* CachedGameState;
 
-	//현재 스테이지 전체 정보
+	/** @brief [데이터] 현재 진행 중인 스테이지의 상세 스탯(시간, 보상 등) */
 	FStageStats CurrentStageData;
 
-	//현재 게임의 단계(외부에서 판단가능)
+	/** @brief [상태] 현재 게임 페이즈 단계 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	EGamePhase CurrentPhase;
 	
