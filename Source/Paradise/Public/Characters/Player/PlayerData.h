@@ -40,6 +40,7 @@ public:
 	 * @brief 장비컴포넌트 (UEquipmentComponent) Getter함수
 	 * @return 장비컴포넌트 반환
 	 */
+	UFUNCTION(BlueprintCallable)
 	UEquipmentComponent* GetEquipmentComponent() const { return EquipmentComponent2; }
 
 
@@ -106,7 +107,7 @@ protected:
 	/* * 장비 관리 컴포넌트
 	 * @details 인게임에서 착용 중인 장비의 로직과 데이터를 처리합니다.
 	 */
-	UPROPERTY(VisibleAnywhere, Category = "Equipment")
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Equipment")
 	TObjectPtr<UEquipmentComponent> EquipmentComponent2 = nullptr;
 
 	/* * GAS 스탯 관리용 어트리뷰트 셋

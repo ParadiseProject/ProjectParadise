@@ -9,8 +9,13 @@
 UCLASS()
 class PARADISE_API AHomeBase : public ABaseUnit
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    AHomeBase();
+	AHomeBase();
+
+protected:
+	virtual void BeginPlay() override;
+
+	virtual void Die() override;
 };

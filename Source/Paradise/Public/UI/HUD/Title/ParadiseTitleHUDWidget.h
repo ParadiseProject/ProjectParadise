@@ -37,9 +37,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Paradise|Config")
 	TArray<TSoftObjectPtr<UObject>> PreloadAssets;
 
-	/** @brief 이동할 레벨의 이름 (기본값: CJWTestLobby/ 일단 테스트용) */
+	/** @brief 이동할 레벨의 이름 (기본값: L_Lobby/ 일단 테스트용) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Paradise|Config")
-	FName NextLevelName = FName("CJWTestLobby");
+	FName NextLevelName = FName("L_Lobby");
 #pragma endregion 설정 데이터 (Data-Driven)
 
 #pragma region 위젯 바인딩

@@ -40,6 +40,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Reward", meta = (ClampMin = "0"))
 	int32 ClearGold;
 
+	/** @brief 클리어 에테르*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Reward", meta = (ClampMin = "0"))
+	int32 ClearAether;
+
 	/** @brief 클리어 경험치 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Reward", meta = (ClampMin = "0"))
 	int32 ClearExp;

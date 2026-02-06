@@ -3,6 +3,7 @@
 #include "Engine/DataTable.h"
 #include "Data/Enums/GameEnums.h"
 #include "GameplayTagContainer.h"
+#include "GameplayEffect.h"
 #include "UnitStructs.generated.h"
 
 class USkeletalMesh;
@@ -419,6 +420,13 @@ struct FAIUnitAssets : public FUnitBaseAssets
 	// =========================================================
 	//  GAS 어빌리티 (Abilities)
 	// =========================================================
+
+	/**
+	 * @brief 이 유닛의 기본 공격 데미지 GE
+	 * @details 늑대는 GE_DamageStandard(물리), 화염정령은 GE_FireDamage(화염) 등을 할당합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Common")
+	TSubclassOf<UGameplayEffect> BasicAttackEffect; // <--- 여기 추가!
 
 	/**
 	 * @brief 평타 어빌리티 (Basic Attack)

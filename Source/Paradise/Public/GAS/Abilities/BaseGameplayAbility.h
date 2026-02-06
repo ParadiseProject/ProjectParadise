@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
+#include "Interfaces/CombatInterface.h"
 #include "BaseGameplayAbility.generated.h"
 
 /**
@@ -79,4 +80,27 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Ability|Effect")
 	void ApplySpecHandleToTarget(AActor* TargetActor, const FGameplayEffectSpecHandle& SpecHandle);
+
+protected:
+	/**
+	 * @brief 이 어빌리티의 정체성 (평타 vs 스킬)
+	 * @details 블루프린트에서 설정합니다. (기본값: BasicAttack)
+	 * - GA_Attack_Normal (평타) -> BasicAttack
+	 * - GA_Skill_Smash (스킬) -> WeaponSkill
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	ECombatActionType AbilityActionType = ECombatActionType::BasicAttack;
+
+	/**
+	 * @brief 캐릭터에게서 전투 데이터를 가져오는 함수 (캐싱 적용됨)
+	 * @details "무기가 바뀌지 않는다"는 전제 하에, 최초 1회만 검색하고 이후엔 저장된 값을 씁니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	const FCombatActionData& GetCombatDataFromActor(); // const 제거 & 참조 반환
+private:
+	/** @brief 데이터를 이미 가져왔는지 확인하는 플래그 */
+	bool bIsDataCached = false;
+
+	/** @brief 한 번 가져온 데이터를 저장해두는 변수 */
+	FCombatActionData CachedCombatData;
 };

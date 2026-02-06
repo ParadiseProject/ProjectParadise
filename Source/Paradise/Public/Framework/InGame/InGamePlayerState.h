@@ -10,7 +10,8 @@
 class UAttributeSet;
 class UAbilitySystemComponent;
 class APlayerData;
-class UHeroDataAsset; //제대로된 클래스 구현시 변경예정
+class UInventoryComponent;
+
 
 /**
  * @brief 게임의 전반적인 상태(지휘관 정보)를 관리하는 클래스
@@ -48,6 +49,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Squad")
 	int32 GetSquadSize() const { return SquadMembers.Num(); }
 
+	/** @brief 인벤토리 컴포넌트 접근자 (Getter) */
+	UFUNCTION(BlueprintCallable, Category = "Getter")
+	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+
 protected:
 	/*
 	 * @brief 실제 스쿼드 멤버들 (영혼/데이터)
@@ -58,24 +63,28 @@ protected:
 
 	/*영웅 생성에 사용할 스탯 데이터 테이블 */
 	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player", meta = (RowType = "CharacterStats"))
-	TObjectPtr<class UDataTable> PlayerStatDataTable;
+	TObjectPtr<class UDataTable> PlayerStatDataTable = nullptr;
 
 	/*영웅 생성에 사용할 에셋 데이터 테이블 */
 	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player", meta = (RowType = "CharacterAssets"))
-	TObjectPtr<class UDataTable> PlayerAssetDataTable;
+	TObjectPtr<class UDataTable> PlayerAssetDataTabl = nullptr;
 
 	//  GAS 컴포넌트 (Commander Resources)
 	/* 지휘관용 ASC (코스트/쿨타임/패시브 효과 관리용) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
+
+	/** @brief 플레이어의 인벤토리 (영웅, 병사, 아이템 관리) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UInventoryComponent> InventoryComponent = nullptr;
 
 	/* 지휘관용 어트리뷰트 (Cost, MaxCost, Gold, RegenRate 등) */
 	UPROPERTY()
-	TObjectPtr<UAttributeSet> CommanderAttributeSet;
+	TObjectPtr<UAttributeSet> CommanderAttributeSet = nullptr;
 
 	/** * @brief 스폰할 영혼(PlayerData)의 클래스 (BP_PlayerData 할당용)
 	 * @details 이 값이 비어있으면 기본 C++ 클래스로 스폰됩니다.
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Squad|Config")
-	TSubclassOf<APlayerData> PlayerDataClass;
+	TSubclassOf<APlayerData> PlayerDataClass = nullptr;
 };

@@ -3,6 +3,9 @@
 
 #include "Components/EquipmentComponent.h"
 #include "Components/InventoryComponent.h"
+#include "Data/Structs/ItemStructs.h"
+#include "Data/Structs/InventoryStruct.h"
+#include "Framework/Core/ParadiseGameInstance.h"
 #include "Characters/Base/PlayerBase.h"
 #include "Engine/StaticMeshActor.h" //제거예정
 
@@ -33,6 +36,72 @@ void UEquipmentComponent::BeginPlay()
 
 void UEquipmentComponent::EquipItem(FName ItemID)
 {
+    UParadiseGameInstance* GI = GetWorld()->GetGameInstance<UParadiseGameInstance>();
+    if (!GI)
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ [Equip] GameInstance is NULL"));
+        return;
+    }
+
+    bool bEquipped = false; // 장착 성공 여부 체크용 플래그
+
+
+    // 1. 무기 테이블(WeaponStats) 검색
+    if (FWeaponStats* WeaponRow = GI->GetDataTableRow<FWeaponStats>(GI->WeaponStatsDataTable, ItemID))
+    {
+        EEquipmentSlot TargetSlot = EEquipmentSlot::Weapon;
+
+        // 장착 (덮어쓰기)
+        FOwnedItemData NewEquip;
+        NewEquip.ItemID = ItemID;
+        NewEquip.Quantity = 1;
+        EquippedItems.Add(TargetSlot, NewEquip.ItemID);
+
+        UE_LOG(LogTemp, Log, TEXT("⚔️ [Equip] 무기 장착 성공: %s"), *ItemID.ToString());
+        bEquipped = true;
+    }
+
+    // 2. 방어구 테이블(ArmorStats) 검색
+    else if (FArmorStats* ArmorRow = GI->GetDataTableRow<FArmorStats>(GI->ArmorStatsDataTable, ItemID))
+    {
+        // [임시] 슬롯 결정 로직 (태그 확인 또는 테이블에 컬럼 추가 권장)
+        EEquipmentSlot TargetSlot = EEquipmentSlot::Chest;
+
+        // 예: 태그로 슬롯 찾기
+        /*
+        if (ArmorRow->ArmorTag.MatchesTag(FGameplayTag::RequestGameplayTag("Item.Type.Armor.Helmet"))) TargetSlot = EEquipmentSlot::Helmet;
+        else if (ArmorRow->ArmorTag.MatchesTag(FGameplayTag::RequestGameplayTag("Item.Type.Armor.Boots"))) TargetSlot = EEquipmentSlot::Boots;
+        */
+
+        EquippedItems.Add(TargetSlot, ItemID);
+
+        UE_LOG(LogTemp, Log, TEXT("🛡️ [Equip] 방어구 장착 성공: %s (Slot: %d)"), *ItemID.ToString(), (int32)TargetSlot);
+        bEquipped = true;
+    }
+    else
+    {
+        // 3. 실패 처리
+        UE_LOG(LogTemp, Warning, TEXT("❌ [Equip] 장착 실패: %s (테이블에 없음)"), *ItemID.ToString());
+        return;
+    }
+
+    // ✅ [로그] 현재 장착된 아이템 전체 리스트 출력
+    if (bEquipped)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("=== 🎒 현재 장착 리스트 (Total: %d) ==="), EquippedItems.Num());
+
+        // TMap 순회하며 출력
+        const UEnum* SlotEnum = StaticEnum<EEquipmentSlot>(); // Enum 이름 문자열 변환용
+        for (const auto& Pair : EquippedItems)
+        {
+            FString SlotName = SlotEnum ? SlotEnum->GetNameStringByValue((int64)Pair.Key) : FString::FromInt((int32)Pair.Key);
+            UE_LOG(LogTemp, Log, TEXT("   🔹 [%s] : %s"), *SlotName, *Pair.Value.ToString());
+        }
+        UE_LOG(LogTemp, Warning, TEXT("======================================"));
+
+        // UI 업데이트 알림
+        if (OnEquipmentUpdated.IsBound()) OnEquipmentUpdated.Broadcast();
+    }
 }
 
 void UEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
@@ -41,7 +110,7 @@ void UEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
 
 FName UEquipmentComponent::GetEquippedItemID(EEquipmentSlot Slot) const
 {
-	return FName();
+	return EquippedItems.FindRef(Slot);
 }
 
 void UEquipmentComponent::SetEquippedItems(const TMap<EEquipmentSlot, FName>& InItems)

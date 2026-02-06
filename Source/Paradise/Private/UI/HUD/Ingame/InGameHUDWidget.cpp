@@ -3,16 +3,18 @@
 
 #include "UI/HUD/Ingame/InGameHUDWidget.h"
 
-#include "UI/Widgets/Ingame/ParadiseCommonButton.h"
-#include "UI/Widgets/Ingame/VirtualJoystickWidget.h"
 #include "UI/Panel/Ingame/ActionControlPanel.h"
 #include "UI/Panel/Ingame/PartyStatusPanel.h"
 #include "UI/Panel/Ingame/SummonControlPanel.h"
+#include "UI/Widgets/Ingame/ParadiseCommonButton.h"
+#include "UI/Widgets/Ingame/VirtualJoystickWidget.h"
 #include "UI/Widgets/Ingame/CharacterStatusWidget.h"
 #include "UI/Widgets/Ingame/GameTimerWidget.h"
-#include "UI/Widgets/Ingame/Popup/ResultPopupWidget.h"
-#include "Framework/InGame/InGameGameState.h"
 
+#include "UI/Widgets/Ingame/Popup/VictoryPopupWidget.h"
+#include "UI/Widgets/Ingame/Popup/DefeatPopupWidget.h"
+
+#include "Framework/InGame/InGameGameState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -20,49 +22,45 @@ void UInGameHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// 설정 버튼 이벤트 바인딩
+#pragma region 초기화 (Initialization)
+	// 1. 결과 팝업 초기화 (숨김 상태로 시작)
+	if (Widget_VictoryPopup) Widget_VictoryPopup->SetVisibility(ESlateVisibility::Collapsed);
+	if (Widget_DefeatPopup) Widget_DefeatPopup->SetVisibility(ESlateVisibility::Collapsed);
+
+	// 2. 버튼 이벤트 바인딩
 	if (Btn_Setting)
 	{
 		Btn_Setting->OnClicked().AddUObject(this, &UInGameHUDWidget::OnSettingButtonClicked);
 	}
 
-	// 자동 전투 버튼 이벤트 바인딩
 	if (Btn_AutoMode)
 	{
 		Btn_AutoMode->OnClicked().AddUObject(this, &UInGameHUDWidget::OnAutoModeButtonClicked);
-
-		// 초기 상태 설정 (예: OFF 텍스트 또는 회색 아이콘)
+		// 초기 텍스트 설정 (필요 시)
 		// Btn_AutoMode->SetButtonText(FText::FromString(TEXT("MANUAL")));
 	}
 
-	// 가상 조이스틱 이벤트 바인딩
+	// 3. 조이스틱 바인딩
 	if (VirtualJoystick)
 	{
-		// 조이스틱의 델리게이트와 HUD의 이동 처리 함수 연결
 		VirtualJoystick->OnJoystickInput.AddDynamic(this, &UInGameHUDWidget::OnJoystickInput);
 	}
 
-	// 결과 팝업 초기화 (숨김)
-	if (Widget_ResultPopup)
-	{
-		Widget_ResultPopup->SetVisibility(ESlateVisibility::Collapsed);
-	}
-
-	// GameState 연결 및 델리게이트 구독
+	// 4. GameState 연결 및 델리게이트 구독 (핵심)
 	InitializeHUD();
+#pragma endregion 초기화
 
-	// Tick 대신 0.5초 주기로 UI 갱신 타이머 실행
+	// 5. 타이머 UI 갱신 (0.5초마다 남은 시간만 갱신)
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().SetTimer(
 			HUDUpdateTimerHandle,
 			this,
 			&UInGameHUDWidget::OnUpdateHUD,
-			0.5f, // 0.5초마다 갱신
+			0.5f,
 			true
 		);
 	}
-
 }
 
 void UInGameHUDWidget::NativeDestruct()
@@ -73,28 +71,35 @@ void UInGameHUDWidget::NativeDestruct()
 		GetWorld()->GetTimerManager().ClearTimer(HUDUpdateTimerHandle);
 	}
 
-	// 2. 델리게이트 해제 (안전장치)
-	AInGameGameState* GS = Cast<AInGameGameState>(UGameplayStatics::GetGameState(this));
-	if (GS)
+	// 2. 델리게이트 안전 해제
+	if (CachedGameState.IsValid())
 	{
-		GS->OnGamePhaseChanged.RemoveAll(this);
+		CachedGameState->OnGamePhaseChanged.RemoveAll(this);
 	}
 
 	Super::NativeDestruct();
 }
 
+#pragma region 내부 로직 구현
 void UInGameHUDWidget::InitializeHUD()
 {
-	UE_LOG(LogTemp, Log, TEXT("InGameHUD 초기화"));
-
+	// GameState를 가져와서 캐싱 (매번 Cast하지 않기 위함)
 	AInGameGameState* GS = Cast<AInGameGameState>(UGameplayStatics::GetGameState(this));
 	if (GS)
 	{
-		// 페이즈 변경 이벤트 바인딩
+		CachedGameState = GS;
+
+		// 페이즈 변경 이벤트 바인딩 ("상태 바뀌면 연락해!")
 		GS->OnGamePhaseChanged.AddUniqueDynamic(this, &UInGameHUDWidget::HandleGamePhaseChanged);
 
-		// 현재 상태 즉시 반영 (이미 게임 중일 수 있음)
+		// 현재 상태 즉시 반영 (이미 게임 진행 중일 경우 대비)
 		HandleGamePhaseChanged(GS->CurrentPhase);
+
+		UE_LOG(LogTemp, Log, TEXT("[InGameHUD] GameState 연결 완료."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameHUD] GameState를 찾을 수 없습니다."));
 	}
 }
 
@@ -102,27 +107,76 @@ void UInGameHUDWidget::HandleGamePhaseChanged(EGamePhase NewPhase)
 {
 	UE_LOG(LogTemp, Log, TEXT("[InGameHUD] 페이즈 변경 감지: %d"), (int32)NewPhase);
 
+	// 결과 화면인가? (승리 혹은 패배)
+	bool bIsResultPhase = (NewPhase == EGamePhase::Victory || NewPhase == EGamePhase::Defeat);
+
+	// 1. 인게임 UI (조이스틱, 타이머 등) 제어
+	// 결과창이 뜨면 조작 UI는 숨긴다.
+	ESlateVisibility InGameUIVisibility = bIsResultPhase ? ESlateVisibility::Collapsed : ESlateVisibility::Visible;
+
+	if (VirtualJoystick) VirtualJoystick->SetVisibility(InGameUIVisibility);
+	if (GameTimerWidget) GameTimerWidget->SetVisibility(InGameUIVisibility);
+	if (ActionControlPanel) ActionControlPanel->SetVisibility(InGameUIVisibility);
+	if (SummonControlPanel) SummonControlPanel->SetVisibility(InGameUIVisibility);
+
+	// 2. 팝업 표시 로직
 	switch (NewPhase)
 	{
 	case EGamePhase::Victory:
-	case EGamePhase::Defeat:
-		// 결과창 표시
-		if (Widget_ResultPopup)
+		if (Widget_VictoryPopup && CachedGameState.IsValid())
 		{
-			AInGameGameState* GS = Cast<AInGameGameState>(UGameplayStatics::GetGameState(this));
-			if (GS)
-			{
-				bool bIsWin = (NewPhase == EGamePhase::Victory);
-				Widget_ResultPopup->SetResultData(bIsWin, GS->AcquiredGold, GS->AcquiredExp);
-				Widget_ResultPopup->SetVisibility(ESlateVisibility::Visible);
+			// TODO: 나중에는 GameState나 StageDataTable에서 실제 현재 스테이지 이름을 가져와야 함.
+			// 지금은 테스트용으로 하드코딩.
+			FText CurrentStageName = FText::FromString(TEXT("STAGE 1-1"));
 
-				// 팝업이 뜨면 조이스틱 입력 막기 등 처리 가능
-				if (VirtualJoystick) VirtualJoystick->SetVisibility(ESlateVisibility::HitTestInvisible);
+			// 1. 재화 정보
+			int32 Gold = CachedGameState->AcquiredGold;
+			int32 Exp = CachedGameState->AcquiredExp;
+			int32 Stars = 3;
+
+			// 2. 캐릭터 데이터 구성 (여기서 데이터를 만드는 건 필수입니다. 나중에 GameState에서 가져오더라도요.)
+			// 다만, 이제 이 데이터를 위젯이 직접 파싱하는 게 아니라 구조체로 묶어서 통째로 넘깁니다.
+			TArray<FResultCharacterData> CharResults;
+
+			// TODO: 실제로는 GameState->GetParticipatedCharacters() 등으로 루프를 돌며 채워야 함
+			for (int i = 0; i < 3; i++)
+			{
+				FResultCharacterData DummyData;
+				DummyData.CharacterName = FText::FromString(FString::Printf(TEXT("Hero %d"), i + 1));
+				DummyData.GainedExp = 150;
+				DummyData.ExpPercent = 0.5f;
+				CharResults.Add(DummyData);
 			}
+
+			// 3. 팝업 호출 (팝업 -> 패널 -> 슬롯 순으로 데이터가 전파됨)
+			Widget_VictoryPopup->SetVictoryData(
+				CurrentStageName,
+				Stars,
+				Gold,
+				Exp,
+				CharResults
+			);
+
+			// 4. 표시
+			Widget_VictoryPopup->SetVisibility(ESlateVisibility::Visible);
+		}
+		break;
+
+	case EGamePhase::Defeat:
+		// 패배 팝업 표시
+		if (Widget_DefeatPopup)
+		{
+			Widget_DefeatPopup->SetVisibility(ESlateVisibility::Visible);
+
+			// 승리 팝업은 확실히 끄기
+			if (Widget_VictoryPopup) Widget_VictoryPopup->SetVisibility(ESlateVisibility::Collapsed);
 		}
 		break;
 
 	default:
+		// 전투 중이거나 준비 상태 등에서는 팝업을 모두 숨김
+		if (Widget_VictoryPopup) Widget_VictoryPopup->SetVisibility(ESlateVisibility::Collapsed);
+		if (Widget_DefeatPopup) Widget_DefeatPopup->SetVisibility(ESlateVisibility::Collapsed);
 		break;
 	}
 }
@@ -161,7 +215,7 @@ void UInGameHUDWidget::OnJoystickInput(FVector2D InputVector)
 		const FVector ForwardDir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
 		const FVector RightDir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
-		// [수정됨] InputVector.Y에 -1.0f를 곱해서 '위로 드래그' = '전진'이 되도록 수정
+		// InputVector.Y에 -1.0f를 곱해서 '위로 드래그' = '전진'이 되도록 수정
 		OwnedPawn->AddMovementInput(ForwardDir, InputVector.Y * -1.0f);
 		OwnedPawn->AddMovementInput(RightDir, InputVector.X);
 	}
@@ -170,10 +224,14 @@ void UInGameHUDWidget::OnJoystickInput(FVector2D InputVector)
 void UInGameHUDWidget::OnUpdateHUD()
 {
 	// [최적화] 타이머에 의해 0.5초마다 호출됨
-	AInGameGameState* GS = Cast<AInGameGameState>(UGameplayStatics::GetGameState(this));
-
-	if (GS && GameTimerWidget && GS->bIsTimerActive)
+	if (CachedGameState.IsValid())
 	{
-		GameTimerWidget->UpdateTime(GS->RemainingTime);
+		// 타이머 위젯이 있고, 게임 상태가 타이머가 돌아가는 상태일 때만 갱신
+		if (GameTimerWidget)
+		{
+			// GameState에 남은 시간 변수가 public이라고 가정
+			GameTimerWidget->UpdateTime(CachedGameState->RemainingTime);
+		}
 	}
 }
+#pragma endregion 내부 로직 구현

@@ -3,16 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/Enums/GameEnums.h"
 #include "Components/ActorComponent.h"
 #include "EquipmentComponent.generated.h"
 
 class UDataTable;
 class APlayerBase;
 class UInventoryComponent;
-UENUM(BlueprintType)
-enum class EEquipmentSlot : uint8 {
-	None
-};
+
 
 /**
  * @brief 장비 상태 변경 알림 델리게이트
