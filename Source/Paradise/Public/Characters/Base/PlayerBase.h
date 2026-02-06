@@ -28,6 +28,9 @@ public:
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+	UFUNCTION(BlueprintCallable)
+	class APlayerData* GetPlayerData() const { return LinkedPlayerData.Get(); }
+
 	/** @brief 캐릭터 사망 여부 반환 (컨트롤러 확인용) */
 	UFUNCTION(BlueprintPure, Category = "Status")
 	bool IsDead() const { return bIsDead; }
