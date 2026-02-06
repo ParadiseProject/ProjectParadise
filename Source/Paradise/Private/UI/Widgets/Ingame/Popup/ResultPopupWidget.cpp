@@ -7,7 +7,7 @@
 #include "Components/Button.h"
 #include "Components/Widget.h"
 #include "Kismet/GameplayStatics.h"
-#include "Framework/Core/ParadiseGameInstance.h"
+#include "Framework/System/LevelLoadingSubsystem.h"
 
 void UResultPopupWidget::NativeConstruct()
 {
@@ -66,15 +66,17 @@ void UResultPopupWidget::SetResultData(bool bIsVictory, int32 Gold, int32 Exp)
 
 void UResultPopupWidget::OnToLobbyClicked()
 {
-	// GameInstance를 통해 로비로 이동 (비동기 로딩)
-	if (UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance()))
+	// [수정] 서브시스템을 통해 로비로 이동
+	if (ULevelLoadingSubsystem* LoadingSystem = GetGameInstance()->GetSubsystem<ULevelLoadingSubsystem>())
 	{
+		// 로딩 맵 이름과 빈 에셋 배열을 명시적으로 전달
 		TArray<TSoftObjectPtr<UObject>> EmptyAssets;
-		GI->OpenLevelWithAsyncLoad(FName("CJWTestLobby"), EmptyAssets);
+		LoadingSystem->StartLevelTransition(FName("L_Lobby"), FName("L_Loading"), EmptyAssets);
 	}
 	else
 	{
-		UGameplayStatics::OpenLevel(this, FName("CJWTestLobby"));
+		// 비상용
+		UGameplayStatics::OpenLevel(this, FName("L_Lobby"));
 	}
 }
 
