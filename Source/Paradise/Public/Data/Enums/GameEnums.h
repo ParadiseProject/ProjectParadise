@@ -68,3 +68,26 @@ enum class EUnitType : uint8
 	/** @brief 전설 등급 (금색 테두리, 5성) */
 	Legendary	UMETA(DisplayName = "Legendary (5 Star)")
 };
+
+
+/**
+* @enum EEquipmentSlot
+* @brief 장비 컴포넌트의 장비 슬롯 ENUM
+*/
+UENUM(BlueprintType)
+enum class EEquipmentSlot : uint8
+{
+	/** @brief 장착 슬롯 : 무기 */
+	Weapon		UMETA(DisplayName = "장착 슬롯 : 무기"),
+	/** @brief 장착 슬롯 : 투구 */
+	Helmet		UMETA(DisplayName = "장착 슬롯 : 투구"),
+	/** @brief 장착 슬롯 : 갑옷 */
+	Chest		UMETA(DisplayName = "장착 슬롯 : 갑옷"),
+	/** @brief 장착 슬롯 : 장갑 */
+	Gloves		UMETA(DisplayName = "장착 슬롯 : 장갑"),
+	/** @brief 장착 슬롯 : 신발 */
+	Boots		UMETA(DisplayName = "장착 슬롯 : 신발"),
+	/** @brief 장착 슬롯 : 없음 */
+	None		UMETA(DisplayName = "장착 슬롯 : 없음")
+
+};
