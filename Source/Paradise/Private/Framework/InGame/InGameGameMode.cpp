@@ -15,33 +15,29 @@ void AInGameGameMode::BeginPlay()
 	//GameState 캐싱
 	CachedGameState = GetGameState<AInGameGameState>();
 
-	if (CachedGameState)
-	{
-		UE_LOG(LogTemp, Log, TEXT("✅ GameState OK!"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ GameState NULL"));
-	}
-
 	//임시로 1-1 스테이지 정보로 초기화 -> (나중에 GameInstance 연동)
 	InitializeStageData(FName("Stage1_1"));
 
+	//초기 상태 설정
 	CurrentPhase = EGamePhase::Result;
 
 	//게임 시작 상태 Ready로 설정
 	SetGamePhase(EGamePhase::Ready);
 }
 
+/**
+ * @details Tick에서는 전투 중일 때만 타이머를 감소시키며, 0초 도달 시 패배 처리를 수행합니다.
+ */
 void AInGameGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	//UE_LOG(LogTemp, Log, TEXT("Ticking..."));
+
 	if(CurrentPhase == EGamePhase::Combat && CachedGameState && CachedGameState->bIsTimerActive)
 	{
 		//시간 감소
 		CachedGameState->RemainingTime -= DeltaSeconds;
-		UE_LOG(LogTemp, Log, TEXT("Time: % f"), CachedGameState->RemainingTime);
+		//UE_LOG(LogTemp, Log, TEXT("Time: % f"), CachedGameState->RemainingTime);
+		
 		//시간 종료 체크
 		if (CachedGameState->RemainingTime <= 0.f)
 		{
@@ -53,12 +49,19 @@ void AInGameGameMode::Tick(float DeltaSeconds)
 	}
 }
 
+/**
+ * @details 페이즈를 변경하고, GameState에 전파하여 UI/캐릭터 등이 반응하게 합니다.
+ * 이후 switch문을 통해 각 단계별 초기화 함수(OnPhase::)를 호출합니다.
+ */
 void AInGameGameMode::SetGamePhase(EGamePhase NewPhase)
 {
 	if (CurrentPhase == NewPhase) return;
 
 	//상태 변경
 	CurrentPhase = NewPhase;
+
+	//게임스테이트에도 반영, Broadcast 발생
+	if (CachedGameState) CachedGameState->SetCurrentPhase(CurrentPhase);
 
 	//상태별 진입 로직
 	switch (CurrentPhase)
@@ -99,34 +102,39 @@ void AInGameGameMode::EndStage(bool bIsVictory)
 
 void AInGameGameMode::InitializeStageData(FName StageID)
 {
-	//데이터테이블이 없으면 종료
-	if (!StageInfoTable) return;
+	if (!StageInfoTable) return;	//데이터테이블이 없으면 종료
 
 	//1. 데이터 테이블에서 정보 가져오기
 	FStageStats* Row = StageInfoTable->FindRow<FStageStats>(StageID, TEXT("StageInfoContext"));
 	if (Row)
 	{
-		//데이터를 개별변수가 아닌 구조체에 한번에 복사
-		CurrentStageData = *Row;
+		CurrentStageData = *Row;	//데이터를 개별변수가 아닌 구조체에 한번에 복사
 
 		//2. 게임스태이트에 정보 할당
 		if (CachedGameState)
 		{
 			CachedGameState->DisplayStageName = CurrentStageData.StageName.ToString();
 			CachedGameState->RemainingTime = CurrentStageData.TimeLimit;
-			CachedGameState->bIsTimerActive = false; 
+			CachedGameState->bIsTimerActive = false;
 		}
-		//UE_LOG(LogTemp, Log, TEXT("스테이지 로그 완료: %s"), *GS->DisplayStageName);
-		UE_LOG(LogTemp, Warning, TEXT("DataLog"));
+
+		//UE_LOG(LogTemp, Log, TEXT("스테이지 로그 완료: %s"), *CachedGameState->DisplayStageName);
+
+		// [로그 추가] 스테이지 기본 정보 출력
+		//UE_LOG(LogTemp, Warning, TEXT("========================================="));
+		//UE_LOG(LogTemp, Warning, TEXT("[Stage Data Loaded] ID: %s"), *StageID.ToString());
+		//UE_LOG(LogTemp, Log, TEXT(" - Name      : %s"), *CurrentStageData.StageName.ToString());
+		//UE_LOG(LogTemp, Log, TEXT(" - Desc      : %s"), *CurrentStageData.Description.ToString());
+		//UE_LOG(LogTemp, Log, TEXT(" - TimeLimit : %.1f sec"), CurrentStageData.TimeLimit);
+		//UE_LOG(LogTemp, Warning, TEXT("========================================="));
 	}
 }
 
 void AInGameGameMode::OnPhaseReady()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Phase: Ready (3초)"));
 	//UE_LOG(LogTemp, Log, TEXT("Phase: Ready (3초 카운트다운)"));
 
-	//1. 카운트다운 UI 표시(게임스테이트 플래그 사용)
+	//1. 플레이어 준비 상태로 전환
 
 	//2. 3초 후 전투 단계(Combat)로 전환
 	FTimerHandle TimerHandle;
@@ -139,52 +147,69 @@ void AInGameGameMode::OnPhaseReady()
 
 void AInGameGameMode::OnPhaseCombat()
 {
-	UE_LOG(LogTemp, Log, TEXT("Phase: Combat"));
 	//UE_LOG(LogTemp, Log, TEXT("Phase: Combat (전투 시작)"));
 
-	//1. 몬스터스폰 매니저어게 스폰 시작 요청
+	//1. 몬스터 스폰 매니저어게 웨이브 시작 요청하기 
 
-	if (CachedGameState)
-	{
-		//2. 타이머 작동시작
-		CachedGameState->bIsTimerActive = true;
-	}
+	//2. 타이머 작동시작
+	if (CachedGameState) CachedGameState->bIsTimerActive = true;
 }
+
 
 void AInGameGameMode::OnPhaseVictory()
 {
-	//1. 타이머 정지(GameState의 플래그 사용)
-	if (CachedGameState) CachedGameState->bIsTimerActive = false;
-	UE_LOG(LogTemp, Log, TEXT("Phase: Victory!"));
 	//UE_LOG(LogTemp, Log, TEXT("Phase: Victory! 보상 지급 준비"));
+	if (CachedGameState)
+	{
+		//1. 타이머 정지(GameState의 플래그 사용)
+		CachedGameState->bIsTimerActive = false;
+		
+		//보상 정보 캐싱
+		CachedGameState->AcquiredGold = CurrentStageData.ClearGold;
+		CachedGameState->AcquiredExp = CurrentStageData.ClearExp;
 
-	//2. 보상 지급(게임모드가 관리) 
-	int32 RewawrdGold = CurrentStageData.ClearGold;
-	int32 ReawardExp = CurrentStageData.ClearExp;
-	//GameInstance 호출 로직이 들어가야함
+		//다음 스테이지 ID 캐싱
+		CachedGameState->NextStageID = CurrentStageData.NextStageID;
+	}
 
-	//3. UI에게 승리연출 
-	//UE_LOG(LogTemp, Log, TEXT("승리 판정. 보상 지급 완료"));
+	// [로그 추가] 보상 및 다음 스테이지 정보 출력
+	//UE_LOG(LogTemp, Warning, TEXT("============= [VICTORY] ============="));
+	//UE_LOG(LogTemp, Log, TEXT(" $$$ Reward Gold : %d G"), CurrentStageData.ClearGold);
+	//UE_LOG(LogTemp, Log, TEXT(" +++ Reward Exp  : %d XP"), CurrentStageData.ClearExp);
+	//UE_LOG(LogTemp, Log, TEXT(" >>> Next Stage  : %s"), *CurrentStageData.NextStageID.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("====================================="));
+
+	//2. 데이터 저장 (GameInstance 연동 필요)
+	// TODO: GameInstance->AddGold(CurrentStageData.ClearGold);
+	// TODO: GameInstance->UnlockStage(CurrentStageData.NextStageID);
+
+
+	//3. 3초 후 결과 단계(Result)로 전환
+	FTimerHandle ResultTimer;
+	GetWorldTimerManager().SetTimer(ResultTimer, [this]() {
+		SetGamePhase(EGamePhase::Result);
+		}, 3.0f, false);
 }
 
 void AInGameGameMode::OnPhaseDefeat()
 {
 	if(CachedGameState) CachedGameState->bIsTimerActive = false;
-	UE_LOG(LogTemp, Error, TEXT("Phase: Defeat...."));
 	//UE_LOG(LogTemp, Error, TEXT("Phase: Defeat.... 보상없음"));
 
+	//패배시 보상 없음
+	
+	//3초 후 결과 단계(Result)로 전환
 	FTimerHandle ResultTimer;
 	GetWorldTimerManager().SetTimer(ResultTimer, [this]() {
 		SetGamePhase(EGamePhase::Result);
 		}, 3.0f, false);
 	
-	//패배시 보상 없음
-	//UE_LOG(LogTemp, Log, TEXT("패배 판정. 보상 없음"));
 }
 
 void AInGameGameMode::OnPhaseResult()
 {
-	UE_LOG(LogTemp, Log, TEXT("Phase: Result"));
 	//UE_LOG(LogTemp, Log, TEXT("Phase: Result (최종 결과 화면 출력)"));
+
+	//버튼생성 후 로비로 레벨이동
 }
 

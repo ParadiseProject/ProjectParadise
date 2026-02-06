@@ -1,0 +1,76 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "UI/HUD/Title/ParadiseTitleHUDWidget.h"
+
+#include "Framework/Core/ParadiseGameInstance.h"
+
+#include "Components/Button.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
+
+void UParadiseTitleHUDWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	bIsLoadingStarted = false;
+
+	// 1. 버튼 이벤트 바인딩
+	if (Btn_ScreenTouch)
+	{
+		Btn_ScreenTouch->OnClicked.AddUniqueDynamic(this, &UParadiseTitleHUDWidget::OnScreenTouched);
+	}
+	// 2. 종료 버튼 이벤트 바인딩
+	if (Btn_Quit)
+	{
+		Btn_Quit->OnClicked.AddUniqueDynamic(this, &UParadiseTitleHUDWidget::OnQuitButtonClicked);
+	}
+
+	// 3. 설정 버튼 이벤트 바인딩
+	if (Btn_Settings)
+	{
+		Btn_Settings->OnClicked.AddUniqueDynamic(this, &UParadiseTitleHUDWidget::OnSettingsButtonClicked);
+	}
+	// 4. 깜빡임 애니메이션 재생 (무한 반복)
+	if (Anim_BlinkText)
+	{
+		PlayAnimation(Anim_BlinkText, 0.0f, 0);
+	}
+}
+
+void UParadiseTitleHUDWidget::OnScreenTouched()
+{
+	// 중복 실행 방지
+	if (bIsLoadingStarted) return;
+	bIsLoadingStarted = true;
+
+	// 터치 시 애니메이션 멈춤 or 속도 증가 등의 피드백 연출 가능
+	// StopAnimation(Anim_BlinkText);
+
+	UE_LOG(LogTemp, Log, TEXT("[타이틀] 스크린 터치 및 클릭 -> Request Lobby Load"));
+
+	// GameInstance를 통해 비동기 로딩 시작
+	if (UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance()))
+	{
+		GI->OpenLevelWithAsyncLoad(NextLevelName, PreloadAssets);
+	}
+	else
+	{
+		// Fallback: GI 캐스팅 실패 시 일반 로딩
+		UE_LOG(LogTemp, Warning, TEXT("[타이틀] ParadiseGameInstance Not Found! Using OpenLevel directly."));
+		UGameplayStatics::OpenLevel(this, NextLevelName);
+	}
+}
+
+void UParadiseTitleHUDWidget::OnQuitButtonClicked()
+{
+	// PC 빌드 등에서 게임을 완전히 종료합니다.
+	UE_LOG(LogTemp, Log, TEXT("[타이틀] 게임 종료 요청"));
+	UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, false);
+}
+
+void UParadiseTitleHUDWidget::OnSettingsButtonClicked()
+{
+	UE_LOG(LogTemp, Log, TEXT("[타이틀] 설정 버튼 클릭"));
+	// TODO: WBP_Settings 같은 설정 팝업 위젯을 CreateWidget 하거나 CommonActivatableWidget 스택에 Push 할 예정.
+}

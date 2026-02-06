@@ -8,17 +8,23 @@
 
 #pragma region 전방 선언
 class UActionControlPanel;
-class UCharacterStatusWidget;
-class UPartyStatusPanel;
 class USummonControlPanel;
-class UParadiseCommonButton;
+class UPartyStatusPanel;
+class UCharacterStatusWidget;
+class UGameTimerWidget;
 class UVirtualJoystickWidget;
+class UResultPopupWidget;
+class UParadiseCommonButton;
+class AInGameGameState;
 #pragma endregion 전방 선언
 
 /**
  * @class UInGameHUDWidget
  * @brief 인게임 화면의 최상위 HUD 컨테이너입니다.
  * @details Common UI의 ActivatableWidget을 상속받아 메뉴 팝업 시 입력 제어가 자동으로 처리됩니다.
+ * 1. 하위 패널(Action, Summon, Party, Status)들을 컴포넌트로 관리합니다.
+ * 2. GameState의 상태 변화(Ready -> Combat -> Victory/Defeat)를 감지하여 결과창을 띄우거나 타이머를 갱신합니다.
+ * 3. 입력(조이스틱)을 캐릭터에게 전달하는 중계 역할을 수행할 수도 있습니다
  */
 UCLASS()
 class PARADISE_API UInGameHUDWidget : public UCommonActivatableWidget
@@ -27,11 +33,13 @@ class PARADISE_API UInGameHUDWidget : public UCommonActivatableWidget
 
 protected:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 
 #pragma region 초기화
 public:
 	/** 
 	 * @brief 게임 시작 시 각종 패널을 초기화하고 데이터를 연결합니다. 
+	 * @details GameState와 연결하고 하위 위젯들을 초기 상태로 설정합니다.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
 	void InitializeHUD();
@@ -51,6 +59,13 @@ public:
 
 #pragma region 내부 로직
 private:
+	/** 
+	 * @brief GameState의 Phase가 변경되었을 때 호출됩니다. (Delegate 바인딩)
+	 * @param NewPhase 변경된 게임 단계
+	 */
+	UFUNCTION()
+	void HandleGamePhaseChanged(EGamePhase NewPhase);
+
 	/** @brief 설정 버튼 클릭 처리 */
 	UFUNCTION()
 	void OnSettingButtonClicked();
@@ -62,6 +77,9 @@ private:
 	/** @brief 가상 조이스틱 입력 처리 (캐릭터 이동) */
 	UFUNCTION()
 	void OnJoystickInput(FVector2D InputVector);
+
+	/** @brief 주기적으로 호출될 UI 갱신 함수 */
+	void OnUpdateHUD();
 #pragma endregion 내부 로직
 
 #pragma region 위젯 바인딩
@@ -78,6 +96,10 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UActionControlPanel> ActionControlPanel = nullptr;
 
+	/** @brief 중앙 상단 게임 타이머 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UGameTimerWidget> GameTimerWidget = nullptr;
+
 	/** @brief 하단 중앙 소환수 패널 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<USummonControlPanel> SummonControlPanel = nullptr;
@@ -89,10 +111,20 @@ private:
 	/** @brief 우측 상단 설정 버튼 (CommonBtn) */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UParadiseCommonButton> Btn_Setting = nullptr;
+
+	/** 
+	 * @brief 게임 종료 시 표시될 승리/패배 결과 팝업
+	 * @details Z-Order가 가장 높아야 하며, 평소에는 Hidden 상태입니다.
+	 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UResultPopupWidget> Widget_ResultPopup = nullptr;
 #pragma endregion 위젯 바인딩
 
 #pragma region 내부 데이터
 private:
+	/** @brief UI 갱신용 타이머 핸들 */
+	FTimerHandle HUDUpdateTimerHandle;
+
 	/** @brief 현재 자동 전투 활성화 여부 */
 	bool bIsAutoMode = false;
 #pragma endregion 내부 데이터

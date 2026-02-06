@@ -4,6 +4,26 @@
 #include "GameEnums.generated.h"
 
 /**
+ * @enum EGamePhase
+ * @brief 게임 흐름 제어를 위한 상태 머신(FSM)의 주요 단계를 정의
+ */
+UENUM(BlueprintType)
+enum class EGamePhase : uint8
+{
+	/** @brief [준비 상태] 전투 시작 전 카운트다운 단계  */
+	Ready,	
+	/** @brief [전투 상태] 메인 게임 플레이 및 스폰/타이머 활성화 */
+	Combat,	
+	/** @brief [승리 상태] 클리어 조건 달성 및 보상 처리 */
+	Victory,
+	/** @brief [패배 상태] 타임오버 또는 사망으로 인해 패배한 상태 */
+	Defeat,	
+	/** @brief [결과 상태] 최종 결과창을 표시하고 로비 이동을 대기하는 단계 */
+	Result
+};
+
+
+/**
  * @enum EUnitType
  * @brief 몬스터, 퍼밀리어의 전투 타입 (근거리, 원거리, 보스 등)
  */
