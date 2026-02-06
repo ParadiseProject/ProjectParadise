@@ -1,64 +1,110 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Characters/AIUnit/BaseUnit.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "AIController.h"
 #include "BrainComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Framework/System/ObjectPoolSubsystem.h"
 
-/**
- * @brief 생성자: 기본 스탯(HP, TeamID)을 초기화합니다.
- */
 ABaseUnit::ABaseUnit()
 {
-    PrimaryActorTick.bCanEverTick = false;
-    TeamID = 0;
+	PrimaryActorTick.bCanEverTick = false;
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	bIsDead = false;
 }
 
-// 데이터 기반 초기화 함수
-void ABaseUnit::InitializeUnit(FCharacterStats* Stats)
+void ABaseUnit::OnPoolActivate_Implementation()
 {
-    if (Stats)
-    {
-        // 1. 체력 설정
-        MaxHP = Stats->BaseMaxHP;
-        HP = MaxHP;
+	bIsDead = false;
+	SetActorHiddenInGame(false);
+	SetActorTickEnabled(true);
+	SetActorEnableCollision(true);
 
-        // 2. 공격력 설정
-        AttackPower = Stats->BaseAttackPower;
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();
+		MoveComp->Velocity = FVector::ZeroVector;
+		MoveComp->SetMovementMode(MOVE_Walking);
 
-        // 3. 이동 속도 설정 (언리얼 캐릭터 무브먼트 컴포넌트 접근)
-        if (GetCharacterMovement())
-        {
-            GetCharacterMovement()->MaxWalkSpeed = Stats->BaseMoveSpeed;
-        }
-
-        UE_LOG(LogTemp, Log, TEXT("%s 초기화: HP %f, 속도 %f"), *GetName(), MaxHP, Stats->BaseMoveSpeed);
-    }
+		FFindFloorResult FloorResult;
+		MoveComp->FindFloor(MoveComp->UpdatedComponent->GetComponentLocation(), FloorResult, false);
+	}
 }
 
-void ABaseUnit::Die()
+void ABaseUnit::OnPoolDeactivate_Implementation()
 {
-    // 시각적 비활성화
-    SetActorHiddenInGame(true);
-    SetActorEnableCollision(false);
-    SetActorTickEnabled(false);
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		if (AIC->GetBrainComponent())
+		{
+			AIC->GetBrainComponent()->StopLogic("Returned to Pool");
+		}
+		AIC->UnPossess();
+	}
 
-    // AI 제어권은 유지하되 로직만 정지
-    AAIController* AIC = Cast<AAIController>(GetController());
-    if (AIC && AIC->GetBrainComponent())
-    {
-        AIC->GetBrainComponent()->StopLogic("Dead");
-    }
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	SetActorTickEnabled(false);
+}
+
+void ABaseUnit::InitializeUnit(FEnemyStats* InStats, FEnemyAssets* InAssets)
+{
+	if (InStats)
+	{
+		MaxHP = InStats->BaseMaxHP;
+		HP = MaxHP;
+		this->FactionTag = InStats->FactionTag;
+
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->MaxWalkSpeed = InStats->BaseMoveSpeed;
+		}
+	}
+
+	if (InAssets)
+	{
+		SetActorScale3D(FVector(InAssets->Scale));
+		if (!InAssets->SkeletalMesh.IsNull())
+		{
+			USkeletalMesh* LoadedMesh = InAssets->SkeletalMesh.LoadSynchronous();
+			if (LoadedMesh) GetMesh()->SetSkeletalMesh(LoadedMesh);
+		}
+		if (InAssets->AnimBlueprint)
+		{
+			GetMesh()->SetAnimInstanceClass(InAssets->AnimBlueprint);
+		}
+	}
 }
 
 float ABaseUnit::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-    float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	if (bIsDead) return 0.0f;
 
-    HP -= ActualDamage;
-    if (HP <= 0)
-    {
-        Die();
-    }
-    return ActualDamage;
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	HP -= ActualDamage;
+
+	if (HP <= 0.0f)
+	{
+		bIsDead = true;
+		Die();
+	}
+	return ActualDamage;
+}
+
+void ABaseUnit::Die()
+{
+	if (UWorld* World = GetWorld())
+	{
+		if (UObjectPoolSubsystem* PoolSubsystem = World->GetSubsystem<UObjectPoolSubsystem>())
+		{
+			PoolSubsystem->ReturnToPool(this);
+		}
+	}
+}
+
+bool ABaseUnit::IsEnemy(ABaseUnit* OtherUnit)
+{
+	if (!OtherUnit || OtherUnit == this) return false;
+	return !this->FactionTag.MatchesTag(OtherUnit->FactionTag);
 }
