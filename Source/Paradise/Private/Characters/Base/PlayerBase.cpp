@@ -97,7 +97,7 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
     {
         Mymesh->SetSkeletalMesh(LinkedPlayerData->CachedMesh);
 
-        Mymesh->SetAnimClass(LinkedPlayerData->CachedAnimBP);
+        Mymesh->SetAnimInstanceClass(LinkedPlayerData->CachedAnimBP);
     }
     
 

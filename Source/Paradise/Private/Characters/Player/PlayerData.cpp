@@ -67,7 +67,7 @@ void APlayerData::InitPlayerData(FName HeroID)
 	UE_LOG(LogTemp, Log, TEXT("🔄 [PlayerData] 영웅 초기화 시작: %s"), *HeroID.ToString());
 
 	//스탯 데이터 조회 및 적용
-	FCharacterStats* Stats = GI->GetDataTableRow<FCharacterStats>(GI->PlayerStatsDataTable, HeroID);
+	FCharacterStats* Stats = GI->GetDataTableRow<FCharacterStats>(GI->CharacterStatsDataTable, HeroID);
 	if (Stats)
 	{
 		InitCombatAttributes(Stats);
@@ -78,7 +78,7 @@ void APlayerData::InitPlayerData(FName HeroID)
 	}
 
 	//에셋 데이터 조회 및 적용
-	FCharacterAssets* Assets = GI->GetDataTableRow<FCharacterAssets>(GI->PlayerAssetsDataTable, HeroID);
+	FCharacterAssets* Assets = GI->GetDataTableRow<FCharacterAssets>(GI->CharacterAssetsDataTable, HeroID);
 	if (Assets)
 	{
 		//에셋 로드

@@ -12,12 +12,12 @@
  * @details 임시 구조체
  */
 USTRUCT(BlueprintType)
-struct FOwnedHeroData
+struct FOwnedCharacterData
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName HeroID; // 데이터 에셋 ID (RowName)
+	FName CharacterID; // 데이터 에셋 ID (RowName)
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Level = 1;
@@ -97,7 +97,7 @@ public:
 	 */
 	 UFUNCTION(BlueprintCallable, Category = "Inventory|Init")
 	 void InitInventory(
-		 const TArray<FOwnedHeroData>& InHeroes,
+		 const TArray<FOwnedCharacterData>& InHeroes,
 		 const TArray<FOwnedFamiliarData>& InFamiliars,
 		 const TArray<FOwnedItemData>& InItems
 	 );
@@ -123,14 +123,21 @@ public:
 	/**
 	 * @brief 영웅을 획득하는 함수
 	 * @details 이미 보유 중인 경우, 영혼석(조각)으로 대체하거나 레벨업 재료로 변환하는 로직이 추가될 수 있습니다.
-	 * @param HeroID 획득한 영웅의 ID
+	 * @param CharacterID 획득한 영웅의 ID
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Modify")
-	void AddHero(FName HeroID);
+	void AddCharacter(FName CharacterID);
+
+	/**
+	 * @brief 퍼밀리어을 획득하는 함수
+	 * @param CharacterID 획득한 영웅의 ID
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Modify")
+	void AddFamiliar(FName FamiliarID);
 
 	/** @return 현재 보유 중인 모든 영웅 목록 (const 참조) */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Query")
-	const TArray<FOwnedHeroData>& GetOwnedHeroes() const { return OwnedHeroes; }
+	const TArray<FOwnedCharacterData>& GetOwnedHeroes() const { return OwnedCharacters; }
 
 	/** @return 현재 보유 중인 모든 퍼밀리어 목록 (const 참조) */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Query")
@@ -152,7 +159,10 @@ public:
 protected:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 	virtual void BeginPlay() override;
 
+
 private:
+	/** @brief 내부 편의 함수: GameInstance 가져오기 */
+	class UParadiseGameInstance* GetParadiseGI() const;
 
 
 public:
@@ -173,7 +183,7 @@ protected:
 
 	/** [영웅] 지휘관이 보유한 영웅들 (ID, Level, Awakening) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory|Storage")
-	TArray<FOwnedHeroData> OwnedHeroes;
+	TArray<FOwnedCharacterData> OwnedCharacters;
 
 	/** [퍼밀리어] 지휘관이 보유한 병사들 (ID, Level, Quantity) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory|Storage")

@@ -104,12 +104,12 @@ public:
 	// RequiredAssetDataTags 으로 다른 타입 데이터 테이블 설정하는 위험 X
 	//유닛 데이터테이블
 	/*영웅(플레이어) 생성에 사용할 에셋 데이터 테이블 */
-	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player", meta = (RowType = "CharacterAssets", RequiredAssetDataTags = "RowStructure=/Script/Paradise.CharacterAssets"))
-	TObjectPtr<class UDataTable> PlayerAssetsDataTable = nullptr;
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Character", meta = (RowType = "CharacterAssets", RequiredAssetDataTags = "RowStructure=/Script/Paradise.CharacterAssets"))
+	TObjectPtr<class UDataTable> CharacterAssetsDataTable = nullptr;
 
 	/*영웅(플레이어) 생성에 사용할 스탯 데이터 테이블 */
-	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player", meta = (RowType = "CharacterStats", RequiredAssetDataTags = "RowStructure=/Script/Paradise.CharacterStats"))
-	TObjectPtr<class UDataTable> PlayerStatsDataTable = nullptr;
+	UPROPERTY(EditDefaultsOnly, Category = "Squad|Character", meta = (RowType = "CharacterStats", RequiredAssetDataTags = "RowStructure=/Script/Paradise.CharacterStats"))
+	TObjectPtr<class UDataTable> CharacterStatsDataTable = nullptr;
 
 	/*적 유닛 생성에 사용할 에셋 데이터 테이블 */
 	UPROPERTY(EditDefaultsOnly, Category = "Squad|Player", meta = (RowType = "EnemyAssets", RequiredAssetDataTags = "RowStructure=/Script/Paradise.EnemyAssets"))
