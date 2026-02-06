@@ -3,6 +3,7 @@
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
 #include "Data/Enums/GameEnums.h"
+#include "GameplayEffect.h"
 #include "ItemStructs.generated.h"
 
 class USkeletalMesh;
@@ -115,6 +116,15 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Stats", meta = (ClampMin = "0.0"))
 	float AttackRange;
+
+	/**
+	 * @brief 무기 스킬 데미지 계수 (Skill Damage Multiplier)
+	 * @details 무기 고유 스킬(WeaponSkillAbility) 사용 시 적용될 데미지 배율입니다.
+	 * 예: 1.5 = 공격력의 150% 데미지.
+	 * 평타(1.0)와 달리 스킬은 더 강해야 하므로 이 값으로 조절합니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat Stats", meta = (ClampMin = "0.0"))
+	float SkillDamageRate = 1.5f;
 
 	/**
 	 * @brief 스킬 재사용 대기시간 (Cooldown)
@@ -230,15 +240,30 @@ public:
 	// -----------------------------------------------------------------
 
 	/**
-	 * @brief 공격 몽타주 (Attack Montage)
+	 * @brief 기본 공격 몽타주 (BasicAttack Montage)
 	 * @details 이 무기를 장착했을 때 재생할 기본 공격 애니메이션 몽타주입니다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	TSoftObjectPtr<UAnimMontage> AttackMontage;
+	TSoftObjectPtr<UAnimMontage> BasicAttackMontage;
+
+	/**
+	 * @brief 스킬 몽타주 (Attack Montage)
+	 * @details 이 무기를 장착했을 때 재생할 스킬 공격 애니메이션 몽타주입니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	TSoftObjectPtr<UAnimMontage> SkillMontage;
 
 	// -----------------------------------------------------------------
 	// [GAS & Logic] 로직 연결
 	// -----------------------------------------------------------------
+
+	/**
+	 * @brief 이 무기의 데미지 공식 GE
+	 * @details 기본적으로 GE_DamageStandard를 할당합니다.
+	 * 독단검, 화염검 등 특수 연산이 필요할 때만 다른 GE를 넣습니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS")
+	TSubclassOf<UGameplayEffect> DamageEffectClass;
 
 	/**
 	 * @brief 기본 공격 어빌리티 (Basic Attack / LMB)

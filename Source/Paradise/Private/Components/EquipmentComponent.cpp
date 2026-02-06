@@ -110,7 +110,7 @@ void UEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
 
 FName UEquipmentComponent::GetEquippedItemID(EEquipmentSlot Slot) const
 {
-	return FName();
+	return EquippedItems.FindRef(Slot);
 }
 
 void UEquipmentComponent::SetEquippedItems(const TMap<EEquipmentSlot, FName>& InItems)

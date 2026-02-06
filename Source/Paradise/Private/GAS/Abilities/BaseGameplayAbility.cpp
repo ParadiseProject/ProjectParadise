@@ -58,3 +58,29 @@ void UBaseGameplayAbility::ApplySpecHandleToTarget(AActor* TargetActor, const FG
 		SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
 	}
 }
+
+const FCombatActionData& UBaseGameplayAbility::GetCombatDataFromActor()
+{
+	if (bIsDataCached)
+	{
+		return CachedCombatData;
+	}
+
+	// 2. 처음 호출된 경우 -> 인터페이스를 통해 데이터 가져오기
+	AActor* AvatarActor = GetAvatarActorFromActorInfo();
+
+	if (ICombatInterface* CombatInt = Cast<ICombatInterface>(AvatarActor))
+	{
+		// 데이터 요청 및 저장
+		CachedCombatData = CombatInt->GetCombatActionData(AbilityActionType);
+
+		// 몽타주가 정상적으로 들어왔다면 캐싱 완료 처리
+		if (CachedCombatData.MontageToPlay)
+		{
+			bIsDataCached = true;
+			// UE_LOG(LogTemp, Log, TEXT("✅ [BaseGA] 전투 데이터 캐싱 완료 (Type: %d)"), (int32)AbilityActionType);
+		}
+	}
+
+	return CachedCombatData;
+}
