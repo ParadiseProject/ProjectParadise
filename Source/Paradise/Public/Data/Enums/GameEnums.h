@@ -28,7 +28,7 @@ enum class EGamePhase : uint8
  * @brief 몬스터, 퍼밀리어의 전투 타입 (근거리, 원거리, 보스 등)
  */
 UENUM(BlueprintType)
-enum class EUnitType : uint8
+enum class EAIUnitType : uint8
 {
 	/** @brief 타입 없음 */
 	None		UMETA(DisplayName = "None"),
