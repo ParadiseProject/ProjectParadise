@@ -9,6 +9,7 @@
 #pragma region 전방 선언
 class UCanvasPanel;
 class UDataTable;
+class UButton;
 #pragma endregion 전방 선언
 
 /**
@@ -29,6 +30,10 @@ protected:
 	/** @brief 노드들이 배치된 컨테이너 (지도 배경이 깔린 패널) */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UCanvasPanel> Canvas_MapArea = nullptr;
+
+	/** @brief 로비로 돌아가는 뒤로가기 버튼 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_Back = nullptr;
 #pragma endregion UI 컴포넌트
 
 #pragma region 데이터 (Data)
@@ -41,6 +46,10 @@ protected:
 #pragma endregion 데이터 (Data)
 
 private:
+	/** @brief 뒤로가기 버튼이 눌렸을 때 호출 될 함수 */
+	UFUNCTION()
+	void OnClickBack();
+
 	/** @brief 맵 노드들의 가시성을 갱신합니다. */
 	void RefreshMapNodes();
 

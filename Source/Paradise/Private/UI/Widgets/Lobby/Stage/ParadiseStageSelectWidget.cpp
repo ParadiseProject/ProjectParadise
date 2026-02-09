@@ -3,6 +3,8 @@
 
 #include "UI/Widgets/Lobby/Stage/ParadiseStageSelectWidget.h"
 #include "UI/Widgets/Lobby/Stage/ParadiseStageNodeWidget.h"
+#include "Framework/Lobby/LobbyPlayerController.h" // 컨트롤러 헤더 필수
+#include "Components/Button.h"
 #include "Components/CanvasPanel.h"
 #include "Data/Structs/StageStructs.h"
 
@@ -10,9 +12,24 @@ void UParadiseStageSelectWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	RefreshMapNodes();
+
+	if (Btn_Back)
+	{
+		Btn_Back->OnClicked.AddDynamic(this, &UParadiseStageSelectWidget::OnClickBack);
+	}
 }
 
 #pragma region 로직 구현
+
+void UParadiseStageSelectWidget::OnClickBack()
+{
+	// 내 컨트롤러 찾아서 로비(None)로 돌아가달라고 요청
+	if (ALobbyPlayerController* PC = GetOwningPlayer<ALobbyPlayerController>())
+	{
+		// "None"으로 이동하면 -> 카메라는 Main으로, UI는 로비 메뉴로 복구됨
+		PC->MoveCameraToMenu(EParadiseLobbyMenu::None);
+	}
+}
 
 void UParadiseStageSelectWidget::RefreshMapNodes()
 {
