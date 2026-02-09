@@ -67,5 +67,8 @@ public:
 	 * @param InCurrentMenu 변경된 메뉴 상태.
 	 */
 	void UpdateMenuStats(EParadiseLobbyMenu InCurrentMenu);
+
+	/** @brief 카메라 이동 시작 시 호출 (모든 UI 페이드 아웃) */
+	void OnStartCameraMove();
 #pragma endregion 외부 제어
 };

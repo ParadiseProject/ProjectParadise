@@ -9,6 +9,7 @@
 
 #pragma region 전방 선언
 class UParadiseLobbyHUDWidget;
+class ACameraActor;
 #pragma endregion 전방 선언
 
 /**
@@ -22,6 +23,40 @@ class PARADISE_API ALobbyPlayerController : public APlayerController
 	
 protected:
 	virtual void BeginPlay() override;
+
+#pragma region 카메라 설정
+public:
+	/**
+	 * @brief 카메라 이동을 요청합니다.
+	 * @param TargetMenu 이동할 메뉴 위치 (Battle, None 등)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|Camera")
+	void MoveCameraToMenu(EParadiseLobbyMenu TargetMenu);
+
+protected:
+	/** @brief 메인 로비 카메라 액터 (레벨에 배치된 태그로 찾음: "Cam_Main") */
+	UPROPERTY()
+	TObjectPtr<ACameraActor> Camera_Main;
+
+	/** @brief 전투(스테이지) 작전 지도 카메라 액터 (태그: "Cam_Battle") */
+	UPROPERTY()
+	TObjectPtr<ACameraActor> Camera_Battle;
+
+	/** @brief 카메라 이동 시간 (초) */
+	UPROPERTY(EditDefaultsOnly, Category = "Paradise|Config")
+	float CameraBlendTime = 1.5f;
+
+	/** @brief 카메라 이동 곡선 (Ease In/Out) */
+	UPROPERTY(EditDefaultsOnly, Category = "Paradise|Config")
+	TEnumAsByte<EViewTargetBlendFunction> CameraBlendFunc = VTBlend_Cubic;
+
+private:
+	/** @brief 카메라 이동 완료 후 UI를 띄우기 위한 타이머 핸들 */
+	FTimerHandle TimerHandle_CameraBlend;
+
+	/** @brief 이동 완료 후 실행할 작업 */
+	void OnCameraMoveFinished(EParadiseLobbyMenu TargetMenu);
+#pragma endregion 카메라 설정
 
 #pragma region 설정 (Config)
 protected:

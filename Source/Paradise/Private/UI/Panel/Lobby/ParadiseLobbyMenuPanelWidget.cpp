@@ -28,22 +28,19 @@ void UParadiseLobbyMenuPanelWidget::NativeConstruct()
 
 void UParadiseLobbyMenuPanelWidget::RequestMenuChange(EParadiseLobbyMenu InMenu)
 {
-	// 컨트롤러가 없으면 다시 찾아봄 (방어 코드)
-	if (!CachedController)
-	{
-		CachedController = GetOwningPlayer<ALobbyPlayerController>();
-	}
-
 	if (CachedController)
 	{
-		// 실제 로직은 컨트롤러에게 위임
-		CachedController->SetLobbyMenu(InMenu);
-
-		UE_LOG(LogTemp, Log, TEXT("[MenuPanel] 메뉴 버튼 클릭: %d"), (int32)InMenu);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[MenuPanel] 컨트롤러를 찾을 수 없어 메뉴 변경 실패!"));
+		// [변경] 바로 SetLobbyMenu 하지 않고, 카메라 이동 요청!
+		// (단, Battle처럼 카메라 이동이 필요한 메뉴만. 나머진 바로 띄워도 됨)
+		if (InMenu == EParadiseLobbyMenu::Battle)
+		{
+			CachedController->MoveCameraToMenu(InMenu);
+		}
+		else
+		{
+			// 소환이나 인벤토리는 그냥 팝업으로 띄운다면 기존대로 유지
+			CachedController->SetLobbyMenu(InMenu);
+		}
 	}
 }
 

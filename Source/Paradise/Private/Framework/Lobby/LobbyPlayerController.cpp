@@ -2,12 +2,41 @@
 
 
 #include "Framework/Lobby/LobbyPlayerController.h"
+#include "Framework/Lobby/LobbySetupActor.h"
 #include "UI/HUD/Lobby/ParadiseLobbyHUDWidget.h"
-#include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
+#include "Camera/CameraActor.h"
 
 void ALobbyPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// 1. [최적화] 태그 검색 대신, 레벨 설정 액터 하나만 찾습니다.
+	// (GetActorOfClass는 찾으면 즉시 리턴하므로 GetAllActors보다 훨씬 빠릅니다)
+	ALobbySetupActor* LobbySetup = Cast<ALobbySetupActor>(UGameplayStatics::GetActorOfClass(this, ALobbySetupActor::StaticClass()));
+	if (LobbySetup)
+	{
+		// 설정 액터에서 이미 할당된 카메라를 가져옵니다. (String 비교 없음, NULL 체크만 하면 됨)
+		Camera_Main = LobbySetup->Camera_Main;
+		Camera_Battle = LobbySetup->Camera_Battle;
+
+		UE_LOG(LogTemp, Log, TEXT("[LobbyController] 카메라 설정 로드 완료 via SetupActor"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[LobbyController] 로비 셋업 액터를 찾을 수 없습니다! 태그 방식으로 폴백하거나 배치를 확인하세요."));
+	}
+
+	// 2. 초기 카메라 설정
+	if (Camera_Main)
+	{
+		SetViewTarget(Camera_Main);
+	}
+	else
+	{
+		// 카메라를 못 찾았을 때의 방어 코드
+		UE_LOG(LogTemp, Error, TEXT("❌ [LobbyController] Main Camera가 설정되지 않았습니다!"));
+	}
 
 	//1. 마우스 커서 보이게 설정
 	bShowMouseCursor = true;
@@ -42,9 +71,49 @@ void ALobbyPlayerController::BeginPlay()
 	}
 }
 
+void ALobbyPlayerController::MoveCameraToMenu(EParadiseLobbyMenu TargetMenu)
+{
+	ACameraActor* TargetCamera = nullptr;
+
+	// 목표 메뉴에 따른 카메라 선정
+	switch (TargetMenu)
+	{
+	case EParadiseLobbyMenu::None:   TargetCamera = Camera_Main; break;
+	case EParadiseLobbyMenu::Battle: TargetCamera = Camera_Battle; break;
+		// 필요하면 Summon, Enhance 등도 다른 카메라로 확장 가능
+	default:                         TargetCamera = Camera_Main; break;
+	}
+
+	if (!TargetCamera) return;
+
+	// 1. UI 먼저 숨기기 (연출을 위해)
+	if (CachedLobbyHUD)
+	{
+		// HUD 함수: 이동 중엔 싹 다 숨겨라! (아래에서 구현 예정)
+		CachedLobbyHUD->OnStartCameraMove();
+	}
+
+	// 2. 카메라 블렌드 (부드러운 이동)
+	SetViewTargetWithBlend(TargetCamera, CameraBlendTime, CameraBlendFunc, 0.0f, true);
+
+	// 3. 이동 끝나는 시간에 맞춰 타이머 설정
+	GetWorldTimerManager().SetTimer(
+		TimerHandle_CameraBlend,
+		[this, TargetMenu]() { OnCameraMoveFinished(TargetMenu); },
+		CameraBlendTime,
+		false
+	);
+}
+
 void ALobbyPlayerController::SetLobbyHUD(UParadiseLobbyHUDWidget* InHUD)
 {
     CachedLobbyHUD = InHUD;
+}
+
+void ALobbyPlayerController::OnCameraMoveFinished(EParadiseLobbyMenu TargetMenu)
+{
+	// 4. 이동 완료! 이제 해당 메뉴 UI 띄우기
+	SetLobbyMenu(TargetMenu);
 }
 
 void ALobbyPlayerController::SetLobbyMenu(EParadiseLobbyMenu InNewMenu)
