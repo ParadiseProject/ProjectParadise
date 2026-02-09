@@ -159,6 +159,4 @@ protected:
 	 */
 	UPROPERTY()
 	TArray<AActor*> HitActors;
-	
-
 };

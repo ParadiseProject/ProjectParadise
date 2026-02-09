@@ -11,7 +11,7 @@ class UAttributeSet;
 class UAbilitySystemComponent;
 class APlayerData;
 class UInventoryComponent;
-
+class UCostManageComponent;
 
 /**
  * @brief 게임의 전반적인 상태(지휘관 정보)를 관리하는 클래스
@@ -24,6 +24,8 @@ class PARADISE_API AInGamePlayerState : public APlayerState, public IAbilitySyst
 
 public:
 	AInGamePlayerState();
+
+	virtual void BeginPlay() override;
 
 	//  GAS 인터페이스 (지휘관 전용: 코스트/골드 관리)
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
@@ -52,6 +54,10 @@ public:
 	/** @brief 인벤토리 컴포넌트 접근자 (Getter) */
 	UFUNCTION(BlueprintCallable, Category = "Getter")
 	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+
+	/** @brief 코스트 관리 컴포넌트 접근자 (Getter) */ 
+	UFUNCTION(BlueprintCallable, Category = "Economy")
+	UCostManageComponent* GetCostManageComponent() const { return CostManageComponent; }
 
 protected:
 	/*
@@ -87,4 +93,8 @@ protected:
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Squad|Config")
 	TSubclassOf<APlayerData> PlayerDataClass = nullptr;
+
+	/** @brief 코스트 관리 컴포넌트 (UI용 Getter 제공) */ 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UCostManageComponent> CostManageComponent = nullptr;
 };

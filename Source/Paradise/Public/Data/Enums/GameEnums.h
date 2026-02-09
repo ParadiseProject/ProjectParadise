@@ -28,7 +28,7 @@ enum class EGamePhase : uint8
  * @brief 몬스터, 퍼밀리어의 전투 타입 (근거리, 원거리, 보스 등)
  */
 UENUM(BlueprintType)
-enum class EUnitType : uint8
+enum class EAIUnitType : uint8
 {
 	/** @brief 타입 없음 */
 	None		UMETA(DisplayName = "None"),
@@ -75,7 +75,7 @@ enum class EUnitType : uint8
  * @details 어빌리티가 이 타입을 인자로 전달하면, 캐릭터는 그에 맞는 데이터(계수, 몽타주 등)를 반환합니다.
  */
 UENUM(BlueprintType)
-	enum class ECombatActionType : uint8
+enum class ECombatActionType : uint8
 {
 	BasicAttack,  // 기본 공격 (평타, LMB) - 계수 1.0
 	WeaponSkill,  // 무기 스킬 (RMB, Q 등) - 계수 1.5 (WeaponStats 참조)

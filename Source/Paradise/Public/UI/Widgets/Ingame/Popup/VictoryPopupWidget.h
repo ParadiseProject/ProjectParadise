@@ -36,14 +36,14 @@ public:
 	 * @param InStageName 스테이지 이름
 	 * @param InStarCount 별 개수
 	 * @param InEarnedGold 획득 골드
-	 * @param InEarnedGem 획득 보석
+	 * @param InEarnedAether 획득 에테르
 	 * @param InCharacterResults 캐릭터별 결과 데이터 배열
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI|Result")
 	void SetVictoryData(
 		FText InStageName,
 		int32 InStarCount, 
-		int32 InEarnedGem,
+		int32 InEarnedAether,
 		int32 InEarnedExp, 
 		const TArray<FResultCharacterData>& InCharacterResults);
 #pragma endregion 외부 인터페이스
@@ -68,7 +68,7 @@ protected:
 
 	/** @brief 획득 보석 표시 텍스트. */
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock> Text_GemValue = nullptr;
+	TObjectPtr<UTextBlock> Text_AetherValue = nullptr;
 
 	/** @brief 첫 번째 별 이미지. */
 	UPROPERTY(meta = (BindWidget))

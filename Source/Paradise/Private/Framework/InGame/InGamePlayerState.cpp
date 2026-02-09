@@ -4,12 +4,22 @@
 #include "Framework/InGame/InGamePlayerState.h"
 #include "Engine/DataTable.h"
 #include "Components/InventoryComponent.h"
+#include "Components/CostManageComponent.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Characters/Player/PlayerData.h"
 
 AInGamePlayerState::AInGamePlayerState()
 {
     InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+    CostManageComponent = CreateDefaultSubobject<UCostManageComponent>(TEXT("CostManageComponent"));
+}
+
+void AInGamePlayerState::BeginPlay()
+{
+    Super::BeginPlay();
+
+	// 코스트 회복 시작
+    if (CostManageComponent) CostManageComponent->StartCostRegen();
 }
 
 void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
