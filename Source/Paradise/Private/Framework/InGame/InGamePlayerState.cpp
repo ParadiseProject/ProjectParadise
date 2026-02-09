@@ -3,11 +3,13 @@
 
 #include "Framework/InGame/InGamePlayerState.h"
 #include "Engine/DataTable.h"
+#include "Components/InventoryComponent.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Characters/Player/PlayerData.h"
 
 AInGamePlayerState::AInGamePlayerState()
 {
+    InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 }
 
 void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)

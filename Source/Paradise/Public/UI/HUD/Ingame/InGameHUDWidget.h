@@ -14,6 +14,8 @@ class UCharacterStatusWidget;
 class UGameTimerWidget;
 class UVirtualJoystickWidget;
 class UResultPopupWidget;
+class UVictoryPopupWidget;
+class UDefeatPopupWidget;
 class UParadiseCommonButton;
 class AInGameGameState;
 #pragma endregion 전방 선언
@@ -43,6 +45,10 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
 	void InitializeHUD();
+
+private:
+	/** @brief GameState를 안전하게 캐싱하여 매 프레임 Cast 비용을 절약합니다. */
+	TWeakObjectPtr<AInGameGameState> CachedGameState = nullptr;
 #pragma endregion 초기화
 
 #pragma region 하위 패널 접근 (Getters)
@@ -112,12 +118,13 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UParadiseCommonButton> Btn_Setting = nullptr;
 
-	/** 
-	 * @brief 게임 종료 시 표시될 승리/패배 결과 팝업
-	 * @details Z-Order가 가장 높아야 하며, 평소에는 Hidden 상태입니다.
-	 */
+	/** @brief 승리 시 표시될 팝업 */
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UResultPopupWidget> Widget_ResultPopup = nullptr;
+	TObjectPtr<UVictoryPopupWidget> Widget_VictoryPopup = nullptr;
+
+	/** @brief 패배 시 표시될 팝업 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UDefeatPopupWidget> Widget_DefeatPopup = nullptr;
 #pragma endregion 위젯 바인딩
 
 #pragma region 내부 데이터

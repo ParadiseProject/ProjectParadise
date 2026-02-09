@@ -4,6 +4,7 @@
 #include "UI/HUD/Title/ParadiseTitleHUDWidget.h"
 
 #include "Framework/Core/ParadiseGameInstance.h"
+#include "Framework/System/LevelLoadingSubsystem.h"
 
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,7 +26,6 @@ void UParadiseTitleHUDWidget::NativeConstruct()
 	{
 		Btn_Quit->OnClicked.AddUniqueDynamic(this, &UParadiseTitleHUDWidget::OnQuitButtonClicked);
 	}
-
 	// 3. 설정 버튼 이벤트 바인딩
 	if (Btn_Settings)
 	{
@@ -49,10 +49,11 @@ void UParadiseTitleHUDWidget::OnScreenTouched()
 
 	UE_LOG(LogTemp, Log, TEXT("[타이틀] 스크린 터치 및 클릭 -> Request Lobby Load"));
 
-	// GameInstance를 통해 비동기 로딩 시작
-	if (UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance()))
+	// 1. 서브시스템을 찾는다
+	if (ULevelLoadingSubsystem* LoadingSystem = GetGameInstance()->GetSubsystem<ULevelLoadingSubsystem>())
 	{
-		GI->OpenLevelWithAsyncLoad(NextLevelName, PreloadAssets);
+		// 2. 서브시스템에게 요청한다 (중간 로딩맵 이름 "L_Loading" 명시)
+		LoadingSystem->StartLevelTransition(NextLevelName, FName("L_Loading"), PreloadAssets);
 	}
 	else
 	{

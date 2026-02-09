@@ -4,33 +4,40 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/ObjectPoolInterface.h"
 #include "Data/Structs/UnitStructs.h"
+#include "GameplayTagContainer.h"
 #include "BaseUnit.generated.h"
 
 UCLASS()
-class PARADISE_API ABaseUnit : public ACharacter
+class PARADISE_API ABaseUnit : public ACharacter, public IObjectPoolInterface
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    ABaseUnit();
+	ABaseUnit();
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unit Stat")
-    int32 TeamID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unit|Status")
+	float HP;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unit Stat")
-    float HP;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unit|Status")
+	float MaxHP;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unit Stat")
-    float MaxHP;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unit|Status")
+	FGameplayTag FactionTag;
 
-    // 공격력 변수 (데이터테이블에서)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unit Stat")
-    float AttackPower;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Unit|Status")
+	bool bIsDead;
 
-    // 데이터테이블 정보를 바탕으로 유닛을 초기화
-    void InitializeUnit(struct FCharacterStats* Stats);
+	virtual void OnPoolActivate_Implementation() override;
+	virtual void OnPoolDeactivate_Implementation() override;
 
-    virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-    void Die();
+	void InitializeUnit(struct FEnemyStats* InStats, struct FEnemyAssets* InAssets);
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+	virtual void Die();
+
+	UFUNCTION(BlueprintCallable, Category = "Unit|Logic")
+	bool IsEnemy(ABaseUnit* OtherUnit);
 };

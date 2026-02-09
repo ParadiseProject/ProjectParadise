@@ -57,7 +57,8 @@ void AMyAIController::OnPossess(APawn* InPawn)
             for (AActor* Actor : FoundBases)
             {
                 AHomeBase* HomeBase = Cast<AHomeBase>(Actor);
-                if (HomeBase && SelfUnit && HomeBase->TeamID != SelfUnit->TeamID && Actor->ActorHasTag(TEXT("Base")))
+
+                if (HomeBase && SelfUnit && SelfUnit->IsEnemy(HomeBase) && Actor->ActorHasTag(TEXT("Base")))
                 {
                     Blackboard->SetValueAsObject(TEXT("HomeBaseActor"), Actor);
                     UE_LOG(LogTemp, Warning, TEXT("[%s] Target Base Set: %s"), *InPawn->GetName(), *Actor->GetName());
@@ -86,7 +87,6 @@ void AMyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 
     AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(BB_KEYS::TargetActor));
 
-    // 이미 타겟이 있는 경우 처리
     if (CurrentTarget && CurrentTarget->IsValidLowLevel())
     {
         if (CurrentTarget == Actor && !Stimulus.WasSuccessfullySensed())
@@ -96,13 +96,12 @@ void AMyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
         return;
     }
 
-    // 새로운 타겟 감지 로직
     if (Stimulus.WasSuccessfullySensed())
     {
         ABaseUnit* TargetUnit = Cast<ABaseUnit>(Actor);
         ABaseUnit* SelfUnit = Cast<ABaseUnit>(GetPawn());
 
-        if (TargetUnit && SelfUnit && TargetUnit->TeamID != SelfUnit->TeamID)
+        if (TargetUnit && SelfUnit && SelfUnit->IsEnemy(TargetUnit))
         {
             Blackboard->SetValueAsObject(BB_KEYS::TargetActor, Actor);
         }

@@ -6,65 +6,6 @@
 #include "Components/ActorComponent.h"
 #include "InventoryComponent.generated.h"
 
-
-/**
- * @brief 보유 영웅 데이터 (Level, Exp, 돌파 수치 등 성장 정보 포함)
- * @details 임시 구조체
- */
-USTRUCT(BlueprintType)
-struct FOwnedHeroData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName HeroID; // 데이터 에셋 ID (RowName)
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Level = 1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 AwakeningLevel = 0; // 초월/각성 단계
-};
-
-/**
- * @brief 보유 퍼밀리어(병사) 데이터
- * @details 병사는 영웅처럼 개별 성장이 있을 수도, 단순히 수량(Quantity)만 관리할 수도 있습니다.
- * 일단은 영웅과 비슷하게 ID와 레벨을 갖는 구조로 잡았습니다. 임시 구조체
- */
-USTRUCT(BlueprintType)
-struct FOwnedFamiliarData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName FamiliarID;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Level = 1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Quantity = 1; // 보유 수량 (병사는 여러 마리일 수 있음)
-};
-
-/**
- * @brief 보유 장비 데이터 (강화 수치 등 포함)
- * @details 임시 구조체
- */
-USTRUCT(BlueprintType)
-struct FOwnedItemData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ItemID;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 EnhancementLevel = 0; // 강화 수치 (+1, +2...)
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Quantity = 1; // 갯수
-};
-
 /**
  * @brief 인벤토리 변경 알림 델리게이트
  * @details 아이템이나 영웅 획득/소모 시 UI 갱신을 위해 호출됩니다.
@@ -97,7 +38,7 @@ public:
 	 */
 	 UFUNCTION(BlueprintCallable, Category = "Inventory|Init")
 	 void InitInventory(
-		 const TArray<FOwnedHeroData>& InHeroes,
+		 const TArray<FOwnedCharacterData>& InHeroes,
 		 const TArray<FOwnedFamiliarData>& InFamiliars,
 		 const TArray<FOwnedItemData>& InItems
 	 );
@@ -123,14 +64,27 @@ public:
 	/**
 	 * @brief 영웅을 획득하는 함수
 	 * @details 이미 보유 중인 경우, 영혼석(조각)으로 대체하거나 레벨업 재료로 변환하는 로직이 추가될 수 있습니다.
-	 * @param HeroID 획득한 영웅의 ID
+	 * @param CharacterID 획득한 영웅의 ID
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Modify")
-	void AddHero(FName HeroID);
+	void AddCharacter(FName CharacterID);
+
+	/**
+	 * @brief 퍼밀리어을 획득하는 함수
+	 * @param CharacterID 획득한 영웅의 ID
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Modify")
+	void AddFamiliar(FName FamiliarID);
+
+	/**
+	 * @brief [Debug] 테스트 아이템을 추가하고 전체 목록을 출력합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void Debug_TestInventory();
 
 	/** @return 현재 보유 중인 모든 영웅 목록 (const 참조) */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Query")
-	const TArray<FOwnedHeroData>& GetOwnedHeroes() const { return OwnedHeroes; }
+	const TArray<FOwnedCharacterData>& GetOwnedHeroes() const { return OwnedCharacters; }
 
 	/** @return 현재 보유 중인 모든 퍼밀리어 목록 (const 참조) */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Query")
@@ -152,7 +106,10 @@ public:
 protected:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 	virtual void BeginPlay() override;
 
+
 private:
+	/** @brief 내부 편의 함수: GameInstance 가져오기 */
+	class UParadiseGameInstance* GetParadiseGI() const;
 
 
 public:
@@ -173,7 +130,7 @@ protected:
 
 	/** [영웅] 지휘관이 보유한 영웅들 (ID, Level, Awakening) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory|Storage")
-	TArray<FOwnedHeroData> OwnedHeroes;
+	TArray<FOwnedCharacterData> OwnedCharacters;
 
 	/** [퍼밀리어] 지휘관이 보유한 병사들 (ID, Level, Quantity) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory|Storage")
