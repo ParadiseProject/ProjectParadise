@@ -2,55 +2,69 @@
 
 
 #include "UI/Widgets/Lobby/Stage/ParadiseStageSelectWidget.h"
-#include "UI/Data/ParadiseStageItemObject.h"
-#include "Components/TileView.h"
+#include "UI/Widgets/Lobby/Stage/ParadiseStageNodeWidget.h"
+#include "Components/CanvasPanel.h"
 #include "Data/Structs/StageStructs.h"
 
 void UParadiseStageSelectWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	InitStageList();
+	RefreshMapNodes();
 }
 
-#pragma region 초기화 로직 (Initialization Logic)
+#pragma region 로직 구현
 
-void UParadiseStageSelectWidget::InitStageList()
+void UParadiseStageSelectWidget::RefreshMapNodes()
 {
-	if (!TileView_Stages) return;
-	if (!DT_StageStats || !DT_StageAssets)
+	if (!Canvas_MapArea || !DT_StageStats || !DT_StageAssets)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[StageSelect] 데이터 테이블이 연결되지 않았습니다."));
+		UE_LOG(LogTemp, Error, TEXT("❌ [StageSelect] 필수 컴포넌트 또는 데이터 테이블 누락"));
 		return;
 	}
 
-	TileView_Stages->ClearListItems();
+	// 1. 캔버스 내의 모든 자식 위젯을 가져옵니다.
+	TArray<UWidget*> Children = Canvas_MapArea->GetAllChildren();
 
-	// 1. Stats 테이블의 모든 RowName을 가져옵니다. (기준이 되는 테이블)
-	TArray<FName> RowNames = DT_StageStats->GetRowNames();
-
-	for (const FName& RowName : RowNames)
+	for (UWidget* Child : Children)
 	{
-		// 2. Stats 데이터 찾기
-		FStageStats* Stats = DT_StageStats->FindRow<FStageStats>(RowName, TEXT("InitStats"));
-
-		// 3. Assets 데이터 찾기 (같은 RowName 사용)
-		FStageAssets* Assets = DT_StageAssets->FindRow<FStageAssets>(RowName, TEXT("InitAssets"));
-
-		// 두 데이터가 모두 존재해야 유효한 스테이지로 간주
-		if (Stats && Assets)
+		// 2. StageNodeWidget인지 확인
+		if (UParadiseStageNodeWidget* Node = Cast<UParadiseStageNodeWidget>(Child))
 		{
-			// 4. 브릿지 객체 생성 (데이터 주입)
-			UParadiseStageItemObject* NewItem = UParadiseStageItemObject::Create(this, RowName, *Stats, *Assets);
+			// ID가 없으면 무시
+			if (Node->StageID.IsNone()) continue;
 
-			// 5. 리스트 뷰에 추가
-			TileView_Stages->AddItem(NewItem);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[StageSelect] RowName '%s'에 대한 데이터 쌍이 일치하지 않습니다."), *RowName.ToString());
+			// 3. 해금 여부 확인 (핵심: 해금 안 됐으면 Collapsed 상태 유지)
+			if (IsStageUnlocked(Node->StageID))
+			{
+				// 4. 데이터 조회 및 주입
+				FStageStats* Stats = DT_StageStats->FindRow<FStageStats>(Node->StageID, TEXT("MapInit"));
+				FStageAssets* Assets = DT_StageAssets->FindRow<FStageAssets>(Node->StageID, TEXT("MapInit"));
+
+				if (Stats && Assets)
+				{
+					// 데이터 주입과 동시에 Visibility를 Visible로 변경
+					Node->SetupNode(*Stats, *Assets);
+				}
+			}
+			else
+			{
+				// 해금 안 된 스테이지는 숨김 (스포일러 방지)
+				Node->SetVisibility(ESlateVisibility::Collapsed);
+			}
 		}
 	}
 }
 
-#pragma endregion 초기화 로직 (Initialization Logic)
+bool UParadiseStageSelectWidget::IsStageUnlocked(FName StageID)
+{
+	// TODO: 실제로는 GameInstance의 SaveGame에서 'MaxClearedStage' 등을 가져와 비교해야 함.
+	// 예시: "1-1"은 항상 해금, 나머지는 세이브 데이터 확인.
+
+	if (StageID == FName("1-1")) return true; // 1-1은 무조건 보임
+
+	// 테스트용: 1-1 클리어 가정, 1-2까지 보임 (실제 개발 시엔 세이브 데이터와 연동하세요)
+	// if (StageID == FName("1-2")) return true; 
+
+	return false;
+}
+#pragma endregion 로직 구현

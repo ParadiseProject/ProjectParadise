@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Blueprint/IUserObjectListEntry.h"
+#include "Data/Structs/StageStructs.h"
 #include "ParadiseStageNodeWidget.generated.h"
 
 #pragma region 전방 선언
@@ -15,45 +15,51 @@ class UParadiseStageItemObject;
 #pragma endregion 전방 선언
 
 /**
- * @class UParadiseStageNodeWidget
- * @brief TileView 내에서 개별 스테이지(1-1, 1-2)를 표현하는 위젯.
- * @details UserObjectListEntry 인터페이스를 구현하여 데이터를 시각화합니다.
+ * @class UStageNodeWidget
+ * @brief 월드맵(Canvas)에 수동으로 배치되는 개별 스테이지 노드.
+ * @details 에디터에서 직접 배치
  */
 UCLASS()
-class PARADISE_API UParadiseStageNodeWidget : public UUserWidget, public IUserObjectListEntry
+class PARADISE_API UParadiseStageNodeWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
 protected:
 	virtual void NativeConstruct() override;
 
-	/** @brief 데이터가 리스트 뷰로부터 전달될 때 호출되는 인터페이스 함수 */
-	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+#pragma region 설정 데이터 (Config)
+public:
+	/** 
+	 * @brief 이 노드가 담당할 스테이지 ID (기획자가 에디터에서 직접 입력)
+	 * @note "1-1", "1-2"
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
+	FName StageID = NAME_None;
+#pragma endregion 설정 데이터 (Config)
 
 #pragma region UI 컴포넌트
 protected:
-	/** @brief 스테이지 썸네일 이미지 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> Img_Thumbnail = nullptr;
 
-	/** @brief 스테이지 이름 (예: 1-1 어둠의 숲) */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_StageName = nullptr;
 
-	/** @brief 입장 버튼 (전체 영역 클릭) */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Enter = nullptr;
 #pragma endregion UI 컴포넌트
 
-#pragma region 내부 로직
-private:
-	/** @brief 현재 할당된 데이터 객체 캐싱 */
-	UPROPERTY()
-	TObjectPtr<UParadiseStageItemObject> CachedData = nullptr;
+#pragma region 로직 (Logic)
+public:
+	/**
+	 * @brief 부모(StageSelect)로부터 데이터를 받아 UI를 갱신하는 함수.
+	 * @param InStats 기획 데이터 (이름 등)
+	 * @param InAssets 아트 데이터 (이미지 등)
+	 */
+	void SetupNode(const FStageStats& InStats, const FStageAssets& InAssets);
 
-	/** @brief 버튼 클릭 핸들러 */
+private:
 	UFUNCTION()
 	void OnClickEnter();
-#pragma endregion 내부 로직 
-	
+#pragma endregion 로직 (Logic)
 };

@@ -2,7 +2,6 @@
 
 
 #include "UI/Widgets/Lobby/Stage/ParadiseStageNodeWidget.h"
-#include "UI/Data/ParadiseStageItemObject.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
@@ -17,46 +16,34 @@ void UParadiseStageNodeWidget::NativeConstruct()
 	}
 }
 
-#pragma region 인터페이스 구현 (Interface Implementation)
-
-void UParadiseStageNodeWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
+#pragma region 로직 구현
+void UParadiseStageNodeWidget::SetupNode(const FStageStats& InStats, const FStageAssets& InAssets)
 {
-	CachedData = Cast<UParadiseStageItemObject>(ListItemObject);
+	// 1. 데이터가 들어왔다는 건 해금되었다는 뜻이므로 보이게 설정
+	SetVisibility(ESlateVisibility::Visible);
 
-	if (CachedData)
+	// 2. 이름 설정
+	if (Text_StageName)
 	{
-		// 1. 텍스트 설정 (FStageStats에서 가져옴)
-		if (Text_StageName)
-		{
-			Text_StageName->SetText(CachedData->StatsData.StageName);
-		}
+		Text_StageName->SetText(InStats.StageName);
+	}
 
-		// 2. 이미지 설정 (FStageAssets에서 가져옴)
-		// 주의: 동기 로드는 프레임 드랍 원인이 될 수 있으나, TileView는 화면에 보이는 것만 로드하므로 
-		// SoftObjectPtr을 LoadSynchronous로 호출해도 소규모에서는 허용됩니다. 
-		// 대규모라면 StreamableManager를 통한 비동기 로드를 권장합니다.
-		if (Img_Thumbnail)
+	// 3. 썸네일 설정
+	if (Img_Thumbnail)
+	{
+		UTexture2D* Tex = InAssets.Thumbnail.LoadSynchronous();
+		if (Tex)
 		{
-			UTexture2D* Tex = CachedData->AssetsData.Thumbnail.LoadSynchronous();
-			if (Tex)
-			{
-				Img_Thumbnail->SetBrushFromTexture(Tex);
-			}
+			Img_Thumbnail->SetBrushFromTexture(Tex);
 		}
 	}
+
+	// TODO: 잠금 여부 처리 (SaveGame 체크 로직 추가 가능)
 }
-
-#pragma endregion 인터페이스 구현 (Interface Implementation)
-
-#pragma region 내부 로직 (Internal Logic)
 
 void UParadiseStageNodeWidget::OnClickEnter()
 {
-	if (!CachedData) return;
-
-	UE_LOG(LogTemp, Log, TEXT("[StageNode] 선택된 스테이지 ID: %s"), *CachedData->StageID.ToString());
-
-	// TODO: 컨트롤러에게 이 스테이지 ID로 게임 시작 요청
+	UE_LOG(LogTemp, Log, TEXT("[StageNode] 입장: %s"), *StageID.ToString());
+	// 플레이어 컨트롤러에 게임 시작 요청
 }
-
-#pragma endregion 내부 로직 (Internal Logic)
+#pragma endregion 로직 구현

@@ -7,7 +7,7 @@
 #include "ParadiseStageSelectWidget.generated.h"
 
 #pragma region 전방 선언
-class UTileView;
+class UCanvasPanel;
 class UDataTable;
 #pragma endregion 전방 선언
 
@@ -26,25 +26,24 @@ protected:
 
 #pragma region UI 컴포넌트
 protected:
-	/** @brief 스테이지 노드들을 나열할 타일 뷰 (Tile View) */
+	/** @brief 노드들이 배치된 컨테이너 (지도 배경이 깔린 패널) */
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTileView> TileView_Stages = nullptr;
+	TObjectPtr<UCanvasPanel> Canvas_MapArea = nullptr;
 #pragma endregion UI 컴포넌트
 
-#pragma region 데이터 설정
+#pragma region 데이터 (Data)
 protected:
-	/** @brief 기획 데이터 테이블 (RowType: FStageStats) */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Paradise|Data")
 	TObjectPtr<UDataTable> DT_StageStats = nullptr;
 
-	/** @brief 리소스 데이터 테이블 (RowType: FStageAssets) */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Paradise|Data")
 	TObjectPtr<UDataTable> DT_StageAssets = nullptr;
-#pragma endregion 데이터 설정
+#pragma endregion 데이터 (Data)
 
-#pragma region 초기화 로직
 private:
-	/** @brief 데이터 테이블을 순회하며 리스트 뷰를 채웁니다. */
-	void InitStageList();
-#pragma endregion 초기화 로직
+	/** @brief 맵 노드들의 가시성을 갱신합니다. */
+	void RefreshMapNodes();
+
+	/** @brief (임시) 해당 스테이지가 해금되었는지 확인하는 헬퍼 함수 */
+	bool IsStageUnlocked(FName StageID);
 };
