@@ -2,6 +2,7 @@
 
 
 #include "Framework/Lobby/LobbyPlayerController.h"
+#include "UI/HUD/Lobby/ParadiseLobbyHUDWidget.h"
 
 void ALobbyPlayerController::BeginPlay()
 {
@@ -16,4 +17,23 @@ void ALobbyPlayerController::BeginPlay()
 	SetInputMode(InputModeData);
 
 	UE_LOG(LogTemp, Log, TEXT("LobbyController: Mouse Cursor On"));
+}
+
+void ALobbyPlayerController::SetLobbyHUD(UParadiseLobbyHUDWidget* InHUD)
+{
+    CachedLobbyHUD = InHUD;
+}
+
+void ALobbyPlayerController::SetLobbyMenu(EParadiseLobbyMenu InNewMenu)
+{
+    if (CurrentMenu == InNewMenu) return;
+
+    CurrentMenu = InNewMenu;
+    UE_LOG(LogTemp, Log, TEXT("🎮 [Controller] 메뉴 변경: %d"), (int32)CurrentMenu);
+
+    // HUD에게 UI 변경 지시
+    if (CachedLobbyHUD)
+    {
+        CachedLobbyHUD->UpdateMenuStats(CurrentMenu);
+    }
 }
