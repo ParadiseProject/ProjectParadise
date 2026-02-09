@@ -15,6 +15,7 @@ class AAIController;
 class UBehaviorTree;
 class UBlackboardData;
 class USoundBase;
+class UFXDataAsset;
 
 /**
  * @struct FUnitBaseStats
@@ -324,10 +325,18 @@ public:
 	TSoftObjectPtr<UAnimMontage> DeathMontage;
 
 	/**
-	 * @brief 사망 효과음 (Dead SFX)
+	 * @brief 유닛 전용 목소리/이펙트 데이터 에셋 (Voice Pack)
+	 * @detail 사망(State.Dead), 기합(State.Attack), 피격(State.Hit) 사운드를 담고 있는 에셋입니다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio|Common")
-	TSoftObjectPtr<USoundBase> DeathSound;
+	TSoftObjectPtr<UFXDataAsset> VoiceDataAsset;
+
+	/**
+	 * @brief 피격 이펙트 태그
+	 * @detail 이 유닛을 때리면 무슨 효과가 나나요?" (예: Effect.Hit.Flesh.Small)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX", meta = (Categories = "Effect.Hit"))
+	FGameplayTag HitReactionTag;
 };
 
 /**
@@ -370,6 +379,12 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation|Skill")
 	TSoftObjectPtr<UAnimMontage> UltimateMontage;
+
+	/**
+	 * 궁극기 사용 시 재생할 이펙트/사운드 키값 (예: Skill.Ultimate.Meteor)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX|Skill", meta = (Categories = "Effect.Skill"))
+	FGameplayTag UltimateEffectTag;
 };
 
 /**
@@ -426,7 +441,7 @@ struct FAIUnitAssets : public FUnitBaseAssets
 	 * @details 늑대는 GE_DamageStandard(물리), 화염정령은 GE_FireDamage(화염) 등을 할당합니다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Common")
-	TSubclassOf<UGameplayEffect> BasicAttackEffect; // <--- 여기 추가!
+	TSubclassOf<UGameplayEffect> BasicAttackEffect;
 
 	/**
 	 * @brief 평타 어빌리티 (Basic Attack)
@@ -441,6 +456,13 @@ struct FAIUnitAssets : public FUnitBaseAssets
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS")
 	TArray<TSubclassOf<UGameplayAbility>> SkillAbilities;
+
+	/**
+	 * @brief 평타 연출 태그
+	 * @details 몬스터가 평타를 칠 때 재생할 이펙트/사운드 (예: Effect.Attack.Claw)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX|Attack", meta = (Categories = "Effect.Attack"))
+	FGameplayTag BasicAttackEffectTag;
 };
 
 /**
@@ -451,6 +473,14 @@ USTRUCT(BlueprintType)
 struct FEnemyAssets : public FAIUnitAssets
 {
 	GENERATED_BODY()
+
+	/**
+	 * @brief 스킬 연출 태그 목록
+	 * @details 보스가 사용하는 스킬들의 연출 태그 리스트
+	 * * 인덱스 0: 스킬1, 인덱스 1: 스킬2 ... 순서대로 매핑
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX|Skill", meta = (Categories = "Effect.Skill"))
+	TArray<FGameplayTag> SkillEffectTags;
 };
 
 /**

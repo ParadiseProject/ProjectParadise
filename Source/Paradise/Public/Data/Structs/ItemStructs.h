@@ -314,12 +314,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Basic")
 	TSoftObjectPtr<UNiagaraSystem> TrailEffect;
 
+	/**
+	 * @brief 평타 연출 태그
+	 * @details 태그를 통해 이펙트와 사운드를 불러와 사용
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX", meta = (Categories = "Effect.Weapon"))
+	FGameplayTag BasicEffectTag;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Skill")
-	TSoftObjectPtr<USoundBase> SkillSound;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Skill")
-	TSoftObjectPtr<UNiagaraSystem> SkillEffect;
+	/**
+	 * @brief 스킬 연출 태그
+	 * @details 태그를 통해 이펙트와 사운드를 불러와 사용
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX", meta = (Categories = "Effect.Skill"))
+	FGameplayTag SkillEffectTag;
 };
 
 /**
