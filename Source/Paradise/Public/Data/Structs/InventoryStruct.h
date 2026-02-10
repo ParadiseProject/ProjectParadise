@@ -15,6 +15,9 @@ struct FOwnedCharacterData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGuid CharacterUID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName CharacterID; // 데이터 에셋 ID (RowName)
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -33,6 +36,9 @@ USTRUCT(BlueprintType)
 struct FOwnedFamiliarData
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGuid FamiliarUID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName FamiliarID;
@@ -54,6 +60,9 @@ struct FOwnedItemData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGuid ItemUID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName ItemID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -61,4 +70,9 @@ struct FOwnedItemData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Quantity = 1; // 갯수
+
+	FOwnedItemData()
+	{
+		ItemUID = FGuid();
+	}
 };
