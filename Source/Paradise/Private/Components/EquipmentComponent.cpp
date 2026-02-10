@@ -83,28 +83,45 @@ void UEquipmentComponent::Debug_TestEquipmentSystem()
 		UE_LOG(LogTemp, Error, TEXT("❌ 방어구 획득 실패 (테이블에 '%s'가 없거나 유효성 검사 탈락)"), *TestArmorID.ToString());
 	}
 
-	// 4. [검증] 최종 상태 확인
+	// 4. [검증] 최종 장착 상태 확인 (기존 코드)
 	UE_LOG(LogTemp, Log, TEXT("3️⃣ [Step 3] 최종 장착 상태 확인"));
+	// ... (무기/방어구 확인 로그) ...
 
-	// 무기 슬롯 확인
-	FName EquippedWeapon = GetEquippedItemID(EEquipmentSlot::Weapon);
-	if (EquippedWeapon == TestWeaponID) {
-		UE_LOG(LogTemp, Log, TEXT("   ✅ 무기 장착 확인됨: %s"), *EquippedWeapon.ToString());
-	}
-	else {
-		UE_LOG(LogTemp, Error, TEXT("   ❌ 무기 장착 안됨 (현재: %s)"), *EquippedWeapon.ToString());
-	}
 
-	// [수정] 투구 슬롯 확인 (Helmet Slot Check)
-	FName EquippedHelmet = GetEquippedItemID(EEquipmentSlot::Helmet);
-	if (EquippedHelmet == TestArmorID) {
-		UE_LOG(LogTemp, Log, TEXT("   ✅ 투구 장착 확인됨: %s"), *EquippedHelmet.ToString());
-	}
-	else {
-		UE_LOG(LogTemp, Error, TEXT("   ❌ 투구 장착 안됨 (현재: %s) -> 태그/슬롯 확인 필요"), *EquippedHelmet.ToString());
-	}
+	// =========================================================
+	// 5. [추가] 장착 해제 테스트 (3초 뒤 실행)
+	// =========================================================
+	FTimerHandle UnequipTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(UnequipTimerHandle, [this]()
+		{
+			UE_LOG(LogTemp, Warning, TEXT("============================================"));
+			UE_LOG(LogTemp, Warning, TEXT("🧪 [Step 4] 장착 해제 테스트 시작 (3초 후)"));
+			UE_LOG(LogTemp, Warning, TEXT("============================================"));
 
-	UE_LOG(LogTemp, Warning, TEXT("============================================"));
+			// 무기 해제
+			UE_LOG(LogTemp, Log, TEXT("🛡️ [Test] 무기 해제 요청..."));
+			UnEquipItem(EEquipmentSlot::Weapon);
+
+			// 방어구 해제 (테스트에 사용한 슬롯, 예: Helmet)
+			UE_LOG(LogTemp, Log, TEXT("🛡️ [Test] 방어구(Helmet) 해제 요청..."));
+			UnEquipItem(EEquipmentSlot::Helmet);
+
+			// 결과 확인 (로그로 확인하거나 비주얼이 사라졌는지 체크)
+			FName WeaponID = GetEquippedItemID(EEquipmentSlot::Weapon);
+			FName HelmetID = GetEquippedItemID(EEquipmentSlot::Helmet);
+
+			if (WeaponID.IsNone() && HelmetID.IsNone())
+			{
+				UE_LOG(LogTemp, Log, TEXT("✅ [Test] 모든 장비 해제 성공!"));
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("❌ [Test] 해제 실패! Weapon: %s, Helmet: %s"), *WeaponID.ToString(), *HelmetID.ToString());
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("============================================"));
+
+		}, 3.0f, false); // 3.0f = 3초 뒤 실행
 }
 
 
@@ -359,17 +376,37 @@ void UEquipmentComponent::AttachWeaponActor(APlayerBase* Char, FName ItemID)
 			WeaponComp->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 캐릭터 충돌 방지
 		}
 
-		// 소켓 부착
-		// 데이터 테이블에 지정된 소켓이 있으면 사용, 없으면 기본값 "hand_r"
-		FName SocketName = WeaponAssets->AttachmentSocket.IsNone() ? TEXT("hand_r") : WeaponAssets->AttachmentSocket;
+		FName SocketName = WeaponAssets->AttachmentSocket;
 
+		UE_LOG(LogTemp, Warning, TEXT("🔍 [Debug] 아이템: %s | 테이블 소켓값: '%s'"),
+			*ItemID.ToString(), *SocketName.ToString());
+
+		//소켓 값이 비어있는 경우 (None)
+		if (SocketName.IsNone())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("⚠️ [Debug] 소켓 이름이 None입니다. 기본값 'hand_r'을 사용합니다."));
+			SocketName = TEXT("hand_r");
+		}
+		//소켓 값이 있는 경우
+		else
+		{
+			//캐릭터 메쉬에 해당 소켓이 진짜 있는지 확인
+			if (Char->GetMesh()->DoesSocketExist(SocketName))
+			{
+				UE_LOG(LogTemp, Log, TEXT("✅ [Debug] 소켓 '%s' 존재 확인됨. 부착 시도."), *SocketName.ToString());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("❌ [Debug] 소켓 '%s'이(가) 캐릭터 메쉬에 없습니다! (오타 확인 필요)"), *SocketName.ToString());
+			}
+		}
+
+		// 최종 부착
 		NewWeapon->AttachToComponent(Char->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
 
-		// 관리 변수에 저장
 		SpawnedWeaponActor = NewWeapon;
 
-		UE_LOG(LogTemp, Log, TEXT("⚔️ [Visual] 무기 장착 완료: %s (Socket: %s)"),
-			*ItemID.ToString(), *SocketName.ToString());
+		UE_LOG(LogTemp, Log, TEXT("⚔️ [Visual] 무기 장착 완료: %s"), *ItemID.ToString());
 	}
 }
 
@@ -377,19 +414,21 @@ void UEquipmentComponent::SetArmorMesh(APlayerBase* Char, EEquipmentSlot Slot, F
 {
 	if (!Char) return;
 
-	//캐릭터에서 해당 슬롯의 메쉬 컴포넌트 가져오기
+	//해당 슬롯의 메쉬 컴포넌트 가져오기
 	USkeletalMeshComponent* TargetMeshComp = Char->GetArmorComponent(Slot);
-
 	if (!TargetMeshComp)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Visual] 캐릭터에 해당 슬롯(%d) 컴포넌트가 없습니다."), (int32)Slot);
 		return;
 	}
 
-	//장착 해제 (ItemID가 None일 경우)
+	//장착 해제 처리 (None)
 	if (ItemID.IsNone())
 	{
+		//초기화
 		TargetMeshComp->SetSkeletalMesh(nullptr);
+		TargetMeshComp->SetLeaderPoseComponent(nullptr);
+		TargetMeshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
 		return;
 	}
 
@@ -400,17 +439,47 @@ void UEquipmentComponent::SetArmorMesh(APlayerBase* Char, EEquipmentSlot Slot, F
 	FArmorAssets* ArmorAssets = GI->GetDataTableRow<FArmorAssets>(GI->ArmorAssetsDataTable, ItemID);
 	if (!ArmorAssets) return;
 
-	//메쉬 로드 및 적용
+	//메쉬 로드
 	USkeletalMesh* LoadedMesh = ArmorAssets->ItemMesh.LoadSynchronous();
-	if (LoadedMesh)
-	{
-		TargetMeshComp->SetSkeletalMesh(LoadedMesh);
+	if (!LoadedMesh) return;
 
-		//마스터 포즈 설정 (Master Pose Component)
-		//방어구 메쉬가 몸통(Mesh)의 애니메이션을 따라가도록 설정합니다.
+	//메쉬 적용
+	TargetMeshComp->SetSkeletalMesh(LoadedMesh);
+
+	//소켓부착
+	FName SocketName = ArmorAssets->AttachmentSocket;
+
+	//소켓 이름이 지정된 경우
+	if (!SocketName.IsNone())
+	{
+		//리더 포즈 해제 (중복 적용 방지)
+		TargetMeshComp->SetLeaderPoseComponent(nullptr);
+
+		// 소켓 존재 여부 확인
+		if (Char->GetMesh()->DoesSocketExist(SocketName))
+		{
+			// 3) 소켓에 부착
+			TargetMeshComp->AttachToComponent(Char->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
+			UE_LOG(LogTemp, Log, TEXT("🛡️ [Visual] 방어구 소켓 부착 완료: %s -> %s"), *ItemID.ToString(), *SocketName.ToString());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("❌ [Visual] 소켓을 찾을 수 없음: %s (Item: %s)"), *SocketName.ToString(), *ItemID.ToString());
+		}
+	}
+	//소켓 이름이 없는 경우 (일반 방어구 - 리더 포즈)
+	else
+	{
+		//부착 해제 (혹시 붙어있었다면)
+		TargetMeshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+
+		//부모 메쉬에 다시 붙임
+		TargetMeshComp->SetupAttachment(Char->GetMesh());
+
+		//리더 포즈 설정 (애니메이션 동기화)
 		TargetMeshComp->SetLeaderPoseComponent(Char->GetMesh());
 
-		UE_LOG(LogTemp, Log, TEXT("🛡️ [Visual] 방어구 교체 완료: %s (Slot: %d)"), *ItemID.ToString(), (int32)Slot);
+		UE_LOG(LogTemp, Log, TEXT("🛡️ [Visual] 방어구 리더 포즈 적용: %s (Slot: %d)"), *ItemID.ToString(), (int32)Slot);
 	}
 }
 
