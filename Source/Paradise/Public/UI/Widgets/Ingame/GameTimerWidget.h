@@ -8,6 +8,7 @@
 
 #pragma region 전방 선언
 class UTextBlock;
+class AInGameGameState;
 #pragma endregion 전방 선언
 
 /**
@@ -22,6 +23,7 @@ class PARADISE_API UGameTimerWidget : public UUserWidget
 
 protected:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 
 #pragma region 외부 인터페이스
 public:
@@ -30,13 +32,13 @@ public:
 	 * @param CurrentTime 남은 시간 (초)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void UpdateTime(float CurrentTime);
+	void UpdateTime(int32 NewTime);
 #pragma endregion 외부 인터페이스
 
 #pragma region 내부 로직
 private:
 	/** @brief 초 단위를 mm:ss 문자열로 변환 */
-	FText GetFormattedTime(float TimeInSeconds) const;
+	FText GetFormattedTime(int32 TimeInSeconds) const;
 #pragma endregion 내부 로직
 
 #pragma region 위젯 바인딩
@@ -51,7 +53,11 @@ private:
 	/** @brief 텍스트 갱신 최적화를 위한 캐싱 값 */
 	int32 CachedSeconds = -1;
 
-	/** @brief 경고 상태(빨간색) 기준 시간 (초) */
-	const float WarningThreshold = 10.0f;
+	/** @brief 빨간색으로 깜빡일 기준 시간 (초) */
+	UPROPERTY(EditDefaultsOnly, Category = "Config")
+	int32 WarningThreshold = 10;
+
+	UPROPERTY()
+	TObjectPtr<AInGameGameState> CachedGameState;
 #pragma endregion 데이터
 };

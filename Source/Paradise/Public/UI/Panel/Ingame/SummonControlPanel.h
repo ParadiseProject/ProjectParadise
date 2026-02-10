@@ -10,6 +10,7 @@
 class USummonSlotWidget;
 class USummonCostWidget;
 class UTexture2D;
+class UCostManageComponent;
 #pragma endregion 전방 선언
 
 /**
@@ -24,6 +25,19 @@ class PARADISE_API USummonControlPanel : public UUserWidget
 
 protected:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+
+#pragma region 내부 로직
+private:
+	/** @brief PlayerState가 준비될 때까지 기다렸다가 연결하는 함수 */
+	void InitCostSystem();
+	/**
+	 * @brief 코스트 변경 델리게이트 핸들러 (직접 바인딩)
+	 * @details UFUNCTION 필수
+	 */
+	UFUNCTION()
+	void HandleCostUpdate(float CurrentCost, float MaxCost);
+#pragma endregion 내부 로직
 
 #pragma region 외부 인터페이스
 public:
@@ -78,5 +92,11 @@ private:
 	/** @brief 슬롯 위젯의 빠른 접근을 위한 캐싱 배열 */
 	UPROPERTY()
 	TArray<TObjectPtr<USummonSlotWidget>> SummonSlots;
+
+	/** @brief 델리게이트 해제를 위한 컴포넌트 약참조 */
+	TWeakObjectPtr<UCostManageComponent> CachedCostComponent = nullptr;
+
+	/** @brief 재시도용 타이머 핸들 */
+	FTimerHandle TimerHandle_InitCost;
 #pragma endregion 내부 데이터
 };
