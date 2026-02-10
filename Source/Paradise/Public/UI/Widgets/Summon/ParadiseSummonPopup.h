@@ -10,6 +10,7 @@
 class UButton;
 class UWidgetSwitcher;
 class UParadiseSummonPanel;
+class UTextBlock;
 #pragma endregion 전방선언
 
 /**
@@ -40,11 +41,15 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Tab_Equipment = nullptr;
 
-	// --- 상단 패널 (네비게이션) ---
+	// --- 상단 패널 (네비게이션 & 재화) ---
 
 	/** @brief 로비로 돌아가는 뒤로가기 버튼 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Back = nullptr;
+
+	/** @brief 현재 보유 에테르 표시 텍스트 (우측 상단 배치 권장) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> Text_AetherAmount;
 
 	// --- 우측 패널 (컨텐츠 영역) ---
 
@@ -69,6 +74,13 @@ private:
 #pragma endregion 내부 변수
 
 #pragma region 내부 로직
+public:
+	/** 
+	 * @brief 현재 보유한 에테르 양을 UI에 갱신합니다. 
+	 * @param InEther 표시할 에테르 값
+	 */
+	UFUNCTION(BlueprintCallable, Category = "UI|Currency")
+	void UpdateAetherUI(int32 InEther);
 private:
 	/** @brief 캐릭터 탭 클릭 핸들러 */
 	UFUNCTION()

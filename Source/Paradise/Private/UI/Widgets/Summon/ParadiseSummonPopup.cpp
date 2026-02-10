@@ -4,8 +4,11 @@
 #include "UI/Widgets/Summon/ParadiseSummonPopup.h"
 #include "UI/Panel/Summon/ParadiseSummonPanel.h"
 #include "Framework/Lobby/LobbyPlayerController.h"
+#include "Framework/Core/ParadiseGameInstance.h"
 #include "Components/Button.h"
 #include "Components/WidgetSwitcher.h"
+#include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
 
 #pragma region 생명주기
 void UParadiseSummonPopup::NativeConstruct()
@@ -27,8 +30,18 @@ void UParadiseSummonPopup::NativeConstruct()
 	{
 		Btn_Back->OnClicked.AddDynamic(this, &UParadiseSummonPopup::OnBackButtonClicked);
 	}
+	// 3. 재화 정보 갱신 (GameInstance 등에서 내 정보 가져오기)
+	if (UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(UGameplayStatics::GetGameInstance(this)))
+	{
+		// TODO: GI나 PlayerData에 실제 저장된 변수명으로 교체하세요. (예: GI->GetMyEther())
+		// 일단 0이나 임시값으로 테스트
+		int32 CurrentEther = 0;
+		// CurrentEther = GI->GetPlayerEther(); 
 
-	// 3. 초기 상태 설정 (캐릭터 탭 기본)
+		UpdateAetherUI(CurrentEther);
+	}
+
+	// 4. 초기 상태 설정 (캐릭터 탭 기본)
 	SwitchTab(INDEX_CHARACTER);
 }
 
@@ -44,6 +57,17 @@ void UParadiseSummonPopup::NativeDestruct()
 #pragma endregion 생명주기
 
 #pragma region 내부 로직
+void UParadiseSummonPopup::UpdateAetherUI(int32 InEther)
+{
+	if (Text_AetherAmount)
+	{
+		// 3자리마다 콤마(,) 찍기 (ex: 1,000,000)
+		FNumberFormattingOptions NumberFormat;
+		NumberFormat.UseGrouping = true;
+
+		Text_AetherAmount->SetText(FText::AsNumber(InEther, &NumberFormat));
+	}
+}
 void UParadiseSummonPopup::OnCharacterTabClicked()
 {
 	SwitchTab(INDEX_CHARACTER);
@@ -62,7 +86,6 @@ void UParadiseSummonPopup::OnBackButtonClicked()
 		// "None"으로 이동하면 -> 카메라는 Main으로, UI는 로비 메뉴로 복구됨
 		PC->MoveCameraToMenu(EParadiseLobbyMenu::None);
 	}
-	UE_LOG(LogTemp, Log, TEXT("[SummonPopup] 로비로 복귀합니다."));
 }
 
 void UParadiseSummonPopup::SwitchTab(int32 NewIndex)
@@ -85,7 +108,5 @@ void UParadiseSummonPopup::SwitchTab(int32 NewIndex)
 	// 3. 버튼 스타일 업데이트 (선택된 탭 비활성화 등 시각적 피드백)
 	if (Btn_Tab_Character) Btn_Tab_Character->SetIsEnabled(NewIndex != INDEX_CHARACTER);
 	if (Btn_Tab_Equipment) Btn_Tab_Equipment->SetIsEnabled(NewIndex != INDEX_EQUIPMENT);
-
-	UE_LOG(LogTemp, Log, TEXT("[SummonPopup] 탭 전환 완료: %d"), NewIndex);
 }
 #pragma endregion 내부 로직
