@@ -26,14 +26,12 @@ void ABaseUnit::OnPoolActivate_Implementation()
 		MoveComp->StopMovementImmediately();
 		MoveComp->Velocity = FVector::ZeroVector;
 		MoveComp->SetMovementMode(MOVE_Walking);
-
-		FFindFloorResult FloorResult;
-		MoveComp->FindFloor(MoveComp->UpdatedComponent->GetComponentLocation(), FloorResult, false);
 	}
 }
 
 void ABaseUnit::OnPoolDeactivate_Implementation()
 {
+	// 풀로 돌아갈 때 AI 로직 중지 및 컨트롤러 해제
 	if (AAIController* AIC = Cast<AAIController>(GetController()))
 	{
 		if (AIC->GetBrainComponent())
@@ -48,7 +46,7 @@ void ABaseUnit::OnPoolDeactivate_Implementation()
 	SetActorTickEnabled(false);
 }
 
-void ABaseUnit::InitializeUnit(FEnemyStats* InStats, FEnemyAssets* InAssets)
+void ABaseUnit::InitializeUnit(FAIUnitStats* InStats, FAIUnitAssets* InAssets)
 {
 	if (InStats)
 	{
@@ -64,17 +62,24 @@ void ABaseUnit::InitializeUnit(FEnemyStats* InStats, FEnemyAssets* InAssets)
 
 	if (InAssets)
 	{
+		// 유닛 크기 설정
 		SetActorScale3D(FVector(InAssets->Scale));
+
+		// 스켈레탈 메시 로드 및 적용
 		if (!InAssets->SkeletalMesh.IsNull())
 		{
 			USkeletalMesh* LoadedMesh = InAssets->SkeletalMesh.LoadSynchronous();
 			if (LoadedMesh) GetMesh()->SetSkeletalMesh(LoadedMesh);
 		}
+
+		// 애니메이션 블루프린트 설정
 		if (InAssets->AnimBlueprint)
 		{
 			GetMesh()->SetAnimInstanceClass(InAssets->AnimBlueprint);
 		}
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[%s] Initialized. Faction: %s"), *GetName(), *FactionTag.ToString());
 }
 
 float ABaseUnit::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -98,6 +103,7 @@ void ABaseUnit::Die()
 	{
 		if (UObjectPoolSubsystem* PoolSubsystem = World->GetSubsystem<UObjectPoolSubsystem>())
 		{
+			// 사망 시 풀로 반환
 			PoolSubsystem->ReturnToPool(this);
 		}
 	}
@@ -106,5 +112,6 @@ void ABaseUnit::Die()
 bool ABaseUnit::IsEnemy(ABaseUnit* OtherUnit)
 {
 	if (!OtherUnit || OtherUnit == this) return false;
+	// 태그가 다르면 적군으로 간주
 	return !this->FactionTag.MatchesTag(OtherUnit->FactionTag);
 }

@@ -4,30 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Engine/DataTable.h"
+#include "Data/Structs/UnitStructs.h"
 #include "UnitSpawner.generated.h"
 
-/** @brief 웨이브별 설정을 위한 구조체 */
+/** @brief 웨이브 설정을 위한 구조체 */
 USTRUCT(BlueprintType)
-struct FUnitWaveInfo
+struct FWaveConfig
 {
 	GENERATED_BODY()
 
-	/** @brief 데이터 테이블에서 가져올 행 이름 (기존 EnemyRowName에 할당됨) */
-	UPROPERTY(EditAnywhere, Category = "Wave")
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
 	FName UnitRowName;
 
-	/** @brief 이번 웨이브에 스폰할 총 마릿수 */
-	UPROPERTY(EditAnywhere, Category = "Wave")
-	int32 SpawnCount = 5;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	int32 SpawnCount;
 
-	/** @brief 유닛 간 스폰 간격 (초) */
-	UPROPERTY(EditAnywhere, Category = "Wave")
-	float SpawnInterval = 2.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	float SpawnInterval;
 
-	/** @brief 현재 웨이브 종료 후 다음 웨이브 시작까지의 대기 시간 */
-	UPROPERTY(EditAnywhere, Category = "Wave")
-	float NextWaveDelay = 10.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	float NextWaveDelay;
+
+	FWaveConfig()
+		: UnitRowName(NAME_None), SpawnCount(10), SpawnInterval(1.0f), NextWaveDelay(5.0f)
+	{
+	}
 };
 
 UCLASS()
@@ -40,42 +42,33 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	void SpawnUnit();
-	FVector GetRandomSpawnLocation();
 
-public:
 	UPROPERTY(EditAnywhere, Category = "Spawning")
 	TSubclassOf<class ABaseUnit> UnitClass;
 
-	UPROPERTY(EditAnywhere, Category = "Spawning|Data")
-	UDataTable* StatsDataTable;
-
-	UPROPERTY(EditAnywhere, Category = "Spawning|Data")
-	UDataTable* AssetsDataTable;
-
-	/** @brief 기존 행 이름 변수 유지 (웨이브 진행 시 자동으로 값이 바뀜) */
-	UPROPERTY(VisibleAnywhere, Category = "Spawning|Data")
-	FName EnemyRowName;
-
-	/** @brief 설계도: 에디터에서 순서대로 유닛 이름과 마릿수 설정 */
-	UPROPERTY(EditAnywhere, Category = "Spawning|Wave")
-	TArray<FUnitWaveInfo> WaveConfigs;
-
-	UPROPERTY(EditAnywhere, Category = "Spawning|Area", meta = (MakeEditWidget = true))
-	FVector SpawnExtent = FVector(500.0f, 500.0f, 0.0f);
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	class UDataTable* StatsDataTable;
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
-	int32 PreSpawnCount = 10;
+	class UDataTable* AssetsDataTable;
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
-	int32 TeamID = 2;
+	FVector SpawnExtent = FVector(500.f, 500.f, 0.f);
 
-private:
+	/** ⭐ 이제 UHT가 FWaveConfig를 정상적으로 인식합니다 */
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TArray<FWaveConfig> WaveConfigs;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	int32 PreSpawnCount = 5;
+
 	FTimerHandle SpawnTimerHandle;
-
-	// 웨이브 관리용 변수
 	int32 CurrentWaveIndex = 0;
 	int32 CurrentSpawnCountInWave = 0;
+	FName EnemyRowName;
+
+	void SpawnUnit();
+	FVector GetRandomSpawnLocation();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
