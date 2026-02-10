@@ -78,7 +78,7 @@ const FCombatActionData& UBaseGameplayAbility::GetCombatDataFromActor()
 		if (CachedCombatData.MontageToPlay)
 		{
 			bIsDataCached = true;
-			// UE_LOG(LogTemp, Log, TEXT("✅ [BaseGA] 전투 데이터 캐싱 완료 (Type: %d)"), (int32)AbilityActionType);
+			UE_LOG(LogTemp, Log, TEXT("✅ [BaseGA] 전투 데이터 캐싱 완료 (Type: %d)"), (int32)AbilityActionType);
 		}
 	}
 

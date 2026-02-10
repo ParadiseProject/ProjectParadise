@@ -5,7 +5,7 @@
 
 AInGameGameMode::AInGameGameMode()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 }
 
 void AInGameGameMode::BeginPlay()
@@ -25,27 +25,32 @@ void AInGameGameMode::BeginPlay()
 	SetGamePhase(EGamePhase::Ready);
 }
 
-/**
- * @details Tick에서는 전투 중일 때만 타이머를 감소시키며, 0초 도달 시 패배 처리를 수행합니다.
- */
-void AInGameGameMode::Tick(float DeltaSeconds)
+void AInGameGameMode::OnStageTimerElapsed()
 {
-	Super::Tick(DeltaSeconds);
+	if (!CachedGameState) return;
 
-	if(CurrentPhase == EGamePhase::Combat && CachedGameState && CachedGameState->bIsTimerActive)
+	CachedGameState->RemainingTime -= 1.0f;
+
+	// [디버깅용] 로그로 타이머 확인
+	//UE_LOG(LogTemp, Log, TEXT("Time: %.0f"), CachedGameState->RemainingTime);
+
+	//타이머 변경 델리게이트 브로드캐스트
+	if (CachedGameState->OnTimerChanged.IsBound())
 	{
-		//시간 감소
-		CachedGameState->RemainingTime -= DeltaSeconds;
-		//UE_LOG(LogTemp, Log, TEXT("Time: % f"), CachedGameState->RemainingTime);
-		
-		//시간 종료 체크
-		if (CachedGameState->RemainingTime <= 0.f)
-		{
-			CachedGameState->RemainingTime = 0.f;
-			CachedGameState->bIsTimerActive = false;
-			EndStage(false); //타임오버로 패배 처리
-			UE_LOG(LogTemp, Warning, TEXT("시간 초과! 패배 처리 로직 실행"));
-		}
+		int32 IntTime = FMath::CeilToInt(CachedGameState->RemainingTime);
+		CachedGameState->OnTimerChanged.Broadcast(IntTime);
+	}
+
+
+	//시간 종료 체크
+	if (CachedGameState->RemainingTime <= 0.f)
+	{
+		CachedGameState->RemainingTime = 0.f;
+		CachedGameState->bIsTimerActive = false;
+
+		//타임오버 패배 처리 -> EndStage 호출
+		EndStage(false);
+		UE_LOG(LogTemp, Warning, TEXT("시간 초과! 패배 처리 로직 실행"));
 	}
 }
 
@@ -132,7 +137,7 @@ void AInGameGameMode::InitializeStageData(FName StageID)
 
 void AInGameGameMode::OnPhaseReady()
 {
-	//UE_LOG(LogTemp, Log, TEXT("Phase: Ready (3초 카운트다운)"));
+	UE_LOG(LogTemp, Log, TEXT("Phase: Ready (3초 카운트다운)"));
 
 	//1. 플레이어 준비 상태로 전환
 
@@ -147,18 +152,22 @@ void AInGameGameMode::OnPhaseReady()
 
 void AInGameGameMode::OnPhaseCombat()
 {
-	//UE_LOG(LogTemp, Log, TEXT("Phase: Combat (전투 시작)"));
+	UE_LOG(LogTemp, Log, TEXT("Phase: Combat (전투 시작)"));
 
 	//1. 몬스터 스폰 매니저어게 웨이브 시작 요청하기 
 
-	//2. 타이머 작동시작
+	// 2. FTimer 가동, 타이머 시작 (1초마다, 반복해서, OnStageTimerElapsed 실행)
+	GetWorldTimerManager().SetTimer(StageTimerHandle, this, &AInGameGameMode::OnStageTimerElapsed, 1.0f, true);
 	if (CachedGameState) CachedGameState->bIsTimerActive = true;
 }
 
 
 void AInGameGameMode::OnPhaseVictory()
 {
-	//UE_LOG(LogTemp, Log, TEXT("Phase: Victory! 보상 지급 준비"));
+	// 승리했을 떄 타이머 정지 
+	GetWorldTimerManager().ClearTimer(StageTimerHandle);
+
+	UE_LOG(LogTemp, Log, TEXT("Phase: Victory! 보상 지급 준비"));
 	if (CachedGameState)
 	{
 		//1. 타이머 정지(GameState의 플래그 사용)
@@ -193,8 +202,10 @@ void AInGameGameMode::OnPhaseVictory()
 
 void AInGameGameMode::OnPhaseDefeat()
 {
+	GetWorldTimerManager().ClearTimer(StageTimerHandle);
+
 	if(CachedGameState) CachedGameState->bIsTimerActive = false;
-	//UE_LOG(LogTemp, Error, TEXT("Phase: Defeat.... 보상없음"));
+	UE_LOG(LogTemp, Error, TEXT("Phase: Defeat.... 보상없음"));
 
 	//패배시 보상 없음
 	

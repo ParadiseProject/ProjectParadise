@@ -15,14 +15,14 @@ void UMeleeBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const 
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-	// 1. 코스트 및 쿨타임 확인 (Commit)
+	// 코스트 및 쿨타임 확인 (Commit)
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
 
-	// 2. [핵심] 데이터 가져오기 (인터페이스 사용)
+	// 데이터 가져오기 (인터페이스 사용)
 	// BaseGameplayAbility에서 만든 함수가 캐싱된 데이터를 줍니다.
 	FCombatActionData CombatData = GetCombatDataFromActor();
 
@@ -36,7 +36,7 @@ void UMeleeBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const 
 		return;
 	}
 
-	// 3. [Task 1] 몽타주 재생
+	// 몽타주 재생
 	UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 		this,
 		NAME_None,
@@ -54,7 +54,7 @@ void UMeleeBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const 
 
 	MontageTask->ReadyForActivation();
 
-	// 4. [Task 2] 타격 이벤트 대기 (WaitGameplayEvent)
+	// 타격 이벤트 대기 (WaitGameplayEvent)
 	UAbilityTask_WaitGameplayEvent* EventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
 		this,
 		HitEventTag, // "Event.Montage.Hit"
@@ -104,6 +104,9 @@ void UMeleeBase::OnGameplayEventReceived(FGameplayEventData Payload)
 
 void UMeleeBase::OnMontageCompleted()
 {
+	// [디버깅] 몽타주가 왜 끝났는지 확인
+	//UE_LOG(LogTemp, Warning, TEXT("🛑 [MeleeBase] 몽타주 종료됨! 어빌리티 End."));
+
 	// 몽타주가 끝나면 어빌리티 종료
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }

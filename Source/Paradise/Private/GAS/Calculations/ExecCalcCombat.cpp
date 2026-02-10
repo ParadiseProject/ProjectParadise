@@ -74,13 +74,14 @@ void UExecCalcCombat::Execute_Implementation(const FGameplayEffectCustomExecutio
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().AttackPowerDef, EvalParams, AttackPower);
 	AttackPower = FMath::Max(AttackPower, 0.f); // 음수 방지
 
-	// 스킬 자체 데미지 (SetByCaller) 확인
-	// GA(스킬)에서 "Damage.Base"라는 태그로 값을 넘겨줬다면 여기서 받음
-	float SkillBaseDamage = 0.f;
-	// 예: SkillBaseDamage = Spec.GetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("Data.Damage.Base"), false, 0.f);
+	float DamageMultiplier = Spec.GetSetByCallerMagnitude(
+		FGameplayTag::RequestGameplayTag(FName("Data.Damage.Multiplier")),
+		false,
+		1.0f // 못 찾으면 기본값 1.0 (평타)
+	);
 
 	// 현재 데미지 누적
-	float CurrentDamage = AttackPower + SkillBaseDamage;
+	float CurrentDamage = AttackPower * DamageMultiplier;
 
 	// =========================================================
 	//  치명타 계산 (Critical Hit)

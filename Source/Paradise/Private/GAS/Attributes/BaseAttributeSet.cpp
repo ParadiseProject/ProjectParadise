@@ -85,7 +85,7 @@ void UBaseAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			// 로그 출력
 			AActor* MyOwner = GetOwningActor();
 			FString OwnerName = MyOwner ? MyOwner->GetName() : TEXT("Unknown");
-			UE_LOG(LogTemp, Log, TEXT("[%s] HP 변경 : %.1f"), *OwnerName, NewHealth);
+			UE_LOG(LogTemp, Log, TEXT("[%s] HP 변경 : %.2f"), *OwnerName, NewHealth);
 		}
 	}
 }

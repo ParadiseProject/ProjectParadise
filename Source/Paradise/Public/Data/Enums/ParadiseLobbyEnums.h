@@ -10,10 +10,10 @@
 UENUM(BlueprintType)
 enum class EParadiseLobbyMenu : uint8
 {
-	None        UMETA(DisplayName = "None"),        // 기본 로비 상태 (3D 뷰)
-	Battle      UMETA(DisplayName = "Battle"),      // 전투 출정
-	Summon      UMETA(DisplayName = "Summon"),      // 소환
-	Squad       UMETA(DisplayName = "Squad"),       // 편성
-	Enhance     UMETA(DisplayName = "Enhance"),     // 강화
-	Codex       UMETA(DisplayName = "Codex")        // 도감
+	None        UMETA(DisplayName = "로비"),       // 기본 로비 상태 (3D 뷰)
+	Battle      UMETA(DisplayName = "전투"),       // 전투 출정
+	Summon      UMETA(DisplayName = "소환"),       // 소환
+	Squad       UMETA(DisplayName = "편성"),       // 편성
+	Enhance     UMETA(DisplayName = "강화"),		   // 강화
+	Codex       UMETA(DisplayName = "도감")        // 도감
 };

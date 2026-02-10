@@ -10,7 +10,7 @@
 #pragma region 전방 선언
 class UWidgetSwitcher;
 class UParadiseLobbyTopBarWidget;
-class UParadiseLobbyBottomBarWidget;
+class UParadiseLobbyMenuPanelWidget;
 #pragma endregion 전방 선언
 
 /**
@@ -30,17 +30,17 @@ protected:
 
 #pragma region UI 컴포넌트
 protected:
-	///** @brief 상단 바 (고정). */
-	//UPROPERTY(meta = (BindWidget))
-	//TObjectPtr<UParadiseLobbyTopBarWidget> WBP_TopBar = nullptr;
+	/** @brief 상단 재화 및 설정 바 (WBP_TopBar) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UParadiseLobbyTopBarWidget> WBP_TopBar = nullptr;
 
-	///** @brief 중앙 콘텐츠 스위처 (메뉴별 패널 교체용). */
-	//UPROPERTY(meta = (BindWidget))
-	//TObjectPtr<UWidgetSwitcher> Switcher_Content = nullptr;
+	/** @brief 우측 중앙 메뉴 버튼 패널 (WBP_MenuPanel) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UParadiseLobbyMenuPanelWidget> WBP_MenuPanel = nullptr;
 
-	///** @brief 하단 메뉴 바 (고정). */
-	//UPROPERTY(meta = (BindWidget))
-	//TObjectPtr<UParadiseLobbyBottomBarWidget> WBP_BottomBar = nullptr;
+	/** @brief 메뉴별 콘텐츠를 보여주는 스위처 (전투, 소환 창 등) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UWidgetSwitcher> Switcher_Content = nullptr;
 #pragma endregion UI 컴포넌트
 
 #pragma region 데이터 설정 (Data-Driven)
@@ -67,5 +67,8 @@ public:
 	 * @param InCurrentMenu 변경된 메뉴 상태.
 	 */
 	void UpdateMenuStats(EParadiseLobbyMenu InCurrentMenu);
+
+	/** @brief 카메라 이동 시작 시 호출 (모든 UI 페이드 아웃) */
+	void OnStartCameraMove();
 #pragma endregion 외부 제어
 };

@@ -29,12 +29,19 @@ public:
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-<<<<<<< HEAD
+	/**
+	 * @brief 현재 장착된 무기를 기반으로 특정 행동(평타/스킬)에 필요한 전투 데이터를 반환합니다.
+	 * * @details ICombatInterface의 구현부입니다.
+	 * 1. PlayerData와 EquipmentComponent를 통해 현재 무기 ID를 조회합니다.
+	 * 2. GameInstance의 데이터 테이블에서 해당 무기의 에셋(몽타주)과 스탯(계수)을 검색합니다.
+	 * 3. 요청된 ActionType(평타 vs 스킬)에 맞춰 데이터를 패키징하여 반환합니다.
+	 * * @param ActionType 수행하려는 행동 타입 (예: BasicAttack, WeaponSkill 등).
+	 * @return FCombatActionData 몽타주, 데미지 이펙트 클래스, 데미지 계수가 포함된 구조체. (무기가 없으면 빈 구조체 반환)
+	 */
 	virtual FCombatActionData GetCombatActionData(ECombatActionType ActionType) const override;
-=======
+
 	UFUNCTION(BlueprintCallable)
 	class APlayerData* GetPlayerData() const { return LinkedPlayerData.Get(); }
->>>>>>> middle
 
 	/** @brief 캐릭터 사망 여부 반환 (컨트롤러 확인용) */
 	UFUNCTION(BlueprintPure, Category = "Status")
@@ -77,6 +84,10 @@ public:
 	 * @brief GAS 필수 인터페이스 
 	 */
 
+	/*
+	 * @brief 애니메이션 노티파이에서 매 프레임 호출할 함수
+	 */
+	void CheckHit();
 
 protected:
 
@@ -93,6 +104,11 @@ protected:
 	 */
 	UFUNCTION()
 	void OnAttackInput(const FInputActionValue& InValue);
+
+	/*
+	 * @brief 공격이 새로 시작될 때 목록 비우기 (NotifyBegin 같은 곳에서 호출 필요, 혹은 몽타주 시작 시)
+	 */
+	void ResetHitActors() { HitActors.Empty(); }
 
 protected:
 
@@ -138,7 +154,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	FName WeaponSocketName;
 
-
-	
-
+	/*
+	 * @brief 이미 때린 적을 중복 타격하지 않게 저장하는 목록
+	 */
+	UPROPERTY()
+	TArray<AActor*> HitActors;
 };

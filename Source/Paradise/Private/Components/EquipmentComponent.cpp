@@ -124,7 +124,8 @@ void UEquipmentComponent::UpdateVisuals(APlayerBase* TargetCharacter)
 
     // [테스트] 무조건 큐브 무기 장착 시도
     // 실제로는 GetEquippedItemID()로 ID를 가져와야 함
-    FName TestWeaponID = FName("TestCubeSword");
+    //FName TestWeaponID = FName("TestCubeSword");
+    FName TestWeaponID = FName("Iron_Sword");
     AttachWeaponActor(TargetCharacter, TestWeaponID);
 }
 
@@ -156,18 +157,18 @@ void UEquipmentComponent::AttachWeaponActor(APlayerBase* Char, FName ItemID)
     if (NewWeapon)
     {
         // 3. 큐브 모양 적용 및 설정
-        NewWeapon->GetStaticMeshComponent()->SetStaticMesh(CubeMesh);
         NewWeapon->GetStaticMeshComponent()->SetMobility(EComponentMobility::Movable); // 움직여야 하므로 Movable 필수
+        NewWeapon->GetStaticMeshComponent()->SetStaticMesh(CubeMesh);
         NewWeapon->GetStaticMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 캐릭터랑 충돌 안 나게
-
-        // 크기 조절 (큐브가 너무 크니까 좀 줄임)
-        NewWeapon->SetActorScale3D(FVector(0.2f, 0.2f, 1.0f)); // 칼처럼 길쭉하게
 
         // 4. 캐릭터에게 부착 요청
         // "Weapon_R" 소켓이 없으면 "hand_r"이라도 쓰도록 임시 처리 (소켓 이름을 확인해주세요!)
         FName SocketToUse = Char->GetMesh()->DoesSocketExist(TEXT("Socket_Weapon_R")) ? TEXT("Socket_Weapon_R") : TEXT("hand_r");
 
         Char->AttachWeapon(NewWeapon, SocketToUse);
+
+        // 크기 조절 (큐브가 너무 크니까 좀 줄임)
+        NewWeapon->SetActorScale3D(FVector(0.2f, 0.2f, 2.0f)); // 칼처럼 길쭉하게
     }
 }
 

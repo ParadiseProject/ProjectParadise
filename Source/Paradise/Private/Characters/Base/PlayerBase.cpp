@@ -15,7 +15,8 @@
 #include "Data/Enums/GameEnums.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Data/Structs/ItemStructs.h"
-
+#include "Kismet/KismetSystemLibrary.h" // 트레이스 함수용
+#include "AbilitySystemBlueprintLibrary.h" // GAS 이벤트 전송용
 
 APlayerBase::APlayerBase()
 {
@@ -119,6 +120,53 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
 	
 }
 
+void APlayerBase::CheckHit()
+{
+    FVector SocketLocation = GetMesh()->GetSocketLocation(TEXT("hand_r")); // 무기 소켓 이름
+
+    // 2. 트레이스 설정 (반경 50cm짜리 구체를 그림)
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(this); // 나는 때리면 안 됨
+
+    FHitResult HitResult;
+    bool bHit = UKismetSystemLibrary::SphereTraceSingle(
+        GetWorld(),
+        SocketLocation,      // 시작점
+        SocketLocation,      // 끝점 (제자리에서 구체 검사)
+        50.0f,               // 반경 (큐브 크기에 맞춰 조절)
+        UEngineTypes::ConvertToTraceType(ECC_Pawn), // 폰(캐릭터)만 검사
+        false,               // 복잡한 충돌(Mesh) 말고 단순 캡슐 충돌 검사
+        ActorsToIgnore,
+        EDrawDebugTrace::ForDuration, // 디버그 선 그리기 (빨간 공 보임)
+        HitResult,
+        true
+    );
+
+    // 3. 무언가 맞았다면?
+    if (bHit && HitResult.GetActor())
+    {
+        AActor* HitActor = HitResult.GetActor();
+
+        // 4. 이미 때린 놈이면 패스 (다단히트 방지)
+        if (HitActors.Contains(HitActor)) return;
+        HitActors.Add(HitActor); // 목록에 추가
+
+        // 5. [핵심] GAS로 "나 때렸어!" 신호 보내기
+        // MeleeBase.cpp에서 기다리는 태그: "Event.Montage.Hit"
+        FGameplayEventData Payload;
+        Payload.Instigator = this;
+        Payload.Target = HitActor;
+
+        // 태그: MeleeBase의 HitEventTag와 똑같아야 함!
+        FGameplayTag HitTag = FGameplayTag::RequestGameplayTag(FName("Event.Montage.Hit"));
+
+        UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, HitTag, Payload);
+
+        UE_LOG(LogTemp, Warning, TEXT("👊 [PlayerBase] 타격 성공! 대상: %s"), *HitActor->GetName());
+
+    }
+}
+
 UAbilitySystemComponent* APlayerBase::GetAbilitySystemComponent() const
 {
 	return LinkedPlayerData.IsValid() ? LinkedPlayerData->GetAbilitySystemComponent() : nullptr;
@@ -141,7 +189,7 @@ FCombatActionData APlayerBase::GetCombatActionData(ECombatActionType ActionType)
 
     // 4. 현재 장착된 무기 ID 조회 ("Sword_01" 등)
     // (EquipmentComponent.h에 GetEquippedItemID 함수가 있어야 함)
-    FName WeaponID = EquipComp->GetEquippedItemID(EEquipmentSlot::None);
+    FName WeaponID = EquipComp->GetEquippedItemID(EEquipmentSlot::Weapon);
 
     if (WeaponID.IsNone()) return Result; // 무기가 없으면 빈 데이터 반환
 
@@ -298,7 +346,15 @@ void APlayerBase::OnMoveInput(const FInputActionValue& InValue)
 void APlayerBase::OnAttackInput(const FInputActionValue& InValue)
 {
     //일단 기본공격
-    //UE_LOG(LogTemp, Log, TEXT("🔥 [Input] 공격 키 눌림! (Attack Input)"));
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+    if (!ASC) return;
+
+    // 2. 공격 태그로 어빌리티 발동 시도
+    //FGameplayTag AttackTag = FGameplayTag::RequestGameplayTag(FName("Ability.Type.Skill.Weapon"));
+    FGameplayTag AttackTag = FGameplayTag::RequestGameplayTag(FName("Ability.Type.Basic"));
+
+    // 태그로 활성화 (Payload 등은 비워둠)
+    ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
 }
 
 
