@@ -36,6 +36,10 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "Paradise|Lobby Setup")
 	TObjectPtr<ACameraActor> Camera_Battle;
 
+	/** @brief 소환(가챠) 카메라 액터*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paradise|Lobby Setup")
+	TObjectPtr<ACameraActor> Camera_Summon;
+
 	// 추후 확장: 소환 연출용 카메라, 강화실 카메라 등등
 	// UPROPERTY(EditInstanceOnly, Category = "Paradise|Lobby Setup")
 	// TObjectPtr<ACameraActor> Camera_Summon;

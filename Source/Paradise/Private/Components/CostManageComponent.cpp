@@ -21,6 +21,7 @@ void UCostManageComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+
 	// 시작 시 현재 상태를 UI에 전파 (초기화)
 	OnCostChanged.Broadcast(CurrentCost, MaxCost);
 }

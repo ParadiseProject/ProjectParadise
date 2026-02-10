@@ -35,12 +35,16 @@ public:
 
 protected:
 	/** @brief 메인 로비 카메라 액터 (레벨에 배치된 태그로 찾음: "Cam_Main") */
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	TObjectPtr<ACameraActor> Camera_Main;
 
 	/** @brief 전투(스테이지) 작전 지도 카메라 액터 (태그: "Cam_Battle") */
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	TObjectPtr<ACameraActor> Camera_Battle;
+
+	/** @brief 소환(가챠) 카메라 액터 (태그: "Cam_Summon") */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+	TObjectPtr<ACameraActor> Camera_Summon;
 
 	/** @brief 카메라 이동 시간 (초) */
 	UPROPERTY(EditDefaultsOnly, Category = "Paradise|Config")

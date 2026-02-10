@@ -4,43 +4,63 @@
 #include "UI/Widgets/Ingame/GameTimerWidget.h"
 
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
+#include "Framework/InGame/InGameGameState.h"
 
 void UGameTimerWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	CachedSeconds = -1; // 강제 갱신을 위해 초기화
+	
+	// GameState 가져오기
+	CachedGameState = Cast<AInGameGameState>(UGameplayStatics::GetGameState(this));
+	if (CachedGameState)
+	{
+		// 1. 델리게이트 바인딩 (int32끼리 연결)
+		if (!CachedGameState->OnTimerChanged.IsAlreadyBound(this, &UGameTimerWidget::UpdateTime))
+		{
+			CachedGameState->OnTimerChanged.AddDynamic(this, &UGameTimerWidget::UpdateTime);
+		}
+		// 2. 초기값 설정 (UI가 뜨자마자 00:00이 아니라 현재 시간으로 보이게)
+		UpdateTime((int32)CachedGameState->RemainingTime);
+	}
 }
 
-void UGameTimerWidget::UpdateTime(float CurrentTime)
+void UGameTimerWidget::NativeDestruct()
 {
-	// 올림 처리 (0.1초 남았을 때 0초로 보이면 안 되므로)
-	const int32 NewSeconds = FMath::CeilToInt(CurrentTime);
-
-	// 최적화: 초 단위가 바뀌었을 때만 텍스트 갱신
-	if (NewSeconds != CachedSeconds)
+	if (CachedGameState && CachedGameState->OnTimerChanged.IsBound())
 	{
-		CachedSeconds = NewSeconds;
+		CachedGameState->OnTimerChanged.RemoveDynamic(this, &UGameTimerWidget::UpdateTime);
+	}
+
+	Super::NativeDestruct();
+}
+
+void UGameTimerWidget::UpdateTime(int32 NewTime)
+{
+	// 최적화: 초 단위가 바뀌었을 때만 텍스트 갱신
+	if (NewTime != CachedSeconds)
+	{
+		CachedSeconds = NewTime;
 
 		if (Text_TimeValue)
 		{
-			Text_TimeValue->SetText(GetFormattedTime(CurrentTime));
+			Text_TimeValue->SetText(GetFormattedTime(NewTime));
 
 			// 10초 이하일 때 빨간색 경고
-			if (CurrentTime <= WarningThreshold && CurrentTime > 0.0f)
+			if (NewTime <= WarningThreshold && NewTime > 0)
 			{
 				Text_TimeValue->SetColorAndOpacity(FLinearColor::Red);
-			}
-			else
-			{
-				Text_TimeValue->SetColorAndOpacity(FLinearColor::White);
 			}
 		}
 	}
 }
 
-FText UGameTimerWidget::GetFormattedTime(float TimeInSeconds) const
+FText UGameTimerWidget::GetFormattedTime(int32 TimeInSeconds) const
 {
-	const int32 TotalSeconds = FMath::Max(0, FMath::CeilToInt(TimeInSeconds));
+	// 음수 방지
+	const int32 TotalSeconds = FMath::Max(0, TimeInSeconds);
+
 	const int32 Minutes = TotalSeconds / 60;
 	const int32 Seconds = TotalSeconds % 60;
 

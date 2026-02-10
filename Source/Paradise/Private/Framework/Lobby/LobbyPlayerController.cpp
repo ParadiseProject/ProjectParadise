@@ -19,6 +19,7 @@ void ALobbyPlayerController::BeginPlay()
 		// 설정 액터에서 이미 할당된 카메라를 가져옵니다. (String 비교 없음, NULL 체크만 하면 됨)
 		Camera_Main = LobbySetup->Camera_Main;
 		Camera_Battle = LobbySetup->Camera_Battle;
+		Camera_Summon = LobbySetup->Camera_Summon;
 
 		UE_LOG(LogTemp, Log, TEXT("[LobbyController] 카메라 설정 로드 완료 via SetupActor"));
 	}
@@ -80,7 +81,8 @@ void ALobbyPlayerController::MoveCameraToMenu(EParadiseLobbyMenu TargetMenu)
 	{
 	case EParadiseLobbyMenu::None:   TargetCamera = Camera_Main; break;
 	case EParadiseLobbyMenu::Battle: TargetCamera = Camera_Battle; break;
-		// 필요하면 Summon, Enhance 등도 다른 카메라로 확장 가능
+	case EParadiseLobbyMenu::Summon: TargetCamera = Camera_Summon; break;
+		// 필요하면Enhance 등도 다른 카메라로 확장 가능
 	default:                         TargetCamera = Camera_Main; break;
 	}
 
