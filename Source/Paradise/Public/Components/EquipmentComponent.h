@@ -39,6 +39,13 @@ public:
 	UEquipmentComponent();
 
 	/**
+	 * @brief [통합 테스트] 인벤토리 지급 -> GUID 조회 -> 장착 -> 결과 확인
+	 * @details 무기(Iron_Sword)와 방어구(Leather_Chest)를 임의로 생성해 장착까지 시도합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void Debug_TestEquipmentSystem();
+
+	/**
 	 * @brief 아이템 ID만으로 장비를 장착하는 스마트 함수
 	 * @details
 	 * 1. ItemDataTable에서 ItemID를 검색하여 EEquipmentSlot(장착 부위)을 알아냅니다.

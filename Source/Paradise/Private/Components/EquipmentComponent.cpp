@@ -5,6 +5,7 @@
 #include "Components/InventoryComponent.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Characters/Base/PlayerBase.h"
+#include "Characters/Player/PlayerData.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Engine/StaticMeshActor.h"
 
@@ -16,6 +17,94 @@ UEquipmentComponent::UEquipmentComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 
 	// ...
+}
+
+void UEquipmentComponent::Debug_TestEquipmentSystem()
+{
+	UE_LOG(LogTemp, Warning, TEXT("============================================"));
+	UE_LOG(LogTemp, Warning, TEXT("🧪 [Equipment System] 통합 테스트 시작"));
+	UE_LOG(LogTemp, Warning, TEXT("============================================"));
+
+	// 0. 연결 상태 확인
+	if (!LinkedInventory)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ 인벤토리가 연결되지 않았습니다! (SetLinkedInventory 호출 필요)"));
+		return;
+	}
+
+	// 1. [시나리오] 아이템 획득
+	FName TestWeaponID = FName("Iron_Sword");
+	FName TestArmorID = FName("A_WoodHelmet"); // [수정] 테스트용 투구 ID
+
+	LinkedInventory->AddItem(TestWeaponID, 1);
+	LinkedInventory->AddItem(TestArmorID, 1);
+
+
+	// ------------------------------------------------------------
+	// 2. [시나리오] GUID 추적 (Inventory -> Logic)
+	// ------------------------------------------------------------
+	// 방금 얻은 아이템의 GUID를 알아내야 장착 요청을 할 수 있습니다.
+	FGuid WeaponGUID;
+	FGuid ArmorGUID;
+
+	// 인벤토리 목록을 뒤져서 해당 ID를 가진 아이템의 GUID를 가져옵니다.
+	const TArray<FOwnedItemData>& Items = LinkedInventory->GetOwnedItems();
+	for (const auto& Item : Items)
+	{
+		if (Item.ItemID == TestWeaponID) WeaponGUID = Item.ItemUID;
+		if (Item.ItemID == TestArmorID)  ArmorGUID = Item.ItemUID;
+	}
+
+
+	// ------------------------------------------------------------
+	// 3. [시나리오] 장착 요청 (Equipment)
+	// ------------------------------------------------------------
+	UE_LOG(LogTemp, Log, TEXT("2️⃣ [Step 2] 장착 시도..."));
+
+	// A. 무기 장착
+	if (WeaponGUID.IsValid())
+	{
+		UE_LOG(LogTemp, Log, TEXT(">> 무기 장착 요청 (GUID: %s)"), *WeaponGUID.ToString());
+		EquipItem(WeaponGUID); // 내부적으로 슬롯 판단 -> 장착 -> 시각화 수행
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ 무기 획득 실패 (테이블에 '%s'가 없거나 유효성 검사 탈락)"), *TestWeaponID.ToString());
+	}
+
+	// B. 방어구 장착
+	if (ArmorGUID.IsValid())
+	{
+		UE_LOG(LogTemp, Log, TEXT(">> 방어구 장착 요청 (GUID: %s)"), *ArmorGUID.ToString());
+		EquipItem(ArmorGUID);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ 방어구 획득 실패 (테이블에 '%s'가 없거나 유효성 검사 탈락)"), *TestArmorID.ToString());
+	}
+
+	// 4. [검증] 최종 상태 확인
+	UE_LOG(LogTemp, Log, TEXT("3️⃣ [Step 3] 최종 장착 상태 확인"));
+
+	// 무기 슬롯 확인
+	FName EquippedWeapon = GetEquippedItemID(EEquipmentSlot::Weapon);
+	if (EquippedWeapon == TestWeaponID) {
+		UE_LOG(LogTemp, Log, TEXT("   ✅ 무기 장착 확인됨: %s"), *EquippedWeapon.ToString());
+	}
+	else {
+		UE_LOG(LogTemp, Error, TEXT("   ❌ 무기 장착 안됨 (현재: %s)"), *EquippedWeapon.ToString());
+	}
+
+	// [수정] 투구 슬롯 확인 (Helmet Slot Check)
+	FName EquippedHelmet = GetEquippedItemID(EEquipmentSlot::Helmet);
+	if (EquippedHelmet == TestArmorID) {
+		UE_LOG(LogTemp, Log, TEXT("   ✅ 투구 장착 확인됨: %s"), *EquippedHelmet.ToString());
+	}
+	else {
+		UE_LOG(LogTemp, Error, TEXT("   ❌ 투구 장착 안됨 (현재: %s) -> 태그/슬롯 확인 필요"), *EquippedHelmet.ToString());
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("============================================"));
 }
 
 
@@ -71,10 +160,17 @@ void UEquipmentComponent::EquipItem(FGuid TargetItemUID)
         (int32)TargetSlot, *ItemData->ItemID.ToString(), ItemData->EnhancementLevel);
 
     //[갱신]
-    if (APlayerBase* Player = Cast<APlayerBase>(GetOwner()))
-    {
-        UpdateVisuals(Player);
-    }
+	if (APlayerData* Soul = Cast<APlayerData>(GetOwner()))
+	{
+		// 영혼이 현재 빙의 중인 육체가 있다면 그 육체를 업데이트
+		if (Soul->CurrentAvatar.IsValid())
+		{
+			if (APlayerBase* Avatar = Cast<APlayerBase>(Soul->CurrentAvatar.Get()))
+			{
+				UpdateVisuals(Avatar);
+			}
+		}
+	}
 
     if (OnEquipmentUpdated.IsBound()) OnEquipmentUpdated.Broadcast();
 }
@@ -86,10 +182,16 @@ void UEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
         UE_LOG(LogTemp, Log, TEXT("🛡️ [UnEquip] 장착 해제: Slot %d"), (int32)Slot);
 
         // 비주얼 갱신
-        if (APlayerBase* Player = Cast<APlayerBase>(GetOwner()))
-        {
-            UpdateVisuals(Player);
-        }
+		if (APlayerData* Soul = Cast<APlayerData>(GetOwner()))
+		{
+			if (Soul->CurrentAvatar.IsValid())
+			{
+				if (APlayerBase* Avatar = Cast<APlayerBase>(Soul->CurrentAvatar.Get()))
+				{
+					UpdateVisuals(Avatar);
+				}
+			}
+		}
 
         if (OnEquipmentUpdated.IsBound()) OnEquipmentUpdated.Broadcast();
     }
@@ -280,11 +382,11 @@ void UEquipmentComponent::SetArmorMesh(APlayerBase* Char, EEquipmentSlot Slot, F
 
 	if (!TargetMeshComp)
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("⚠️ [Visual] 캐릭터에 해당 슬롯(%d) 컴포넌트가 없습니다."), (int32)Slot);
+		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Visual] 캐릭터에 해당 슬롯(%d) 컴포넌트가 없습니다."), (int32)Slot);
 		return;
 	}
 
-	// 2. 장착 해제 (ItemID가 None일 경우)
+	//장착 해제 (ItemID가 None일 경우)
 	if (ItemID.IsNone())
 	{
 		TargetMeshComp->SetSkeletalMesh(nullptr);
@@ -306,7 +408,7 @@ void UEquipmentComponent::SetArmorMesh(APlayerBase* Char, EEquipmentSlot Slot, F
 
 		//마스터 포즈 설정 (Master Pose Component)
 		//방어구 메쉬가 몸통(Mesh)의 애니메이션을 따라가도록 설정합니다.
-		TargetMeshComp->SetMasterPoseComponent(Char->GetMesh());
+		TargetMeshComp->SetLeaderPoseComponent(Char->GetMesh());
 
 		UE_LOG(LogTemp, Log, TEXT("🛡️ [Visual] 방어구 교체 완료: %s (Slot: %d)"), *ItemID.ToString(), (int32)Slot);
 	}

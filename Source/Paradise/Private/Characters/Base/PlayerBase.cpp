@@ -34,19 +34,19 @@ APlayerBase::APlayerBase()
 
     HelmetMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HelmetMesh"));
     HelmetMesh->SetupAttachment(GetMesh()); // 부모 메쉬에 붙임
-    HelmetMesh->SetMasterPoseComponent(GetMesh()); // 애니메이션 동기화
+    HelmetMesh->SetLeaderPoseComponent(GetMesh()); // 애니메이션 동기화
 
     ChestMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ChestMesh"));
     ChestMesh->SetupAttachment(GetMesh());
-    ChestMesh->SetMasterPoseComponent(GetMesh());
+    ChestMesh->SetLeaderPoseComponent(GetMesh());
 
     GlovesMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GlovesMesh"));
     GlovesMesh->SetupAttachment(GetMesh());
-    GlovesMesh->SetMasterPoseComponent(GetMesh());
+    GlovesMesh->SetLeaderPoseComponent(GetMesh());
 
     BootsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BootsMesh"));
     BootsMesh->SetupAttachment(GetMesh());
-    BootsMesh->SetMasterPoseComponent(GetMesh());
+    BootsMesh->SetLeaderPoseComponent(GetMesh());
 
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -186,6 +186,11 @@ void APlayerBase::CheckHit()
 UAbilitySystemComponent* APlayerBase::GetAbilitySystemComponent() const
 {
 	return LinkedPlayerData.IsValid() ? LinkedPlayerData->GetAbilitySystemComponent() : nullptr;
+}
+
+void APlayerBase::BeginPlay()
+{
+    Super::BeginPlay();
 }
 
 USkeletalMeshComponent* APlayerBase::GetArmorComponent(EEquipmentSlot Slot) const

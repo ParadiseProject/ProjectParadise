@@ -29,6 +29,7 @@ public:
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+	virtual void BeginPlay() override;
 	/**
 	 * @brief 슬롯에 해당하는 스켈레탈 메쉬 컴포넌트를 반환합니다.
 	 * @details EquipmentComponent에서 외형 변경 시 호출합니다.
