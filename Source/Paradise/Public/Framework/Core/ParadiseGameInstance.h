@@ -26,6 +26,20 @@ class PARADISE_API UParadiseGameInstance : public UGameInstance
 public:
 	UParadiseGameInstance();
 	virtual void Init() override;
+#pragma region 게임 데이터 저장 및 로드
+
+public:
+
+	UFUNCTION(BlueprintCallable, Category = "SaveSystem")
+	void SaveGameData();
+
+	UFUNCTION(BlueprintCallable, Category = "SaveSystem")
+	void LoadGameData();
+
+	// 기본 슬롯 이름
+	const FString DefaultSaveSlot = TEXT("SaveSlot_01");
+
+#pragma endregion 게임 데이터 저장 및 로드
 
 #pragma region 설정
 protected:

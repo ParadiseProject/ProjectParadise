@@ -3,6 +3,11 @@
 
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Framework/System/LevelLoadingSubsystem.h"
+#include "Framework/System/ParadiseSaveGame.h"
+#include "Framework/InGame/InGamePlayerState.h"
+#include "Components/InventoryComponent.h"
+#include "Components/EquipmentComponent.h"
+#include "Characters/Player/PlayerData.h"
 #include "Kismet/GameplayStatics.h"
 
 
@@ -21,4 +26,12 @@ void UParadiseGameInstance::Init()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[ParadiseGameInstance] 초기화 및 로딩 서브시스템 설정 완료."));
+}
+
+void UParadiseGameInstance::SaveGameData()
+{
+}
+
+void UParadiseGameInstance::LoadGameData()
+{
 }

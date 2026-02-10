@@ -32,6 +32,22 @@ APlayerBase::APlayerBase()
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false; // 카메라는 스프링암만 따라감
 
+    HelmetMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HelmetMesh"));
+    HelmetMesh->SetupAttachment(GetMesh()); // 부모 메쉬에 붙임
+    HelmetMesh->SetLeaderPoseComponent(GetMesh()); // 애니메이션 동기화
+
+    ChestMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ChestMesh"));
+    ChestMesh->SetupAttachment(GetMesh());
+    ChestMesh->SetLeaderPoseComponent(GetMesh());
+
+    GlovesMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GlovesMesh"));
+    GlovesMesh->SetupAttachment(GetMesh());
+    GlovesMesh->SetLeaderPoseComponent(GetMesh());
+
+    BootsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BootsMesh"));
+    BootsMesh->SetupAttachment(GetMesh());
+    BootsMesh->SetLeaderPoseComponent(GetMesh());
+
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
@@ -170,6 +186,24 @@ void APlayerBase::CheckHit()
 UAbilitySystemComponent* APlayerBase::GetAbilitySystemComponent() const
 {
 	return LinkedPlayerData.IsValid() ? LinkedPlayerData->GetAbilitySystemComponent() : nullptr;
+}
+
+void APlayerBase::BeginPlay()
+{
+    Super::BeginPlay();
+}
+
+USkeletalMeshComponent* APlayerBase::GetArmorComponent(EEquipmentSlot Slot) const
+{
+    switch (Slot)
+    {
+    case EEquipmentSlot::Helmet: return HelmetMesh;
+    case EEquipmentSlot::Chest:  return ChestMesh;
+    case EEquipmentSlot::Gloves: return GlovesMesh;
+    case EEquipmentSlot::Boots:  return BootsMesh;
+    // Weapon은 별도 액터로 붙이므로 여기선 nullptr 반환
+    default: return nullptr;
+    }
 }
 
 FCombatActionData APlayerBase::GetCombatActionData(ECombatActionType ActionType) const

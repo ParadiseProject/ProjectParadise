@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/Enums/GameEnums.h"
 #include "InventoryStruct.generated.h"
 
 /**
@@ -13,6 +14,9 @@ USTRUCT(BlueprintType)
 struct FOwnedCharacterData
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGuid CharacterUID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName CharacterID; // 데이터 에셋 ID (RowName)
@@ -35,6 +39,9 @@ struct FOwnedFamiliarData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGuid FamiliarUID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName FamiliarID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -54,6 +61,9 @@ struct FOwnedItemData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGuid ItemUID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName ItemID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -61,4 +71,25 @@ struct FOwnedItemData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Quantity = 1; // 갯수
+
+	FOwnedItemData()
+	{
+		ItemUID = FGuid();
+	}
+};
+
+/**
+ * @brief 캐릭터 별 장착 장비 데이터 (저장용)
+ * @details 특정 영웅이 각 슬롯에 어떤 아이템(UID)을 장착하고 있는지 저장합니다.
+ */
+USTRUCT(BlueprintType)
+struct FCharacterEquipmentData
+{
+	GENERATED_BODY()
+
+public:
+	// Key: 장비 슬롯 (Weapon, Helmet 등)
+	// Value: 장착된 아이템의 고유 ID (ItemUID)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EEquipmentSlot, FGuid> EquipmentMap;
 };

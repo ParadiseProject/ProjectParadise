@@ -29,6 +29,14 @@ public:
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+	virtual void BeginPlay() override;
+	/**
+	 * @brief 슬롯에 해당하는 스켈레탈 메쉬 컴포넌트를 반환합니다.
+	 * @details EquipmentComponent에서 외형 변경 시 호출합니다.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Visual")
+	USkeletalMeshComponent* GetArmorComponent(EEquipmentSlot Slot) const;
+
 	/**
 	 * @brief 현재 장착된 무기를 기반으로 특정 행동(평타/스킬)에 필요한 전투 데이터를 반환합니다.
 	 * * @details ICombatInterface의 구현부입니다.
@@ -114,6 +122,19 @@ protected:
 
 	/** 현재 카메라 모드 인덱스 (0: Default, 1: Classic, 2: Dynamic) */
 	int32 CurrentCameraIndex = 0;
+
+	/**  모듈형 캐릭터 파츠(Body는 ACharacter의 Mesh 사용) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<USkeletalMeshComponent> HelmetMesh = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<USkeletalMeshComponent> ChestMesh= nullptr; // 상의+하의 통합형이면 이것만 사용
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<USkeletalMeshComponent> GlovesMesh=nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+	TObjectPtr<USkeletalMeshComponent> BootsMesh= nullptr;
 
 	/*
 	 * @brief 입력 액션 Move

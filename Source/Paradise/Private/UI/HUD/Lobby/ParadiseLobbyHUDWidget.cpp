@@ -47,7 +47,7 @@ void UParadiseLobbyHUDWidget::UpdateMenuStats(EParadiseLobbyMenu InCurrentMenu)
     // 로비 UI 숨기기
     if (WBP_MenuPanel) WBP_MenuPanel->SetVisibility(ESlateVisibility::Collapsed);
 
-    if (InCurrentMenu == EParadiseLobbyMenu::Battle)
+    if (InCurrentMenu == EParadiseLobbyMenu::Battle || InCurrentMenu == EParadiseLobbyMenu::Summon)
     {
         if (WBP_TopBar) WBP_TopBar->SetVisibility(ESlateVisibility::Collapsed);
     }

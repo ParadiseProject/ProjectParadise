@@ -3,6 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/Structs/ItemStructs.h"
+#include "Data/Structs/UnitStructs.h"
+#include "Data/Structs/InventoryStruct.h"
 #include "Components/ActorComponent.h"
 #include "InventoryComponent.generated.h"
 
@@ -50,16 +53,7 @@ public:
 	 * @param Count 추가할 개수 (기본값 1)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Modify")
-	void AddItem(FName ItemID, int32 Count = 1);
-
-	/**
-	 * @brief 아이템을 소모(삭제)하는 함수
-	 * @param ItemID 소모할 아이템의 ID
-	 * @param Count 소모할 개수
-	 * @return bool 성공 시 true, 수량이 부족하거나 없으면 false
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Inventory|Modify")
-	bool RemoveItem(FName ItemID, int32 Count = 1);
+	void AddItem(FName ItemID, int32 Count = 1, int32 EnhancementLvl = 0);
 
 	/**
 	 * @brief 영웅을 획득하는 함수
@@ -75,6 +69,13 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Inventory|Modify")
 	void AddFamiliar(FName FamiliarID);
+
+	/** * @brief 통합 삭제 함수
+		* @details 인벤토리 내의 영웅, 병사, 아이템을 모두 뒤져서 해당 GUID를 가진 객체를 삭제합니다.
+		* @return 성공 시 true
+		*/
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Unified")
+	bool RemoveObjectByGUID(FGuid TargetGUID, int32 Count = 1);
 
 	/**
 	 * @brief [Debug] 테스트 아이템을 추가하고 전체 목록을 출력합니다.
@@ -94,6 +95,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory|Query")
 	const TArray<FOwnedItemData>& GetOwnedItems() const { return OwnedItems; }
 
+	/**
+	 * @brief GUID로 아이템 데이터 포인터 반환 (장비 장착 시 필수)
+	 * @return 찾지 못하면 nullptr
+	 */
+	FOwnedItemData* GetItemByGUID(FGuid TargetUID);
 
 	/**
 	 * @brief 특정 아이템의 현재 보유 개수를 반환합니다.
@@ -102,6 +108,12 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "Inventory|Query")
 	int32 GetItemQuantity(FName ItemID) const;
+
+	/**
+	 * @brief 특정 영웅을 보유하고 있는지 확인
+	 */
+	UFUNCTION(BlueprintPure, Category = "Inventory|Query")
+	bool HasCharacter(FName CharacterID) const;
 
 protected:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 	virtual void BeginPlay() override;

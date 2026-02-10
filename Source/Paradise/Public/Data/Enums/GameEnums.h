@@ -100,6 +100,7 @@ enum class EEquipmentSlot : uint8
 	/** @brief 장착 슬롯 : 신발 */
 	Boots		UMETA(DisplayName = "장착 슬롯 : 신발"),
 	/** @brief 장착 슬롯 : 없음 */
-	None		UMETA(DisplayName = "장착 슬롯 : 없음")
-
+	None		UMETA(DisplayName = "장착 슬롯 : 없음"),
+	/** @brief 장착 슬롯 : 없음 */
+	Unknown		UMETA(DisplayName = "장착 슬롯 : 오류")
 };

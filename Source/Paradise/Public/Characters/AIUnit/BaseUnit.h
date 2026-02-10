@@ -29,10 +29,15 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Unit|Status")
 	bool bIsDead;
 
+	/** 오브젝트 풀 인터페이스 구현 */
 	virtual void OnPoolActivate_Implementation() override;
 	virtual void OnPoolDeactivate_Implementation() override;
 
-	void InitializeUnit(struct FEnemyStats* InStats, struct FEnemyAssets* InAssets);
+	/** * @brief 유닛 초기화 함수
+	 * FEnemyStats와 FFamiliarStats가 공통으로 상속받는 FAIUnitStats/Assets를 사용하여
+	 * 적과 아군 데이터를 모두 수용합니다.
+	 */
+	void InitializeUnit(struct FAIUnitStats* InStats, struct FAIUnitAssets* InAssets);
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 

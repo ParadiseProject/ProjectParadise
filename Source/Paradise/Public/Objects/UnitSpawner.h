@@ -4,8 +4,33 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Engine/DataTable.h" // 데이터 테이블 사용을 위해 추가
+#include "Data/Structs/UnitStructs.h"
 #include "UnitSpawner.generated.h"
+
+/** @brief 웨이브 설정을 위한 구조체 */
+USTRUCT(BlueprintType)
+struct FWaveConfig
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	FName UnitRowName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	int32 SpawnCount;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	float SpawnInterval;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	float NextWaveDelay;
+
+	FWaveConfig()
+		: UnitRowName(NAME_None), SpawnCount(10), SpawnInterval(1.0f), NextWaveDelay(5.0f)
+	{
+	}
+};
 
 UCLASS()
 class PARADISE_API AUnitSpawner : public AActor
@@ -17,40 +42,33 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	void SpawnUnit();
-	FVector GetRandomSpawnLocation();
 
-public:
 	UPROPERTY(EditAnywhere, Category = "Spawning")
 	TSubclassOf<class ABaseUnit> UnitClass;
 
-	/** @brief 사용할 스탯 데이터 테이블 */
-	UPROPERTY(EditAnywhere, Category = "Spawning|Data")
-	UDataTable* StatsDataTable;
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	class UDataTable* StatsDataTable;
 
-	/** @brief 사용할 에셋 데이터 테이블 */
-	UPROPERTY(EditAnywhere, Category = "Spawning|Data")
-	UDataTable* AssetsDataTable;
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	class UDataTable* AssetsDataTable;
 
-	/** @brief 기존 행 이름 변수 유지 */
-	UPROPERTY(EditAnywhere, Category = "Spawning|Data")
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	FVector SpawnExtent = FVector(500.f, 500.f, 0.f);
+
+	/** ⭐ 이제 UHT가 FWaveConfig를 정상적으로 인식합니다 */
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TArray<FWaveConfig> WaveConfigs;
+
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	int32 PreSpawnCount = 5;
+
+	FTimerHandle SpawnTimerHandle;
+	int32 CurrentWaveIndex = 0;
+	int32 CurrentSpawnCountInWave = 0;
 	FName EnemyRowName;
 
-	/** @brief 사각형 스폰 범위 */
-	UPROPERTY(EditAnywhere, Category = "Spawning|Area", meta = (MakeEditWidget = true))
-	FVector SpawnExtent = FVector(500.0f, 500.0f, 0.0f);
-
-	UPROPERTY(EditAnywhere, Category = "Spawning")
-	int32 PreSpawnCount = 10;
-
-	UPROPERTY(EditAnywhere, Category = "Spawning")
-	float SpawnInterval = 5.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Spawning")
-	int32 TeamID = 2;
-
-private:
-	FTimerHandle SpawnTimerHandle;
+	void SpawnUnit();
+	FVector GetRandomSpawnLocation();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;

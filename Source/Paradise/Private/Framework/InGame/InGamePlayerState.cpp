@@ -4,6 +4,7 @@
 #include "Framework/InGame/InGamePlayerState.h"
 #include "Engine/DataTable.h"
 #include "Components/InventoryComponent.h"
+#include "Components/EquipmentComponent.h"
 #include "Components/CostManageComponent.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Characters/Player/PlayerData.h"
@@ -35,10 +36,16 @@ void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
         APlayerData* NewSoul = GetWorld()->SpawnActor<APlayerData>(PlayerDataClass);
         if (NewSoul)
         {
-            //HeroID 로 GI 에서 조회해서 초기화
+            //HeroID로 초기화
             NewSoul->InitPlayerData(HeroID);
 
-            // 스쿼드에 추가
+            //인벤토리 연결
+            if (UEquipmentComponent* EquipComp = NewSoul->GetEquipmentComponent())
+            {
+                EquipComp->SetLinkedInventory(this->InventoryComponent);
+
+                UE_LOG(LogTemp, Log, TEXT("🔗 [SquadInit] %s에게 인벤토리 연결 완료"), *HeroID.ToString());
+            }
             SquadMembers.Add(NewSoul);
         }
     }

@@ -147,13 +147,6 @@ struct FArmorStats : public FItemBaseStats
 
 public:
 
-	/**
-	* @brief 방어구 부위 태그
-	* @details 예: Item.Type.Armor.Helmet, Item.Type.Armor.Chest
-	*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Categories = "Item.Type.Armor"))
-	FGameplayTag ArmorTag;
-
 	// -----------------------------------------------------------------
 	// [Survival Stats] 방어 관련 수치 
 	// -----------------------------------------------------------------
@@ -340,6 +333,13 @@ struct FArmorAssets : public FItemBaseAssets
 	GENERATED_BODY()
 
 public:
+	/**
+	* @brief 방어구 부위 태그
+	* @details 예: Item.Type.Armor.Helmet, Item.Type.Armor.Chest
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Categories = "Item.Type.Armor"))
+	FGameplayTag ArmorTag;
+
 	// -----------------------------------------------------------------
 	// [GAS]
 	// -----------------------------------------------------------------
