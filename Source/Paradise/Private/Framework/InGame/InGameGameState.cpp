@@ -22,4 +22,5 @@ void AInGameGameState::SetCurrentPhase(EGamePhase NewPhase)
     {
         OnGamePhaseChanged.Broadcast(CurrentPhase);
     }
+
 }

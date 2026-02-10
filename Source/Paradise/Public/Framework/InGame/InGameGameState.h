@@ -13,6 +13,11 @@
  */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGamePhaseChanged, EGamePhase, NewPhase);
 
+/** 
+* @brief 스테이지 타이머 변경 시 호출되는 다이나믹 멀티캐스트 델리게이트
+*/
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTimerChanged, int32, NewRemainingTime);
+
 /**
  * @class AInGameGameState
  * @brief 인게임 플레이 중의 전역 상태(타이머, 페이즈, 보상 정보)를 관리하는 클래스입니다.
@@ -53,6 +58,10 @@ public:
 	/** @brief [이벤트] 게임 페이즈가 변경될 때 발생하는 델리게이트 */
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnGamePhaseChanged OnGamePhaseChanged;
+
+	/** @brief [이벤트] 타이머가 변경될 때 발생하는 델리게이트 */
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnTimerChanged OnTimerChanged;
 
 	/** @brief [상태] 현재 진행 중인 게임 페이즈 (FSM 상태값) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage Data")

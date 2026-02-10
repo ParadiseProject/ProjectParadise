@@ -23,7 +23,11 @@ public:
 	AInGameGameMode();
 
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
+	
+	/** 
+	* @brief 스테이지 타이머가 1초 경과할 때마다 호출되는 함수
+	*/
+	void OnStageTimerElapsed();
 	
 public:
 
@@ -76,4 +80,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	EGamePhase CurrentPhase;
 	
+	/** @brief [타이머] 스테이지 진행을 위한 타이머 핸들 */
+	UPROPERTY()
+	FTimerHandle StageTimerHandle;
 };
