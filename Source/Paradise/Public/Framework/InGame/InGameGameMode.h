@@ -63,12 +63,7 @@ protected:
 	void OnPhaseResult();	///< [결과] 결과창 표시 및 레벨 이동 준비
 	/** @} */
 
-
 protected:
-	/** @brief [설정] 스테이지 정보가 저장된 데이터 테이블 */
-	UPROPERTY(EditDefaultsOnly, Category = "Data")
-	UDataTable* StageInfoTable;
-
 	/** @brief [캐싱] 전역 상태 관리를 위한 GameState 포인터 */
 	UPROPERTY()
 	class AInGameGameState* CachedGameState;

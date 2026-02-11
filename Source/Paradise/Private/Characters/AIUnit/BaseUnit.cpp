@@ -115,3 +115,8 @@ bool ABaseUnit::IsEnemy(ABaseUnit* OtherUnit)
 	// 태그가 다르면 적군으로 간주
 	return !this->FactionTag.MatchesTag(OtherUnit->FactionTag);
 }
+
+void ABaseUnit::PlayRangeAttack()
+{
+	UE_LOG(LogTemp, Log, TEXT("Range Attack Executed!"));
+}

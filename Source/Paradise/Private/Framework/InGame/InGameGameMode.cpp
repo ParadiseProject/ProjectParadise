@@ -2,6 +2,7 @@
 
 #include "Framework/InGame/InGameGameMode.h"
 #include "Framework/InGame/InGameGameState.h"
+#include "Framework/Core/ParadiseGameInstance.h"
 
 AInGameGameMode::AInGameGameMode()
 {
@@ -107,10 +108,24 @@ void AInGameGameMode::EndStage(bool bIsVictory)
 
 void AInGameGameMode::InitializeStageData(FName StageID)
 {
-	if (!StageInfoTable) return;	//데이터테이블이 없으면 종료
+	//0. GameInstance 가져오기
+	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ [GameMode] GameInstance를 찾을 수 없습니다."));
+		return;
+	}
 
-	//1. 데이터 테이블에서 정보 가져오기
-	FStageStats* Row = StageInfoTable->FindRow<FStageStats>(StageID, TEXT("StageInfoContext"));
+	//1.GameInstance에 있는 스테이지 테이블 가져오기
+	UDataTable* StageTable = GI->StatgeStatsDataTable; 
+	if (!StageTable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ [GameMode] 스테이지 데이터 테이블이 없습니다."));
+		return;
+	}
+
+	//2. 데이터 테이블에서 정보 찾기
+	FStageStats* Row = StageTable->FindRow<FStageStats>(StageID, TEXT("StageInfoContext"));
 	if (Row)
 	{
 		CurrentStageData = *Row;	//데이터를 개별변수가 아닌 구조체에 한번에 복사
@@ -132,6 +147,10 @@ void AInGameGameMode::InitializeStageData(FName StageID)
 		//UE_LOG(LogTemp, Log, TEXT(" - Desc      : %s"), *CurrentStageData.Description.ToString());
 		//UE_LOG(LogTemp, Log, TEXT(" - TimeLimit : %.1f sec"), CurrentStageData.TimeLimit);
 		//UE_LOG(LogTemp, Warning, TEXT("========================================="));
+	}
+	else
+	{
+		//UE_LOG(LogTemp, Error, TEXT("❌ [GameMode] 스테이지 ID를 찾을 수 없습니다: %s"), *StageID.ToString());
 	}
 }
 

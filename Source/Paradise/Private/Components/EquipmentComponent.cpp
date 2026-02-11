@@ -15,115 +15,7 @@ UEquipmentComponent::UEquipmentComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
-	// ...
 }
-
-void UEquipmentComponent::Debug_TestEquipmentSystem()
-{
-	UE_LOG(LogTemp, Warning, TEXT("============================================"));
-	UE_LOG(LogTemp, Warning, TEXT("🧪 [Equipment System] 통합 테스트 시작"));
-	UE_LOG(LogTemp, Warning, TEXT("============================================"));
-
-	// 0. 연결 상태 확인
-	if (!LinkedInventory)
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ 인벤토리가 연결되지 않았습니다! (SetLinkedInventory 호출 필요)"));
-		return;
-	}
-
-	// 1. [시나리오] 아이템 획득
-	FName TestWeaponID = FName("Iron_Sword");
-	FName TestArmorID = FName("A_WoodHelmet"); // [수정] 테스트용 투구 ID
-
-	LinkedInventory->AddItem(TestWeaponID, 1);
-	LinkedInventory->AddItem(TestArmorID, 1);
-
-
-	// ------------------------------------------------------------
-	// 2. [시나리오] GUID 추적 (Inventory -> Logic)
-	// ------------------------------------------------------------
-	// 방금 얻은 아이템의 GUID를 알아내야 장착 요청을 할 수 있습니다.
-	FGuid WeaponGUID;
-	FGuid ArmorGUID;
-
-	// 인벤토리 목록을 뒤져서 해당 ID를 가진 아이템의 GUID를 가져옵니다.
-	const TArray<FOwnedItemData>& Items = LinkedInventory->GetOwnedItems();
-	for (const auto& Item : Items)
-	{
-		if (Item.ItemID == TestWeaponID) WeaponGUID = Item.ItemUID;
-		if (Item.ItemID == TestArmorID)  ArmorGUID = Item.ItemUID;
-	}
-
-
-	// ------------------------------------------------------------
-	// 3. [시나리오] 장착 요청 (Equipment)
-	// ------------------------------------------------------------
-	UE_LOG(LogTemp, Log, TEXT("2️⃣ [Step 2] 장착 시도..."));
-
-	// A. 무기 장착
-	if (WeaponGUID.IsValid())
-	{
-		UE_LOG(LogTemp, Log, TEXT(">> 무기 장착 요청 (GUID: %s)"), *WeaponGUID.ToString());
-		EquipItem(WeaponGUID); // 내부적으로 슬롯 판단 -> 장착 -> 시각화 수행
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ 무기 획득 실패 (테이블에 '%s'가 없거나 유효성 검사 탈락)"), *TestWeaponID.ToString());
-	}
-
-	// B. 방어구 장착
-	if (ArmorGUID.IsValid())
-	{
-		UE_LOG(LogTemp, Log, TEXT(">> 방어구 장착 요청 (GUID: %s)"), *ArmorGUID.ToString());
-		EquipItem(ArmorGUID);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ 방어구 획득 실패 (테이블에 '%s'가 없거나 유효성 검사 탈락)"), *TestArmorID.ToString());
-	}
-
-	// 4. [검증] 최종 장착 상태 확인 (기존 코드)
-	UE_LOG(LogTemp, Log, TEXT("3️⃣ [Step 3] 최종 장착 상태 확인"));
-	// ... (무기/방어구 확인 로그) ...
-
-
-	// =========================================================
-	// 5. [추가] 장착 해제 테스트 (3초 뒤 실행)
-	// =========================================================
-	FTimerHandle UnequipTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(UnequipTimerHandle, [this]()
-		{
-			UE_LOG(LogTemp, Warning, TEXT("============================================"));
-			UE_LOG(LogTemp, Warning, TEXT("🧪 [Step 4] 장착 해제 테스트 시작 (3초 후)"));
-			UE_LOG(LogTemp, Warning, TEXT("============================================"));
-
-			// 무기 해제
-			UE_LOG(LogTemp, Log, TEXT("🛡️ [Test] 무기 해제 요청..."));
-			UnEquipItem(EEquipmentSlot::Weapon);
-
-			// 방어구 해제 (테스트에 사용한 슬롯, 예: Helmet)
-			UE_LOG(LogTemp, Log, TEXT("🛡️ [Test] 방어구(Helmet) 해제 요청..."));
-			UnEquipItem(EEquipmentSlot::Helmet);
-
-			// 결과 확인 (로그로 확인하거나 비주얼이 사라졌는지 체크)
-			FName WeaponID = GetEquippedItemID(EEquipmentSlot::Weapon);
-			FName HelmetID = GetEquippedItemID(EEquipmentSlot::Helmet);
-
-			if (WeaponID.IsNone() && HelmetID.IsNone())
-			{
-				UE_LOG(LogTemp, Log, TEXT("✅ [Test] 모든 장비 해제 성공!"));
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("❌ [Test] 해제 실패! Weapon: %s, Helmet: %s"), *WeaponID.ToString(), *HelmetID.ToString());
-			}
-
-			UE_LOG(LogTemp, Warning, TEXT("============================================"));
-
-		}, 3.0f, false); // 3.0f = 3초 뒤 실행
-}
-
 
 void UEquipmentComponent::SetLinkedInventory(UInventoryComponent* InInventory)
 {
@@ -134,52 +26,21 @@ void UEquipmentComponent::SetLinkedInventory(UInventoryComponent* InInventory)
     }
 }
 
-// Called when the game starts
-void UEquipmentComponent::BeginPlay()
+void UEquipmentComponent::InitializeEquipment(const TMap<EEquipmentSlot, FGuid>& InEquipmentMap, UInventoryComponent* InInventory)
 {
-	Super::BeginPlay();
+	if (!InInventory)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Equipment] 인벤토리 참조가 유효하지 않아 장비를 초기화할 수 없습니다."));
+		return;
+	}
 
-	// ...
+	//GameInstance가 건네준 최신 장비 데이터(맵)로 내 캐시를 덮어씌움
+	EquippedItems = InEquipmentMap;
 
-}
-
-void UEquipmentComponent::EquipItem(FGuid TargetItemUID)
-{
-    //[유효성 검사]
-    if (!LinkedInventory)
-    {
-        UE_LOG(LogTemp, Error, TEXT("❌ [Equip] 인벤토리 연결 안됨."));
-        return;
-    }
-    if (!TargetItemUID.IsValid()) return;
-
-    //[데이터 조회]
-    FOwnedItemData* ItemData = LinkedInventory->GetItemByGUID(TargetItemUID);
-    if (!ItemData)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("❌ [Equip] 인벤토리에 없는 아이템 (UID: %s)"), *TargetItemUID.ToString());
-        return;
-    }
-
-    //[슬롯 결정] 헬퍼 함수 호출로 로직 분리!
-    EEquipmentSlot TargetSlot = FindEquipmentSlot(ItemData->ItemID);
-
-    if (TargetSlot == EEquipmentSlot::Unknown)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("⚠️ [Equip] 장착 불가(테이블/태그 오류): %s"), *ItemData->ItemID.ToString());
-        return;
-    }
-
-    //[장착 실행]
-    EquippedItems.Add(TargetSlot, TargetItemUID);
-
-    UE_LOG(LogTemp, Log, TEXT("⚔️ [Equip] 성공! Slot: %d | Item: %s (+%d강)"),
-        (int32)TargetSlot, *ItemData->ItemID.ToString(), ItemData->EnhancementLevel);
-
-    //[갱신]
+	//외형 업데이트 실행
+	//EquipmentComponent가 현재 Avatar를 찾아 갱신
 	if (APlayerData* Soul = Cast<APlayerData>(GetOwner()))
 	{
-		// 영혼이 현재 빙의 중인 육체가 있다면 그 육체를 업데이트
 		if (Soul->CurrentAvatar.IsValid())
 		{
 			if (APlayerBase* Avatar = Cast<APlayerBase>(Soul->CurrentAvatar.Get()))
@@ -188,30 +49,6 @@ void UEquipmentComponent::EquipItem(FGuid TargetItemUID)
 			}
 		}
 	}
-
-    if (OnEquipmentUpdated.IsBound()) OnEquipmentUpdated.Broadcast();
-}
-
-void UEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
-{
-    if (EquippedItems.Remove(Slot) > 0)
-    {
-        UE_LOG(LogTemp, Log, TEXT("🛡️ [UnEquip] 장착 해제: Slot %d"), (int32)Slot);
-
-        // 비주얼 갱신
-		if (APlayerData* Soul = Cast<APlayerData>(GetOwner()))
-		{
-			if (Soul->CurrentAvatar.IsValid())
-			{
-				if (APlayerBase* Avatar = Cast<APlayerBase>(Soul->CurrentAvatar.Get()))
-				{
-					UpdateVisuals(Avatar);
-				}
-			}
-		}
-
-        if (OnEquipmentUpdated.IsBound()) OnEquipmentUpdated.Broadcast();
-    }
 }
 
 FName UEquipmentComponent::GetEquippedItemID(EEquipmentSlot Slot) const
@@ -297,38 +134,6 @@ void UEquipmentComponent::UpdateVisuals(APlayerBase* TargetCharacter)
 			SetArmorMesh(Char, Slot, NAME_None);
 		}
 	}
-}
-
-
-EEquipmentSlot UEquipmentComponent::FindEquipmentSlot(FName ItemID) const
-{
-	if (ItemID.IsNone()) return EEquipmentSlot::Unknown;
-
-	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetWorld()->GetGameInstance());
-	if (!GI) return EEquipmentSlot::Unknown;
-
-	//무기 테이블 확인
-	if (GI->GetDataTableRow<FWeaponAssets>(GI->WeaponAssetsDataTable, ItemID))
-	{
-		return EEquipmentSlot::Weapon;
-	}
-
-	//방어구 테이블 확인
-	if (FArmorAssets* ArmorRow = GI->GetDataTableRow<FArmorAssets>(GI->ArmorAssetsDataTable, ItemID))
-	{
-		// 태그 비교 로직
-		const FGameplayTag& Tag = ArmorRow->ArmorTag;
-
-		if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag("Item.Type.Armor.Helmet"))) return EEquipmentSlot::Helmet;
-		if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag("Item.Type.Armor.Chest")))  return EEquipmentSlot::Chest;
-		if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag("Item.Type.Armor.Gloves"))) return EEquipmentSlot::Gloves;
-		if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag("Item.Type.Armor.Boots")))  return EEquipmentSlot::Boots;
-
-		// 매칭되는 태그가 없으면 경고
-		UE_LOG(LogTemp, Warning, TEXT("⚠️ [FindSlot] 알 수 없는 방어구 태그: %s"), *Tag.ToString());
-	}
-
-	return EEquipmentSlot::Unknown;
 }
 
 void UEquipmentComponent::AttachWeaponActor(APlayerBase* Char, FName ItemID)

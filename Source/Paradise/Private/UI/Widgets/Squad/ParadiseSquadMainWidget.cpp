@@ -1,0 +1,388 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "UI/Widgets/Squad/ParadiseSquadMainWidget.h"
+#include "UI/Widgets/Squad/Inventory/ParadiseSquadInventoryWidget.h"
+#include "UI/Widgets/Squad/ParadiseSquadFormationWidget.h"
+#include "UI/Widgets/Squad/ParadiseSquadDetailWidget.h"
+
+#include "Framework/Core/ParadiseGameInstance.h"
+#include "Framework/InGame/InGamePlayerState.h"
+#include "Components/InventoryComponent.h"
+#include "Components/Button.h"
+#include "Engine/DataTable.h"
+
+#include "Data/Structs/UnitStructs.h"
+#include "Data/Structs/ItemStructs.h"
+
+#pragma region 생명주기
+void UParadiseSquadMainWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	// 1. GameInstance 캐싱 (데이터 테이블 접근)
+	CachedGI = Cast<UParadiseGameInstance>(GetGameInstance());
+	if (!CachedGI.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SquadMain] GameInstance is invalid! Data loading will fail."));
+	}
+
+	// 2. Inventory Component 캐싱 (보유 데이터 접근)
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (AInGamePlayerState* PS = PC->GetPlayerState<AInGamePlayerState>())
+		{
+			CachedInventory = PS->GetInventoryComponent();
+		}
+	}
+
+	// 3. 탭 버튼 바인딩
+	if (Btn_Tab_Character) Btn_Tab_Character->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::OnClickCharTab);
+	if (Btn_Tab_Weapon)    Btn_Tab_Weapon->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::OnClickWpnTab);
+	if (Btn_Tab_Armor)     Btn_Tab_Armor->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::OnClickArmTab);
+	if (Btn_Tab_Unit)      Btn_Tab_Unit->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::OnClickUnitTab);
+
+	// 4. 자식 위젯 이벤트 구독
+	if (WBP_InventoryPanel)
+	{
+		WBP_InventoryPanel->OnItemClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleInventoryItemClicked);
+	}
+
+	if (WBP_FormationPanel)
+	{
+		WBP_FormationPanel->OnSlotSelected.AddDynamic(this, &UParadiseSquadMainWidget::HandleFormationSlotSelected);
+	}
+
+	if (WBP_DetailPanel)
+	{
+		WBP_DetailPanel->OnSwapEquipmentClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleSwapEquipmentMode);
+		WBP_DetailPanel->OnCancelClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleCancelEquipMode);
+		WBP_DetailPanel->OnSwapCharacterClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleSwapCharacterMode);
+		WBP_DetailPanel->OnConfirmClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleConfirmAction);
+	}
+
+	// 5. 초기 상태 설정 (캐릭터 탭)
+	SwitchTab(SquadTabs::Character);
+}
+
+void UParadiseSquadMainWidget::NativeDestruct()
+{
+	// 델리게이트 안전 해제
+	if (Btn_Tab_Character) Btn_Tab_Character->OnClicked.RemoveAll(this);
+
+	// 자식 위젯 델리게이트는 위젯 소멸 시 자동 해제되지만, 명시적 해제가 안전함
+	if (WBP_InventoryPanel) WBP_InventoryPanel->OnItemClicked.RemoveAll(this);
+	if (WBP_FormationPanel) WBP_FormationPanel->OnSlotSelected.RemoveAll(this);
+	if (WBP_DetailPanel)
+	{
+		WBP_DetailPanel->OnSwapCharacterClicked.RemoveAll(this);
+		WBP_DetailPanel->OnConfirmClicked.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+#pragma endregion 생명주기
+
+#pragma region 로직 - 탭 및 상태 제어
+void UParadiseSquadMainWidget::OnClickCharTab() { SwitchTab(SquadTabs::Character); }
+void UParadiseSquadMainWidget::OnClickWpnTab() { SwitchTab(SquadTabs::Weapon); }
+void UParadiseSquadMainWidget::OnClickArmTab() { SwitchTab(SquadTabs::Armor); }
+void UParadiseSquadMainWidget::OnClickUnitTab() { SwitchTab(SquadTabs::Unit); }
+
+void UParadiseSquadMainWidget::SwitchTab(int32 NewTab)
+{
+	// 같은 탭 재클릭 시 무시
+	if (CurrentTabIndex == NewTab) return;
+
+	// 장비 교체 모드일 때는 캐릭터/유닛 탭으로 이동 불가 (UI 잠금)
+	if (CurrentState == ESquadUIState::EquipmentSwap)
+	{
+		if (NewTab != SquadTabs::Weapon && NewTab != SquadTabs::Armor) return;
+	}
+	else if (CurrentState == ESquadUIState::CharacterSwap)
+	{
+		if (NewTab != SquadTabs::Character && NewTab != SquadTabs::Unit) return;
+	}
+
+	CurrentTabIndex = NewTab;
+
+	// 1. 하단 Detail 패널 버튼 갱신 (유닛 탭은 장비 교체 버튼 숨김 등)
+	UpdateDetailPanelState();
+
+	// 2. 인벤토리 리스트 데이터 갱신
+	RefreshInventoryUI();
+}
+
+void UParadiseSquadMainWidget::UpdateUIState()
+{
+	bool bIsNormal = (CurrentState == ESquadUIState::Normal);
+	bool bIsCharSwap = (CurrentState == ESquadUIState::CharacterSwap);
+	bool bIsEquipSwap = (CurrentState == ESquadUIState::EquipmentSwap);
+
+	// 교체 모드 시 관련 없는 탭 비활성화
+	if (Btn_Tab_Character)
+	{
+		bool bEnable = bIsNormal || (bIsCharSwap && CurrentTabIndex == SquadTabs::Character);
+		Btn_Tab_Character->SetIsEnabled(bEnable);
+	}
+	if (Btn_Tab_Unit)
+	{
+		bool bEnable = bIsNormal || (bIsCharSwap && CurrentTabIndex == SquadTabs::Unit);
+		Btn_Tab_Unit->SetIsEnabled(bEnable);
+	}
+	if (Btn_Tab_Weapon)
+	{
+		bool bEnable = bIsNormal || bIsEquipSwap;
+		Btn_Tab_Weapon->SetIsEnabled(bEnable);
+	}
+	if (Btn_Tab_Armor)
+	{
+		bool bEnable = bIsNormal || bIsEquipSwap;
+		Btn_Tab_Armor->SetIsEnabled(bEnable);
+	}
+
+	// Detail 패널 버튼 모드 전환
+	UpdateDetailPanelState();
+}
+
+void UParadiseSquadMainWidget::UpdateDetailPanelState()
+{
+	if (WBP_DetailPanel)
+	{
+		bool bIsUnitTab = (CurrentTabIndex == SquadTabs::Unit);
+		bool bHasSelection = !PendingSelection.ID.IsNone();
+		WBP_DetailPanel->UpdateButtonState(CurrentState, bIsUnitTab, bHasSelection);
+	}
+}
+#pragma endregion 로직 - 탭 및 상태 제어
+
+#pragma region 로직 - 데이터 처리
+void UParadiseSquadMainWidget::RefreshInventoryUI()
+{
+	if (!CachedInventory.IsValid() || !CachedGI.IsValid() || !WBP_InventoryPanel) return;
+
+	TArray<FSquadItemUIData> ListData;
+
+	// 현재 탭에 맞는 데이터를 인벤토리에서 가져와 UI 데이터로 가공
+	switch (CurrentTabIndex)
+	{
+	case SquadTabs::Character:
+		for (const auto& Data : CachedInventory->GetOwnedHeroes())
+		{
+			// GameInstance의 테이블 조회 로직 활용
+			ListData.Add(MakeUIData(Data.CharacterID, Data.Level, SquadTabs::Character));
+		}
+		break;
+
+	case SquadTabs::Weapon:
+		for (const auto& Data : CachedInventory->GetOwnedItems())
+		{
+			// 무기 테이블에 존재하는 ID만 필터링하여 리스트에 추가
+			if (CachedGI->GetDataTableRow<FWeaponStats>(CachedGI->WeaponStatsDataTable, Data.ItemID))
+			{
+				ListData.Add(MakeUIData(Data.ItemID, Data.EnhancementLevel, SquadTabs::Weapon));
+			}
+		}
+		break;
+
+	case SquadTabs::Armor:
+		for (const auto& Data : CachedInventory->GetOwnedItems())
+		{
+			// 방어구 테이블에 존재하는 ID만 필터링
+			if (CachedGI->GetDataTableRow<FArmorStats>(CachedGI->ArmorStatsDataTable, Data.ItemID))
+			{
+				ListData.Add(MakeUIData(Data.ItemID, Data.EnhancementLevel, SquadTabs::Armor));
+			}
+		}
+		break;
+
+	case SquadTabs::Unit:
+		for (const auto& Data : CachedInventory->GetOwnedFamiliars())
+		{
+			ListData.Add(MakeUIData(Data.FamiliarID, Data.Level, SquadTabs::Unit));
+		}
+		break;
+	}
+	//  데이터 후처리 (장착 여부 및 선택 상태 표시)
+	for (auto& Item : ListData)
+	{
+		// TODO: CurrentEquippedIDs에 포함되어 있으면 테두리 표시
+		// if (CurrentEquippedIDs.Contains(Item.ID)) Item.bIsEquipped = true;
+
+		// 교체 모드에서 선택한 아이템이면 하이라이트
+		if (CurrentState != ESquadUIState::Normal && Item.ID == PendingSelection.ID)
+		{
+			Item.bIsSelected = true;
+		}
+	}
+	// 가공된 데이터를 뷰(Inventory Panel)에 전달
+	WBP_InventoryPanel->UpdateList(CurrentTabIndex, ListData);
+}
+
+FSquadItemUIData UParadiseSquadMainWidget::MakeUIData(FName ID, int32 InLevel, int32 TabType)
+{
+	FSquadItemUIData Result;
+	Result.ID = ID;
+	Result.Level = InLevel;
+	Result.Name = FText::FromName(ID); // 기본값 (테이블 조회 실패 대비)
+
+	if (!CachedGI.IsValid()) return Result;
+
+	// GameInstance의 템플릿 함수(GetDataTableRow)를 사용하여 데이터 테이블 안전하게 조회
+	if (TabType == SquadTabs::Character)
+	{
+		if (auto* Stat = CachedGI->GetDataTableRow<FCharacterStats>(CachedGI->CharacterStatsDataTable, ID))
+		{
+			// 실제 변수명(예: Rarity)을 확인하여 태그로 변환하거나, 변수명을 맞추세요.
+			// 일단 컴파일을 위해 빈 태그로 둡니다.
+			Result.RankTag = FGameplayTag::EmptyTag;
+		}
+		if (auto* Asset = CachedGI->GetDataTableRow<FCharacterAssets>(CachedGI->CharacterAssetsDataTable, ID))
+		{
+			Result.Icon = Asset->FaceIcon.LoadSynchronous();
+		}
+	}
+	else if (TabType == SquadTabs::Weapon)
+	{
+		if (auto* Stat = CachedGI->GetDataTableRow<FWeaponStats>(CachedGI->WeaponStatsDataTable, ID))
+		{
+			Result.Name = Stat->DisplayName;
+			// 여기도 마찬가지
+			Result.RankTag = FGameplayTag::EmptyTag;
+		}
+		if (auto* Asset = CachedGI->GetDataTableRow<FWeaponAssets>(CachedGI->WeaponAssetsDataTable, ID))
+		{
+			Result.Icon = Asset->Icon.LoadSynchronous();
+		}
+	}
+	else if (TabType == SquadTabs::Armor)
+	{
+		if (auto* Stat = CachedGI->GetDataTableRow<FArmorStats>(CachedGI->ArmorStatsDataTable, ID))
+		{
+			Result.Name = Stat->DisplayName;
+			Result.RankTag = FGameplayTag::EmptyTag;
+		}
+		if (auto* Asset = CachedGI->GetDataTableRow<FArmorAssets>(CachedGI->ArmorAssetsDataTable, ID))
+		{
+			Result.Icon = Asset->Icon.LoadSynchronous();
+		}
+	}
+	else if (TabType == SquadTabs::Unit)
+	{
+		if (auto* Stat = CachedGI->GetDataTableRow<FFamiliarStats>(CachedGI->FamiliarStatsDataTable, ID))
+		{
+			// 퍼밀리어는 구조체에 RankTypeTag가 있다면 주석 해제
+			// Result.RankTag = Stat->RankTypeTag;
+			Result.RankTag = FGameplayTag::EmptyTag;
+		}
+	}
+
+	return Result;
+}
+#pragma endregion 로직 - 데이터 처리
+
+#pragma region 로직 - 이벤트 핸들러
+void UParadiseSquadMainWidget::HandleFormationSlotSelected(int32 SlotIndex)
+{
+	SelectedFormationSlotIndex = SlotIndex;
+	bool bIsUnitSlot = (SlotIndex >= 3);
+
+	// 슬롯 선택 시 상태 초기화 (교체 모드였다면 취소됨)
+	if (CurrentState != ESquadUIState::Normal)
+	{
+		HandleCancelEquipMode();
+	}
+
+	// 임시 데이터로 상세창 갱신 테스트
+	FSquadItemUIData DummyData;
+	DummyData.Name = FText::FromString(bIsUnitSlot ? TEXT("선택된 유닛 슬롯") : TEXT("선택된 캐릭터 슬롯"));
+	DummyData.Level = SlotIndex;
+
+	// 상세 패널 갱신 (편성창 컨텍스트 = true)
+	WBP_DetailPanel->ShowInfo(DummyData, true, bIsUnitSlot);
+
+	// 버튼 상태 업데이트
+	UpdateDetailPanelState();
+}
+
+void UParadiseSquadMainWidget::HandleSwapEquipmentMode()
+{
+	// 1. 상태 변경 (장비 교체 모드)
+	CurrentState = ESquadUIState::EquipmentSwap;
+	PendingSelection = FSquadItemUIData(); // 선택 초기화
+
+	// 2. 무기 탭으로 강제 이동
+	SwitchTab(SquadTabs::Weapon);
+
+	// 3. UI 잠금 처리 및 버튼 변경
+	UpdateUIState();
+}
+
+void UParadiseSquadMainWidget::HandleCancelEquipMode()
+{
+	// 1. 상태 복구 (일반 모드)
+	CurrentState = ESquadUIState::Normal;
+	PendingSelection = FSquadItemUIData(); // 선택 초기화
+
+	// 2. UI 잠금 해제 및 버튼 복구
+	UpdateUIState();
+
+	// 3. 인벤토리 하이라이트 제거
+	RefreshInventoryUI();
+}
+
+void UParadiseSquadMainWidget::HandleSwapCharacterMode()
+{
+	// 1. 상태 변경
+	CurrentState = ESquadUIState::CharacterSwap;
+	PendingSelection = FSquadItemUIData(); // 선택 초기화
+
+	// 2. 탭 강제 이동 (슬롯에 따라 캐릭터 or 유닛)
+	bool bIsUnitSlot = (SelectedFormationSlotIndex >= 3);
+	SwitchTab(bIsUnitSlot ? SquadTabs::Unit : SquadTabs::Character);
+
+	// 3. UI 잠금 처리
+	UpdateUIState();
+}
+
+void UParadiseSquadMainWidget::HandleConfirmAction()
+{
+	if (PendingSelection.ID.IsNone()) return;
+
+	UE_LOG(LogTemp, Log, TEXT("[SquadMain] CONFIRM SWAP: Slot[%d] <-> Item[%s]"), SelectedFormationSlotIndex, *PendingSelection.ID.ToString());
+
+	// TODO: InventoryComponent에 실제 교체 요청
+	// if (CurrentState == CharacterSwap) Inventory->EquipCharacter(...)
+	// else if (CurrentState == EquipMode) Inventory->EquipItem(...)
+
+	// 교체 완료 후 일반 모드로 복귀
+	HandleCancelEquipMode();
+}
+
+void UParadiseSquadMainWidget::HandleInventoryItemClicked(FSquadItemUIData ItemData)
+{
+	// 교체 모드일 때
+	if (CurrentState != ESquadUIState::Normal)
+	{
+		// 1. 선택한 아이템 임시 저장 (Pending)
+		PendingSelection = ItemData;
+
+		// 2. 인벤토리 갱신 (선택된 아이템 하이라이트)
+		RefreshInventoryUI();
+
+		// 3. 상세 패널 갱신 (확인 버튼 활성화 및 정보 표시)
+		if (WBP_DetailPanel)
+		{
+			// 인벤토리 컨텍스트(false)지만 교체 모드에서는 버튼 상태 업데이트 필요
+			WBP_DetailPanel->ShowInfo(ItemData, false, (CurrentTabIndex == SquadTabs::Unit));
+			UpdateDetailPanelState(); // 확인 버튼 켜기
+		}
+	}
+	else
+	{
+		// [일반 모드]
+		// 단순 정보 표시 (버튼은 상세 패널 내부 로직에 의해 숨겨짐)
+		WBP_DetailPanel->ShowInfo(ItemData, false, (CurrentTabIndex == SquadTabs::Unit));
+	}
+}
+#pragma endregion 로직 - 이벤트 핸들러

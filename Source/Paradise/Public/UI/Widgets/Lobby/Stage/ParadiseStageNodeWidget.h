@@ -11,7 +11,6 @@
 class UImage;
 class UTextBlock;
 class UButton;
-class UParadiseStageItemObject;
 #pragma endregion 전방 선언
 
 /**

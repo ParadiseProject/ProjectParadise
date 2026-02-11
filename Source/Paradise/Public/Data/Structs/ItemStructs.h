@@ -286,28 +286,6 @@ public:
 	// -----------------------------------------------------------------
 
 	/**
-	 * @brief 휘두르는 소리 (Swing Sound)
-	 * @details 공격 허공에 휘두를 때 재생되는 사운드 큐입니다.
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Basic")
-	TSoftObjectPtr<USoundBase> SwingSound;
-
-	/**
-	 * @brief 타격음 (Hit Sound)
-	 * @details 적을 맞췄을 때 재생되는 사운드 큐입니다.
-	 * @note 물리 재질(Physical Material)에 따라 달라져야 한다면 별도 로직이 필요할 수 있습니다.
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Basic")
-	TSoftObjectPtr<USoundBase> HitSound;
-
-	/**
-	 * @brief 공격 궤적 이펙트 (Trail Effect)
-	 * @details 무기를 휘두를 때 칼날을 따라 나오는 나이아가라(Niagara) 효과입니다.
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound/FX|Basic")
-	TSoftObjectPtr<UNiagaraSystem> TrailEffect;
-
-	/**
 	 * @brief 평타 연출 태그
 	 * @details 태그를 통해 이펙트와 사운드를 불러와 사용
 	 */

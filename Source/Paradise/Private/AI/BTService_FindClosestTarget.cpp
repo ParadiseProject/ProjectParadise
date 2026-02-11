@@ -23,23 +23,28 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
 	if (!BB) return;
 
-	// 현재 타겟이 살아있는지 먼저 확인
+	// 1. 현재 블랙보드에 등록된 타겟을 가져옴
 	AActor* CurrentTarget = Cast<AActor>(BB->GetValueAsObject(TargetActorKey.SelectedKeyName));
 	ABaseUnit* TargetUnit = Cast<ABaseUnit>(CurrentTarget);
 
-	// 이미 타겟이 있고, 그 타겟이 살아있다면 타겟을 바꾸지 않고 유지함
+	// 2. 이미 타겟이 있고, 그 타겟이 살아있다면
 	if (TargetUnit && !TargetUnit->bIsDead)
 	{
+		// 타겟을 바꾸지는 않지만, 거리는 매 틱(0.2초)마다 업데이트
+		float CurrentDistance = FVector::Dist(SelfUnit->GetActorLocation(), TargetUnit->GetActorLocation());
+		BB->SetValueAsFloat(FName("DistanceToTarget"), CurrentDistance);
 		return;
 	}
 
-	// 타겟이 없거나 죽었다면 새로운 적을 찾음
+	// 3. 타겟이 없거나 죽었다면 새로운 적을 찾음
 	ABaseUnit* ClosestEnemy = nullptr;
 	float MinDistance = SearchRadius;
 
 	for (TActorIterator<ABaseUnit> It(GetWorld()); It; ++It)
 	{
 		ABaseUnit* OtherUnit = *It;
+
+		// 나 자신이 아니고, 죽지 않았으며, 적군인 경우만 체크
 		if (OtherUnit != SelfUnit && !OtherUnit->bIsDead && SelfUnit->IsEnemy(OtherUnit))
 		{
 			float Distance = FVector::Dist(SelfUnit->GetActorLocation(), OtherUnit->GetActorLocation());
@@ -51,5 +56,16 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 		}
 	}
 
-	BB->SetValueAsObject(TargetActorKey.SelectedKeyName, ClosestEnemy);
+	// 4. 결과 기록
+	if (ClosestEnemy)
+	{
+		BB->SetValueAsObject(TargetActorKey.SelectedKeyName, ClosestEnemy);
+		BB->SetValueAsFloat(FName("DistanceToTarget"), MinDistance);
+	}
+	else
+	{
+		// 적이 주변에 아예 없으면 타겟을 비우고 거리를 아주 큰 값으로 설정
+		BB->SetValueAsObject(TargetActorKey.SelectedKeyName, nullptr);
+		BB->SetValueAsFloat(FName("DistanceToTarget"), 999999.0f);
+	}
 }

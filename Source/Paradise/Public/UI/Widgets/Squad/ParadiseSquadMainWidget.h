@@ -1,0 +1,157 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Blueprint/UserWidget.h"
+#include "UI/Data/SquadUITypes.h"
+#include "ParadiseSquadMainWidget.generated.h"
+
+#pragma region 전방 선언
+class UParadiseSquadInventoryWidget;
+class UParadiseSquadFormationWidget;
+class UParadiseSquadDetailWidget;
+class UButton;
+class UInventoryComponent;
+class UParadiseGameInstance;
+class UDataTable;
+#pragma endregion 전방 선언
+
+/**
+ * @class UParadiseSquadMainWidget
+ * @brief 편성(Squad) 시스템의 메인 컨트롤러 (Mediator Pattern) 위젯
+ * @details GameInstance(데이터 테이블)와 InventoryComponent(보유 목록)를 조회합니다.
+ * 일반 모드와 장비 교체 모드 간의 상태 전환을 관리합니다.
+ * 하위 위젯(Formation, Detail, Inventory) 간의 상호작용을 중재합니다.
+ */
+UCLASS()
+class PARADISE_API UParadiseSquadMainWidget : public UUserWidget
+{
+	GENERATED_BODY()
+	
+#pragma region 생명주기
+protected:
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+#pragma endregion 생명주기
+
+#pragma region UI 컴포넌트 바인딩
+protected:
+	// --- 하위 패널 (Child Widgets) ---
+
+	/** @brief 우측 인벤토리 리스트 패널 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UParadiseSquadInventoryWidget> WBP_InventoryPanel = nullptr;
+
+	/** @brief 좌측 상단 편성(슬롯) 패널 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UParadiseSquadFormationWidget> WBP_FormationPanel = nullptr;
+
+	/** @brief 좌측 하단 상세 정보 및 버튼 패널 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UParadiseSquadDetailWidget> WBP_DetailPanel = nullptr;
+
+	// --- 탭 버튼 (Tab Buttons) ---
+
+	UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> Btn_Tab_Character = nullptr;
+	UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> Btn_Tab_Weapon = nullptr;
+	UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> Btn_Tab_Armor = nullptr;
+	UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> Btn_Tab_Unit = nullptr;
+#pragma endregion UI 컴포넌트 바인딩
+
+#pragma region 로직 - 탭 및 상태 제어
+private:
+	UFUNCTION() void OnClickCharTab();
+	UFUNCTION() void OnClickWpnTab();
+	UFUNCTION() void OnClickArmTab();
+	UFUNCTION() void OnClickUnitTab();
+
+	/** 
+	 * @brief 탭을 전환하고 관련 UI를 갱신합니다.
+	 * @param NewTab 전환할 탭 인덱스 (SquadTabs 네임스페이스 참조)
+	 */
+	void SwitchTab(int32 NewTab);
+
+	/** @brief 현재 상태(CurrentState)에 따라 버튼 활성/비활성 및 UI 잠금을 처리합니다. */
+	void UpdateUIState();
+
+	/** @brief 상세 패널의 버튼 상태(교체 vs 확인 / 취소)를 갱신하는 헬퍼  */ 
+	void UpdateDetailPanelState();
+#pragma endregion 로직 - 탭 및 상태 제어
+
+#pragma region 로직 - 데이터 처리
+private:
+	/** @brief 현재 탭에 맞는 데이터를 수집하여 인벤토리 패널을 갱신합니다. */
+	void RefreshInventoryUI();
+
+	/** 
+	 * @brief ID와 레벨 정보를 받아 UI 표시용 데이터 구조체로 변환합니다. (Factory Method)
+	 * @param ID 대상의 ID (RowName)
+	 * @param InLevel 레벨
+	 * @param TabType 어떤 종류의 테이블을 검색할지 결정
+	 * @return UI 표시용 데이터 구조체 (FSquadItemUIData)
+	 */
+	FSquadItemUIData MakeUIData(FName ID, int32 InLevel, int32 TabType);
+#pragma endregion 로직 - 데이터 처리
+
+#pragma region 로직 - 이벤트 핸들러
+private:
+	/**
+	 * @brief 인벤토리 아이템 클릭 시 호출됩니다.
+	 * @details 일반 모드에서는 정보 표시/교체, 장비 모드에서는 장착 로직을 수행합니다.
+	 */
+	UFUNCTION()
+	void HandleInventoryItemClicked(FSquadItemUIData ItemData);
+
+	/** 
+	 * @brief 편성 슬롯 클릭 시 호출됩니다.
+	 * @details 선택된 슬롯을 강조하고 상세 정보를 표시합니다.
+	 */
+	UFUNCTION()
+	void HandleFormationSlotSelected(int32 SlotIndex);
+
+	/** @brief [장비 교체] 버튼 클릭 시 -> 교체 모드로 진입합니다. */
+	UFUNCTION()
+	void HandleSwapEquipmentMode();
+
+	/** @brief [취소/완료] 버튼 클릭 시 -> 일반 모드로 복귀합니다. */
+	UFUNCTION()
+	void HandleCancelEquipMode();
+
+	/** @brief [캐릭터 교체] 버튼 클릭 시 */
+	UFUNCTION()
+	void HandleSwapCharacterMode();
+
+	/** @brief [확인] 버튼 클릭 시 -> 실제 교체 수행 */
+	UFUNCTION()
+	void HandleConfirmAction();
+#pragma endregion 로직 - 이벤트 핸들러
+
+#pragma region 데이터 소스 (약한 참조)
+private:
+	/** @brief 보유 아이템 목록 접근용 (순환 참조 방지) */
+	TWeakObjectPtr<UInventoryComponent> CachedInventory = nullptr;
+
+	/** @brief 데이터 테이블 접근용 (순환 참조 방지) */
+	TWeakObjectPtr<UParadiseGameInstance> CachedGI = nullptr;
+#pragma endregion 데이터 소스
+
+#pragma region 내부 상태
+private:
+	/** @brief 현재 UI 상태 (일반/교체) */
+	ESquadUIState CurrentState = ESquadUIState::Normal;
+
+	/** @brief 현재 활성화된 탭 인덱스 */
+	int32 CurrentTabIndex = SquadTabs::Character;
+
+	/** @brief 현재 선택된 편성 슬롯 인덱스 (장비 교체 시 대상 식별용) */
+	int32 SelectedFormationSlotIndex = -1;
+
+	/** [추가] 교체를 위해 인벤토리에서 선택한 아이템 (확인 버튼 누르기 전 대기 상태) */
+	FSquadItemUIData PendingSelection;
+
+	/** [추가] 현재 편성에 장착된 ID 목록 (인벤토리 테두리 표시용) */
+	TArray<FName> CurrentEquippedIDs;
+#pragma endregion 내부 상태
+
+};

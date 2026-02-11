@@ -12,6 +12,7 @@ class UAbilitySystemComponent;
 class APlayerData;
 class UInventoryComponent;
 class UCostManageComponent;
+class UFamiliarSummonComponent;
 
 /**
  * @brief 게임의 전반적인 상태(지휘관 정보)를 관리하는 클래스
@@ -39,6 +40,12 @@ public:
 	 */
 	void InitSquad(const TArray<FName>& StartingHeroIDs);
 
+	/**
+	 * @brief 글로벌 인벤토리(GameInstance)에 접근하기 위한 편의성 헬퍼 함수
+	 */
+	UFUNCTION(BlueprintPure, Category = "Inventory")
+	class UInventoryComponent* GetInventoryComponent() const;
+
 	/*
 	 * @brief 인덱스에 해당하는 영웅 데이터(영혼) 반환
 	 */
@@ -51,14 +58,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Squad")
 	int32 GetSquadSize() const { return SquadMembers.Num(); }
 
-	/** @brief 인벤토리 컴포넌트 접근자 (Getter) */
-	UFUNCTION(BlueprintCallable, Category = "Getter")
-	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 	/** @brief 코스트 관리 컴포넌트 접근자 (Getter) */ 
 	UFUNCTION(BlueprintCallable, Category = "Economy")
 	UCostManageComponent* GetCostManageComponent() const { return CostManageComponent; }
 
+	/** @brief 퍼밀리어 소환 컴포넌트 접근자 (Getter)*/
+	UFUNCTION(BlueprintCallable, Category = "Summon")
+	UFamiliarSummonComponent* GetFamiliarSummonComponent() const { return FamiliarSummonComponent; }
 protected:
 	/*
 	 * @brief 실제 스쿼드 멤버들 (영혼/데이터)
@@ -84,6 +91,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UInventoryComponent> InventoryComponent = nullptr;
 
+	/** @brief 코스트 관리 컴포넌트 (UI용 Getter 제공) */ 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UCostManageComponent> CostManageComponent = nullptr;
+
+	/** @brief 퍼밀리어 소환 컴포넌트 (UI용 Getter 제공) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UFamiliarSummonComponent> FamiliarSummonComponent;
+
 	/* 지휘관용 어트리뷰트 (Cost, MaxCost, Gold, RegenRate 등) */
 	UPROPERTY()
 	TObjectPtr<UAttributeSet> CommanderAttributeSet = nullptr;
@@ -94,7 +109,4 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Squad|Config")
 	TSubclassOf<APlayerData> PlayerDataClass = nullptr;
 
-	/** @brief 코스트 관리 컴포넌트 (UI용 Getter 제공) */ 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	TObjectPtr<UCostManageComponent> CostManageComponent = nullptr;
 };

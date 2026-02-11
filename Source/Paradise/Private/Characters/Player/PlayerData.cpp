@@ -8,6 +8,7 @@
 #include "Data/Structs/UnitStructs.h"
 #include "AbilitySystemComponent.h"
 #include "Components/EquipmentComponent.h"
+#include "Data/Enums/GameEnums.h"
 
 APlayerData::APlayerData()
 {
@@ -51,19 +52,154 @@ void APlayerData::InitPlayerAssets(FCharacterAssets* Assets)
 	{
 		this->CachedMesh = Assets->SkeletalMesh.LoadSynchronous();
 		this->CachedAnimBP = Assets->AnimBlueprint;
+
+		if (AbilitySystemComponent)
+		{
+			// 기존 궁극기가 있다면 제거 (재초기화/리스폰 대비)
+			if (UltimateSkillHandle.IsValid())
+			{
+				AbilitySystemComponent->ClearAbility(UltimateSkillHandle);
+				UltimateSkillHandle = FGameplayAbilitySpecHandle(); // 초기화
+			}
+
+			// 새 궁극기 부여
+			if (Assets->UltimateAbility)
+			{
+				// InputID는 프로젝트 설정에 맞게 변경 (예: Skill_Ultimate or 3, 4번 등)
+				FGameplayAbilitySpec Spec(Assets->UltimateAbility, 1, static_cast<int32>(EInputID::Ultimate));
+
+				UltimateSkillHandle = AbilitySystemComponent->GiveAbility(Spec);
+
+				UE_LOG(LogTemp, Log, TEXT("✅ [PlayerData] 궁극기(Ultimate) 어빌리티 부여 완료"));
+			}
+		}
 	}
+
 }
 
+FCombatActionData APlayerData::GetCombatActionData(ECombatActionType ActionType) const
+{
+	FCombatActionData Result;
+
+	// 1. GameInstance 가져오기 (필수)
+	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] GameInstance 없음!"));
+		return Result;
+	}
+
+	// =========================================================
+	// 궁극기 (Ultimate Skill) - 캐릭터 고유 능력
+	// =========================================================
+	if (ActionType == ECombatActionType::UltimateSkill)
+	{
+		// 내 캐릭터 ID로 에셋 테이블 조회
+		FCharacterAssets* CharAssets = GI->GetDataTableRow<FCharacterAssets>(GI->CharacterAssetsDataTable, CharacterID);
+		FCharacterStats* CharStats = GI->GetDataTableRow<FCharacterStats>(GI->CharacterStatsDataTable, CharacterID);
+
+		if (CharAssets)
+		{
+			Result.MontageToPlay = CharAssets->UltimateMontage.LoadSynchronous(); // 구조체에 이 필드가 있다고 가정
+			Result.DamageMultiplier = CharStats->UltimateDamageRate;
+
+			// 이펙트 클래스 (캐릭터 고유 이펙트가 있다면 설정)
+			Result.DamageEffectClass = CharAssets->UltimateDamageEffect;
+		}
+
+		return Result; // 궁극기 데이터 반환 후 종료
+	}
+
+	// =========================================================
+	// 무기 기술 (Basic Attack / Weapon Skill)
+	// =========================================================
+
+	// 1. 장비 컴포넌트 체크
+	if (!EquipmentComponent2) return Result;
+
+	// 2. 현재 무기 ID 조회
+	FName WeaponID = EquipmentComponent2->GetEquippedItemID(EEquipmentSlot::Weapon);
+	if (WeaponID.IsNone()) return Result;
+
+	// 3. 무기 데이터 테이블 조회
+	FWeaponAssets* WeaponAssets = GI->GetDataTableRow<FWeaponAssets>(GI->WeaponAssetsDataTable, WeaponID);
+	FWeaponStats* WeaponStats = GI->GetDataTableRow<FWeaponStats>(GI->WeaponStatsDataTable, WeaponID);
+
+	// 4. 데이터 패키징
+	if (WeaponAssets && WeaponStats)
+	{
+		// 공통: 무기 전용 데미지 이펙트 (독, 화염 등)
+		Result.DamageEffectClass = WeaponAssets->DamageEffectClass;
+
+		switch (ActionType)
+		{
+		case ECombatActionType::BasicAttack:
+			Result.MontageToPlay = WeaponAssets->BasicAttackMontage.LoadSynchronous();
+			Result.DamageMultiplier = 1.0f;
+			break;
+
+		case ECombatActionType::WeaponSkill:
+			Result.MontageToPlay = WeaponAssets->SkillMontage.LoadSynchronous();
+			Result.DamageMultiplier = WeaponStats->SkillDamageRate;
+			break;
+		}
+	}
+
+	return Result;
+}
+
+void APlayerData::InitializeWeaponAbilities(const FWeaponAssets* WeaponData)
+{
+	if (!AbilitySystemComponent || !WeaponData) return;
+
+	UE_LOG(LogTemp, Log, TEXT("⚔️ [PlayerData] 무기 어빌리티 교체 시작..."));
+
+	// ---------------------------------------------------------
+	// 1. 기존 무기 어빌리티 제거 (Clean Up)
+	// ---------------------------------------------------------
+	if (BasicAttackHandle.IsValid())
+	{
+		AbilitySystemComponent->ClearAbility(BasicAttackHandle);
+		BasicAttackHandle = FGameplayAbilitySpecHandle();
+	}
+
+	if (WeaponSkillHandle.IsValid())
+	{
+		AbilitySystemComponent->ClearAbility(WeaponSkillHandle);
+		WeaponSkillHandle = FGameplayAbilitySpecHandle();
+	}
+
+	// ---------------------------------------------------------
+	// 2. 새 무기 어빌리티 부여 (Grant New Abilities)
+	// ---------------------------------------------------------
+
+	// 평타 (Basic Attack)
+	if (WeaponData->BasicAttackAbility)
+	{
+		FGameplayAbilitySpec Spec(WeaponData->BasicAttackAbility, 1, static_cast<int32>(EInputID::Attack));
+		BasicAttackHandle = AbilitySystemComponent->GiveAbility(Spec);
+	}
+
+	// 무기 스킬 (Weapon Skill)
+	if (WeaponData->WeaponSkillAbility)
+	{
+		FGameplayAbilitySpec Spec(WeaponData->WeaponSkillAbility, 1, static_cast<int32>(EInputID::Skill));
+		WeaponSkillHandle = AbilitySystemComponent->GiveAbility(Spec);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("✅ [PlayerData] 무기 어빌리티 부여 완료 (평타/스킬)"));
+}
 
 void APlayerData::InitPlayerData(FName HeroID)
 {
+	
 	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
 	if (!GI)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] GameInstance를 찾을 수 없습니다."));
 		return;
 	}
-
+	this->CharacterID = HeroID;
 	UE_LOG(LogTemp, Log, TEXT("🔄 [PlayerData] 영웅 초기화 시작: %s"), *HeroID.ToString());
 
 	//스탯 데이터 조회 및 적용
@@ -81,12 +217,7 @@ void APlayerData::InitPlayerData(FName HeroID)
 	FCharacterAssets* Assets = GI->GetDataTableRow<FCharacterAssets>(GI->CharacterAssetsDataTable, HeroID);
 	if (Assets)
 	{
-		//에셋 로드
-		if (!Assets->SkeletalMesh.IsNull())
-		{
-			this->CachedMesh = Assets->SkeletalMesh.LoadSynchronous();
-		}
-		this->CachedAnimBP = Assets->AnimBlueprint;
+		InitPlayerAssets(Assets);
 
 		UE_LOG(LogTemp, Log, TEXT("✅ [PlayerData] 데이터 로드 완료"));
 	}
