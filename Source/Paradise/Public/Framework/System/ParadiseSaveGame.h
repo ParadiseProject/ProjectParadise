@@ -47,6 +47,4 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 	TArray<FOwnedFamiliarData> SavedFamiliars;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	TMap<FName, FCharacterEquipmentData> SavedCharacterEquipments;
 };

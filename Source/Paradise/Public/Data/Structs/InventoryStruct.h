@@ -7,7 +7,7 @@
 #include "InventoryStruct.generated.h"
 
 /**
- * @brief 보유 영웅 데이터 (Level, Exp, 돌파 수치 등 성장 정보 포함)
+ * @brief 보유 영웅 데이터 (Level, Exp, ,장비장착 정보, 돌파 수치 등 성장 정보 포함)
  * @details 임시 구조체
  */
 USTRUCT(BlueprintType)
@@ -26,6 +26,12 @@ struct FOwnedCharacterData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 AwakeningLevel = 0; // 초월/각성 단계
+
+	// Key: 장비 슬롯 (Weapon, Helmet 등)
+	// Value: 장착된 아이템의 고유 ID (ItemUID)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EEquipmentSlot, FGuid> EquipmentMap;
+
 };
 
 /**
@@ -78,18 +84,3 @@ struct FOwnedItemData
 	}
 };
 
-/**
- * @brief 캐릭터 별 장착 장비 데이터 (저장용)
- * @details 특정 영웅이 각 슬롯에 어떤 아이템(UID)을 장착하고 있는지 저장합니다.
- */
-USTRUCT(BlueprintType)
-struct FCharacterEquipmentData
-{
-	GENERATED_BODY()
-
-public:
-	// Key: 장비 슬롯 (Weapon, Helmet 등)
-	// Value: 장착된 아이템의 고유 ID (ItemUID)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<EEquipmentSlot, FGuid> EquipmentMap;
-};
