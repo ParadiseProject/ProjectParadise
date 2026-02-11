@@ -6,13 +6,17 @@
 #include "GameFramework/Info.h"
 #include "Engine/DataTable.h"
 #include "AbilitySystemInterface.h"
+#include "GameplayAbilitySpecHandle.h"
+#include "Data/Structs/CombatTypes.h"
+#include "Data/Enums/GameEnums.h"
 #include "PlayerData.generated.h"
 
 class UAttributeSet;
 class UBaseAttributeSet;
+class UEquipmentComponent;
 struct FCharacterStats;
 struct FCharacterAssets;
-class UEquipmentComponent;
+struct FWeaponAssets;
 
 /**
  * 
@@ -43,6 +47,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UEquipmentComponent* GetEquipmentComponent() const { return EquipmentComponent2; }
 
+	/**
+	 * @brief 무기 데이터(FWeaponAssets)를 받아 관련 어빌리티(평타, 스킬)를 부여합니다.
+	 * @details 기존에 장착된 무기 어빌리티가 있다면 제거 후 새로 부여합니다.
+	 */
+	void InitializeWeaponAbilities(const FWeaponAssets* WeaponData);
 
 	/**
 	 * @brief [변경됨] 영웅 ID를 받아 GameInstance를 통해 모든 데이터를 초기화합니다.
@@ -63,6 +72,12 @@ public:
 	 */
 	UFUNCTION()
 	void OnRespawnFinished();
+
+	/**
+	 * @brief 실제 전투 데이터를 조회하는 함수
+	 * @details PlayerBase가 호출하면, GameInstance와 EquipmentComponent를 뒤져서 결과를 줍니다.
+	 */
+	FCombatActionData GetCombatActionData(ECombatActionType ActionType) const;
 
 protected:
 	/** @brief Combat어트리뷰트셋 데이터테이블 기반 초기화 (GI 이용)*/
@@ -117,6 +132,23 @@ protected:
 	 */
 	UPROPERTY()
 	TObjectPtr<UBaseAttributeSet> CombatAttributeSet = nullptr;
+
+
+	// =========================================================
+	//  Ability Handles (어빌리티 관리용 주민등록증)
+	// =========================================================
+
+	/** @brief 무기 평타 어빌리티 핸들 */
+	UPROPERTY(BlueprintReadOnly, Category = "GAS|Handle")
+	FGameplayAbilitySpecHandle BasicAttackHandle;
+
+	/** @brief 무기 전용 스킬 어빌리티 핸들 */
+	UPROPERTY(BlueprintReadOnly, Category = "GAS|Handle")
+	FGameplayAbilitySpecHandle WeaponSkillHandle;
+
+	/** @brief 캐릭터 궁극기 어빌리티 핸들 */
+	UPROPERTY(BlueprintReadOnly, Category = "GAS|Handle")
+	FGameplayAbilitySpecHandle UltimateSkillHandle;
 
 	/*
 	 * @brief 리스폰 대기시간

@@ -14,12 +14,18 @@
 #include "InputActionValue.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Data/Enums/GameEnums.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Data/Structs/ItemStructs.h"
+<<<<<<< HEAD
+#include "Kismet/KismetSystemLibrary.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "Data/Assets/ParadiseInputConfig.h" 
+#include "Data/Structs/InputStructs.h"
+=======
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h" // 트레이스 함수용
 #include "AbilitySystemBlueprintLibrary.h" // GAS 이벤트 전송용
+>>>>>>> middle
 
 APlayerBase::APlayerBase()
 {
@@ -90,9 +96,33 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
         if (IA_Move) {
             EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &APlayerBase::OnMoveInput);
         }
-        if (IA_Attack)
+        if (InputConfig)
         {
-            EnhancedInputComponent->BindAction(IA_Attack, ETriggerEvent::Started, this, &APlayerBase::OnAttackInput);
+            for (const FParadiseInputAction& Action : InputConfig->AbilityInputActions)
+            {
+                if (Action.InputAction && Action.InputTag != EInputID::None)
+                {
+                    // 눌렀을 때 (Pressed)
+                    EnhancedInputComponent->BindAction(
+                        Action.InputAction,
+                        ETriggerEvent::Started,
+                        this,
+                        &APlayerBase::SendAbilityInputToASC, // 배달부 함수 연결
+                        Action.InputTag,
+                        true
+                    );
+
+                    // 뗐을 때 (Released)
+                    EnhancedInputComponent->BindAction(
+                        Action.InputAction,
+                        ETriggerEvent::Completed,
+                        this,
+                        &APlayerBase::SendAbilityInputToASC,
+                        Action.InputTag,
+                        false
+                    );
+                }
+            }
         }
     }
 }
@@ -220,60 +250,13 @@ USkeletalMeshComponent* APlayerBase::GetArmorComponent(EEquipmentSlot Slot) cons
 
 FCombatActionData APlayerBase::GetCombatActionData(ECombatActionType ActionType) const
 {
-    FCombatActionData Result;
-
-    // 1. 영혼(PlayerData) 연결 확인
-    if (!LinkedPlayerData.IsValid()) return Result;
-
-    // 2. GameInstance 가져오기 (데이터 테이블 검색용)
-    UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
-    if (!GI) return Result;
-
-    // 3. 장비 컴포넌트 가져오기
-    UEquipmentComponent* EquipComp = LinkedPlayerData->GetEquipmentComponent();
-    if (!EquipComp) return Result;
-
-    // 4. 현재 장착된 무기 ID 조회 ("Sword_01" 등)
-    // (EquipmentComponent.h에 GetEquippedItemID 함수가 있어야 함)
-    FName WeaponID = EquipComp->GetEquippedItemID(EEquipmentSlot::Weapon);
-
-    if (WeaponID.IsNone()) return Result; // 무기가 없으면 빈 데이터 반환
-
-    // 5. GI를 통해 데이터 테이블 검색 (ID -> Data Struct)
-    FWeaponAssets* Assets = GI->GetDataTableRow<FWeaponAssets>(GI->WeaponAssetsDataTable, WeaponID);
-    FWeaponStats* Stats = GI->GetDataTableRow<FWeaponStats>(GI->WeaponStatsDataTable, WeaponID);
-
-    // 6. 데이터가 있으면 구조체에 포장
-    if (Assets && Stats)
+    if (!LinkedPlayerData.IsValid())
     {
-        // [공통] 데미지 계산 GE 클래스 (독/화염 등 속성 반영)
-        Result.DamageEffectClass = Assets->DamageEffectClass;
-
-        // [분기] 행동 타입(평타/스킬)에 따라 다른 데이터 전달
-        switch (ActionType)
-        {
-        case ECombatActionType::BasicAttack:
-            // 평타: 기본 몽타주 + 계수 1.0 (평타는 보통 배율 없음)
-            Result.MontageToPlay = Assets->BasicAttackMontage.LoadSynchronous();
-            Result.DamageMultiplier = 1.0f;
-            break;
-
-        case ECombatActionType::WeaponSkill:
-            // 스킬: 평타 몽타주(혹은 스킬 몽타주) + 스킬 계수
-            // 만약 Assets에 SkillMontage가 있다면 그걸 넣으세요.
-            Result.MontageToPlay = Assets->SkillMontage.LoadSynchronous();
-
-            // ★ 핵심: 스탯 테이블에 있는 SkillDamageRate 사용 (1.5배 등)
-            Result.DamageMultiplier = Stats->SkillDamageRate;
-            break;
-
-        case ECombatActionType::UltimateSkill:
-            // 궁극기는 필요 시 CharacterStats에서 가져오도록 확장
-            break;
-        }
+        UE_LOG(LogTemp, Warning, TEXT("⚠️ [PlayerBase] LinkedPlayerData가 유효하지 않음!"));
+        return FCombatActionData();
     }
 
-    return Result;
+    return LinkedPlayerData->GetCombatActionData(ActionType);
 }
 
 void APlayerBase::SetCamera_Default()
@@ -389,18 +372,19 @@ void APlayerBase::OnMoveInput(const FInputActionValue& InValue)
     AddMovementInput(CameraRight, MovementVector.X);
 }
 
-void APlayerBase::OnAttackInput(const FInputActionValue& InValue)
+void APlayerBase::SendAbilityInputToASC(EInputID InputId, bool bIsPressed)
 {
-    //일단 기본공격
     UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
     if (!ASC) return;
 
-    // 2. 공격 태그로 어빌리티 발동 시도
-    //FGameplayTag AttackTag = FGameplayTag::RequestGameplayTag(FName("Ability.Type.Skill.Weapon"));
-    FGameplayTag AttackTag = FGameplayTag::RequestGameplayTag(FName("Ability.Type.Basic"));
-
-    // 태그로 활성화 (Payload 등은 비워둠)
-    ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
+    if (bIsPressed)
+    {
+        ASC->AbilityLocalInputPressed(static_cast<int32>(InputId));
+    }
+    else
+    {
+        ASC->AbilityLocalInputReleased(static_cast<int32>(InputId));
+    }
 }
 
 
