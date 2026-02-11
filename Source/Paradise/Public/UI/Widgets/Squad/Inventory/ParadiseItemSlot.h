@@ -14,7 +14,7 @@ class UButton;
 #pragma endregion 전방 선언
 
 /** @brief 슬롯 클릭 시 데이터와 함께 알림 */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSlotClicked, const FSquadItemUIData&, ItemData);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSlotClicked, FSquadItemUIData, ItemData);
 
 /**
  * @class UParadiseItemSlot

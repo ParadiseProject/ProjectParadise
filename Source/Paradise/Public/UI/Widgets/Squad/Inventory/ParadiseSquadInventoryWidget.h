@@ -42,7 +42,7 @@ public:
 private:
 	/** @brief 슬롯 클릭 핸들러 (내부 바인딩용) */
 	UFUNCTION()
-	void HandleSlotClick(FSquadItemUIData Data);
+	void HandleSlotClick(FSquadItemUIData ItemData);
 #pragma endregion 내부 로직
 
 #pragma region UI 바인딩
