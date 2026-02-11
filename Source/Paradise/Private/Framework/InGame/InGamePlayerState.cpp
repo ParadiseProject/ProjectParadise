@@ -12,7 +12,6 @@
 
 AInGamePlayerState::AInGamePlayerState()
 {
-    InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
     CostManageComponent = CreateDefaultSubobject<UCostManageComponent>(TEXT("CostManageComponent"));
     FamiliarSummonComponent = CreateDefaultSubobject<UFamiliarSummonComponent>(TEXT("FamiliarSummonComponent"));
 }
@@ -27,9 +26,9 @@ void AInGamePlayerState::BeginPlay()
 
 void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
 {
- 
-    UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
-    if (!GI) return;
+
+    UInventoryComponent* MainInv = GetInventoryComponent();
+    if (!MainInv) return;
 
     for (const FName& HeroID : StartingHeroIDs)
     {
@@ -44,7 +43,7 @@ void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
             //인벤토리 연결
             if (UEquipmentComponent* EquipComp = NewSoul->GetEquipmentComponent())
             {
-                EquipComp->SetLinkedInventory(this->InventoryComponent);
+                EquipComp->SetLinkedInventory(MainInv);
 
                 UE_LOG(LogTemp, Log, TEXT("🔗 [SquadInit] %s에게 인벤토리 연결 완료"), *HeroID.ToString());
             }
@@ -53,6 +52,15 @@ void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
     }
 
     UE_LOG(LogTemp, Log, TEXT("✅ [PlayerState] 스쿼드 초기화 완료 (%d명)"), SquadMembers.Num());
+}
+
+UInventoryComponent* AInGamePlayerState::GetInventoryComponent() const
+{
+    if (UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance()))
+    {
+        return GI->GetMainInventory();
+    }
+    return nullptr;
 }
 
 APlayerData* AInGamePlayerState::GetSquadMemberData(int32 Index) const

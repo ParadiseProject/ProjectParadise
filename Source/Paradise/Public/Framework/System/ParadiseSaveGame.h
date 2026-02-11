@@ -18,6 +18,8 @@ class PARADISE_API UParadiseSaveGame : public USaveGame
 	
 public:
 	UParadiseSaveGame();
+
+	
 protected:
 
 private:
@@ -41,12 +43,12 @@ public:
 
 	//보유 영웅 목록 (성장 정보 포함)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	TArray<FOwnedCharacterData> SavedCharacter;
+	TArray<FOwnedCharacterData> SavedCharacters;
 
 	//보유 패밀리어 목록
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 	TArray<FOwnedFamiliarData> SavedFamiliars;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	TMap<FName, FCharacterEquipmentData> SavedCharacterEquipments;
+	//추가 예정 : 플레이어 재화류 , 클리어한 스테이지 정보 등등 
+
 };

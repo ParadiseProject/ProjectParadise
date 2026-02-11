@@ -40,6 +40,12 @@ public:
 	 */
 	void InitSquad(const TArray<FName>& StartingHeroIDs);
 
+	/**
+	 * @brief 글로벌 인벤토리(GameInstance)에 접근하기 위한 편의성 헬퍼 함수
+	 */
+	UFUNCTION(BlueprintPure, Category = "Inventory")
+	class UInventoryComponent* GetInventoryComponent() const;
+
 	/*
 	 * @brief 인덱스에 해당하는 영웅 데이터(영혼) 반환
 	 */
@@ -52,9 +58,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Squad")
 	int32 GetSquadSize() const { return SquadMembers.Num(); }
 
-	/** @brief 인벤토리 컴포넌트 접근자 (Getter) */
-	UFUNCTION(BlueprintCallable, Category = "Getter")
-	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 	/** @brief 코스트 관리 컴포넌트 접근자 (Getter) */ 
 	UFUNCTION(BlueprintCallable, Category = "Economy")

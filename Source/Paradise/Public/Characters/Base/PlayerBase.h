@@ -6,6 +6,7 @@
 #include "Characters/Base/CharacterBase.h"
 #include "AbilitySystemInterface.h"
 #include "Interfaces/CombatInterface.h"
+#include "Data/Enums/GameEnums.h"
 #include "PlayerBase.generated.h"
 
 
@@ -107,16 +108,16 @@ protected:
 	void OnMoveInput(const FInputActionValue& InValue);
 
 	/*
-	* @brief IA_Attack 입력액션에 바인딩할 함수
-	 * @param InValue 입력 액션의 입력값
-	 */
-	UFUNCTION()
-	void OnAttackInput(const FInputActionValue& InValue);
-
-	/*
 	 * @brief 공격이 새로 시작될 때 목록 비우기 (NotifyBegin 같은 곳에서 호출 필요, 혹은 몽타주 시작 시)
 	 */
 	void ResetHitActors() { HitActors.Empty(); }
+
+	/**
+	 * @brief 입력 액션이 들어오면 ASC로 신호를 보내는 배달부 함수
+	 * @param InputId : 어떤 키인가? (Enum)
+	 * @param bIsPressed : 눌렀는가(true), 뗐는가(false)
+	 */
+	void SendAbilityInputToASC(EInputID InputId, bool bIsPressed);
 
 protected:
 
@@ -142,11 +143,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> IA_Move = nullptr;
 
+
 	/*
-	 * @brief 입력 액션 Move
+	 * @brief 전투 스킬(GAS)용 입력 설정 데이터 에셋
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<UInputAction> IA_Attack = nullptr;
+	TObjectPtr<class UParadiseInputConfig> InputConfig;
 
 	/*
 	 * @brief 스프링암 컴포넌트

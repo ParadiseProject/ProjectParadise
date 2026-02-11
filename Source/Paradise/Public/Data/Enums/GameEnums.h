@@ -104,3 +104,18 @@ enum class EEquipmentSlot : uint8
 	/** @brief 장착 슬롯 : 없음 */
 	Unknown		UMETA(DisplayName = "장착 슬롯 : 오류")
 };
+
+/**
+ * @enum EEquipmentSlot
+ * @brief 장비 컴포넌트의 장비 슬롯 ENUM
+ */
+UENUM(BlueprintType)
+enum class EInputID : uint8
+{
+	None,       // 0
+	Confirm,    // 1 (확인)
+	Cancel,     // 2 (취소)
+	Attack,     // 3 (평타)
+	Skill,      // 4 (무기스킬)
+	Ultimate    // 5 (궁극기)
+};
