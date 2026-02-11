@@ -4,8 +4,10 @@
 #include "Characters/Base/PlayerBase.h"
 #include "Characters/Player/PlayerData.h"
 #include "Components/EquipmentComponent.h"
+#include "Components/InventoryComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Framework/System/ParadiseSaveGame.h"
 #include "AbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Framework/InGame/InGameController.h"
@@ -15,6 +17,7 @@
 #include "Data/Enums/GameEnums.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Data/Structs/ItemStructs.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h" // 트레이스 함수용
 #include "AbilitySystemBlueprintLibrary.h" // GAS 이벤트 전송용
 
@@ -98,11 +101,11 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
 {
     if (!InPlayerData) return;
 
-    //연결
+    //플레이어 데이터와 플레이어 베이스 와 연결
     LinkedPlayerData = InPlayerData;
-    InPlayerData->CurrentAvatar = this; 
+    InPlayerData->CurrentAvatar = this;
 
-    //GAS 연결
+    // GAS 연결
     // Owner(APlayerData): HeroDataActor (데이터/로직의 주체)
     // Avatar(APlayerBase): This Character (애니메이션/물리의 주체)
     UAbilitySystemComponent* ASC = InPlayerData->GetAbilitySystemComponent();
@@ -111,29 +114,38 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
         ASC->InitAbilityActorInfo(InPlayerData, this);
     }
 
-    //캐릭터 에셋 외형 업데이트
-    //APlayerData의 장비 외형 데이터 테이블의 한줄을 읽어서 외형 업데이트
+    // 캐릭터 에셋 외형 업데이트
+    // APlayerData의 장비 외형 데이터 테이블의 한줄을 읽어서 외형 업데이트
     if (USkeletalMeshComponent* Mymesh = GetMesh())
     {
         Mymesh->SetSkeletalMesh(LinkedPlayerData->CachedMesh);
-
         Mymesh->SetAnimInstanceClass(LinkedPlayerData->CachedAnimBP);
     }
-    
 
-
-    //외형 업데이트 (장비 동기화)
-    //APlayerData가 가진 장비 컴포넌트를 확인해서 내 몸에 메시를 입힘
+        // 외형 업데이트 (장비 동기화)
+        // APlayerData가 가진 장비 컴포넌트를 확인해서 내 몸에 메시를 입힘
     if (UEquipmentComponent* EquipComp = InPlayerData->GetEquipmentComponent())
     {
-        //장비컴포넌트에 장착된 장비 비쥬얼적으로 보이게 하는 함수 구현해야함
-        //EquipComp->UpdateVisuals(this);
-        //UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] UpdateVisuals 완료!"));
+        // 1. GameInstance와 메인 인벤토리 가져오기
+        UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
+        if (GI && GI->GetMainInventory())
+        {
+            //인벤토리(보유 캐릭터 목록)에서 내 데이터 구조체 찾기
+            //UID를 적용했다면 InPlayerData->CharacterUID 로 비교하세요.
+            for (const auto& CharData : GI->GetMainInventory()->GetOwnedCharacters())
+            {
+                if (CharData.CharacterID == InPlayerData->CharacterID)
+                {
+                    //찾은 데이터(EquipmentMap)를 장비 컴포넌트에 주입 -> 내부에서 자동으로 캐시 덮어쓰고 메쉬 생성!
+                    EquipComp->InitializeEquipment(CharData.EquipmentMap, GI->GetMainInventory());
+                    UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 장비 데이터 연동 및 UpdateVisuals 완료!"));
+                    break;
+                }
+            }
+        }
     }
 
     UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 육체 초기화 완료!"));
-  
-	
 }
 
 void APlayerBase::CheckHit()

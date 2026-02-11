@@ -39,6 +39,12 @@ public:
 	 */
 	void InitSquad(const TArray<FName>& StartingHeroIDs);
 
+	/**
+	 * @brief 글로벌 인벤토리(GameInstance)에 접근하기 위한 편의성 헬퍼 함수
+	 */
+	UFUNCTION(BlueprintPure, Category = "Inventory")
+	class UInventoryComponent* GetInventoryComponent() const;
+
 	/*
 	 * @brief 인덱스에 해당하는 영웅 데이터(영혼) 반환
 	 */
@@ -51,9 +57,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Squad")
 	int32 GetSquadSize() const { return SquadMembers.Num(); }
 
-	/** @brief 인벤토리 컴포넌트 접근자 (Getter) */
-	UFUNCTION(BlueprintCallable, Category = "Getter")
-	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 	/** @brief 코스트 관리 컴포넌트 접근자 (Getter) */ 
 	UFUNCTION(BlueprintCallable, Category = "Economy")
@@ -79,10 +82,6 @@ protected:
 	/* 지휘관용 ASC (코스트/쿨타임/패시브 효과 관리용) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
-
-	/** @brief 플레이어의 인벤토리 (영웅, 병사, 아이템 관리) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	TObjectPtr<UInventoryComponent> InventoryComponent = nullptr;
 
 	/* 지휘관용 어트리뷰트 (Cost, MaxCost, Gold, RegenRate 등) */
 	UPROPERTY()

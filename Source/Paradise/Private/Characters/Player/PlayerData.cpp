@@ -57,13 +57,15 @@ void APlayerData::InitPlayerAssets(FCharacterAssets* Assets)
 
 void APlayerData::InitPlayerData(FName HeroID)
 {
+	
+
 	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
 	if (!GI)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] GameInstance를 찾을 수 없습니다."));
 		return;
 	}
-
+	this->CharacterID = HeroID;
 	UE_LOG(LogTemp, Log, TEXT("🔄 [PlayerData] 영웅 초기화 시작: %s"), *HeroID.ToString());
 
 	//스탯 데이터 조회 및 적용
