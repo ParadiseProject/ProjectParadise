@@ -45,7 +45,7 @@ void UParadiseItemSlot::UpdateSlot(const FSquadItemUIData& InData)
 		}
 	}
 
-	// 2. 레벨/수량 텍스트
+	// 2. 레벨 텍스트
 	if (Text_Level)
 	{
 		if (InData.LevelOrCount > 0)
