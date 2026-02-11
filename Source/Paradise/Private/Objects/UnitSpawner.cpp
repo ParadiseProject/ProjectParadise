@@ -3,7 +3,7 @@
 #include "Objects/UnitSpawner.h"
 #include "Characters/AIUnit/BaseUnit.h"
 #include "Framework/System/ObjectPoolSubsystem.h"
-#include "AIController.h"
+#include "Framework/InGame/MyAIController.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "NavigationSystem.h"
 #include "DrawDebugHelpers.h"
@@ -17,7 +17,6 @@ void AUnitSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// [기존 로직 유지] 프리 스폰 (오브젝트 풀 예열)
 	UObjectPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>();
 	if (PoolSubsystem && UnitClass)
 	{
@@ -28,34 +27,28 @@ void AUnitSpawner::BeginPlay()
 		}
 	}
 
-	// [기존 로직 유지] 첫 웨이브 타이머 시작
 	if (WaveConfigs.Num() > 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Starting First Wave..."));
 		GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &AUnitSpawner::SpawnUnit, WaveConfigs[0].SpawnInterval, true, 1.0f);
 	}
 }
 
 void AUnitSpawner::SpawnUnit()
 {
-	// 1. 웨이브 인덱스 체크
 	if (!WaveConfigs.IsValidIndex(CurrentWaveIndex))
 	{
 		GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
 		return;
 	}
 
-	// 2. 현재 웨이브의 유닛 정보 가져오기
 	EnemyRowName = WaveConfigs[CurrentWaveIndex].UnitRowName;
 	UObjectPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>();
 
 	if (!PoolSubsystem || !UnitClass || !StatsDataTable || !AssetsDataTable || EnemyRowName.IsNone())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Spawner Check Failed! RowName: %s"), *EnemyRowName.ToString());
 		return;
 	}
 
-	// 3. 스폰 위치 및 생성
 	FVector SpawnLocation = GetRandomSpawnLocation() + FVector(0.f, 0.f, 100.0f);
 	FRotator SpawnRotation = FRotator(0.f, FMath::RandRange(0.f, 360.f), 0.f);
 
@@ -63,61 +56,64 @@ void AUnitSpawner::SpawnUnit()
 
 	if (NewUnit)
 	{
-		// 풀에서 막 나온 유닛 위치/회전 강제 재설정 (기존 기능 유지)
 		NewUnit->SetActorLocationAndRotation(SpawnLocation, SpawnRotation, false, nullptr, ETeleportType::ResetPhysics);
 
-		// 4. 데이터 로드 (FAIUnitStats로 자동 캐스팅됨)
+		// 스폰된 유닛에게 UnitID 부여
+		NewUnit->SetUnitID(EnemyRowName);
+
 		FEnemyStats* StatData = StatsDataTable->FindRow<FEnemyStats>(EnemyRowName, TEXT(""));
 		FEnemyAssets* AssetData = AssetsDataTable->FindRow<FEnemyAssets>(EnemyRowName, TEXT(""));
 
 		if (StatData && AssetData)
 		{
-			// 통합된 InitializeUnit 호출
 			NewUnit->InitializeUnit(StatData, AssetData);
 
-			// AI 컨트롤러 및 BT 설정
-			AAIController* AIC = Cast<AAIController>(NewUnit->GetController());
+			// AI 컨트롤러 확인
+			AMyAIController* AIC = Cast<AMyAIController>(NewUnit->GetController());
+
+			// 컨트롤러가 없다면 생성
 			if (!AIC)
 			{
 				NewUnit->SpawnDefaultController();
-				AIC = Cast<AAIController>(NewUnit->GetController());
+				AIC = Cast<AMyAIController>(NewUnit->GetController());
 			}
 
 			if (AIC)
 			{
-				AIC->Possess(NewUnit);
+				/** * [핵심 수정] AIC->Possess(NewUnit) 수동 호출을 제거합니다.
+				 */
+
+				 // 1. 블랙보드에 데이터 테이블 스탯 주입
+				AIC->LoadUnitStatsFromTable();
+
+				// 2. 비헤이비어 트리 실행
 				if (!AssetData->BehaviorTree.IsNull())
 				{
 					UBehaviorTree* BT = AssetData->BehaviorTree.LoadSynchronous();
-					if (BT) AIC->RunBehaviorTree(BT);
+					if (BT)
+					{
+						AIC->RunBehaviorTree(BT);
+						UE_LOG(LogTemp, Log, TEXT("🚀 [%s] Behavior Tree Started Successfully."), *NewUnit->GetName());
+					}
 				}
 			}
-			UE_LOG(LogTemp, Log, TEXT("Enemy Spawned: %s"), *EnemyRowName.ToString());
 		}
 	}
 
-	// 5. [중요] 기존 웨이브 카운팅 및 다음 웨이브 전환 로직
 	CurrentSpawnCountInWave++;
 	if (CurrentSpawnCountInWave >= WaveConfigs[CurrentWaveIndex].SpawnCount)
 	{
 		CurrentSpawnCountInWave = 0;
 		int32 FinishedIdx = CurrentWaveIndex;
-		CurrentWaveIndex++; // 다음 웨이브로
+		CurrentWaveIndex++;
 
 		GetWorldTimerManager().ClearTimer(SpawnTimerHandle);
 
-		// 다음 웨이브가 있다면 타이머 재설정
 		if (WaveConfigs.IsValidIndex(CurrentWaveIndex))
 		{
 			float NextDelay = WaveConfigs[FinishedIdx].NextWaveDelay;
 			GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &AUnitSpawner::SpawnUnit,
 				WaveConfigs[CurrentWaveIndex].SpawnInterval, true, NextDelay);
-
-			UE_LOG(LogTemp, Warning, TEXT("Wave %d Finished. Next Wave in %f s"), FinishedIdx, NextDelay);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("All Waves Finished!"));
 		}
 	}
 }
@@ -140,6 +136,7 @@ FVector AUnitSpawner::GetRandomSpawnLocation()
 void AUnitSpawner::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
+
 	DrawDebugBox(GetWorld(), GetActorLocation(), SpawnExtent, FColor::Cyan, false, 2.0f, 0, 5.0f);
 }
 #endif
