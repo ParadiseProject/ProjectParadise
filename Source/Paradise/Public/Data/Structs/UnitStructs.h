@@ -365,7 +365,7 @@ public:
 	TSoftObjectPtr<UTexture2D> BodyIcon;
 
 	// =========================================================
-	//  GAS & Skill (Player Only)
+	//  GAS & Montage (Player Only)
 	// =========================================================
 
 	/**
@@ -373,6 +373,12 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS")
 	TSubclassOf<UGameplayAbility> UltimateAbility;
+
+	/**
+	 * @brief 궁극기 사용 시 적용할 GameplayEffect
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS")
+	TSubclassOf<class UGameplayEffect> UltimateDamageEffect;
 
 	/**
 	 * @brief 궁극기 연출 몽타주 (Ultimate Montage)

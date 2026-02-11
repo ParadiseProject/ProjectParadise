@@ -81,6 +81,7 @@ FCombatActionData APlayerData::GetCombatActionData(ECombatActionType ActionType)
 {
 	FCombatActionData Result;
 
+	// 1. GameInstance 가져오기 (필수)
 	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
 	if (!GI)
 	{
@@ -88,16 +89,46 @@ FCombatActionData APlayerData::GetCombatActionData(ECombatActionType ActionType)
 		return Result;
 	}
 
+	// =========================================================
+	// 궁극기 (Ultimate Skill) - 캐릭터 고유 능력
+	// =========================================================
+	if (ActionType == ECombatActionType::UltimateSkill)
+	{
+		// 내 캐릭터 ID로 에셋 테이블 조회
+		FCharacterAssets* CharAssets = GI->GetDataTableRow<FCharacterAssets>(GI->CharacterAssetsDataTable, CharacterID);
+		FCharacterStats* CharStats = GI->GetDataTableRow<FCharacterStats>(GI->CharacterStatsDataTable, CharacterID);
+
+		if (CharAssets)
+		{
+			Result.MontageToPlay = CharAssets->UltimateMontage.LoadSynchronous(); // 구조체에 이 필드가 있다고 가정
+			Result.DamageMultiplier = CharStats->UltimateDamageRate;
+
+			// 이펙트 클래스 (캐릭터 고유 이펙트가 있다면 설정)
+			Result.DamageEffectClass = CharAssets->UltimateDamageEffect;
+		}
+
+		return Result; // 궁극기 데이터 반환 후 종료
+	}
+
+	// =========================================================
+	// 무기 기술 (Basic Attack / Weapon Skill)
+	// =========================================================
+
+	// 1. 장비 컴포넌트 체크
 	if (!EquipmentComponent2) return Result;
 
+	// 2. 현재 무기 ID 조회
 	FName WeaponID = EquipmentComponent2->GetEquippedItemID(EEquipmentSlot::Weapon);
 	if (WeaponID.IsNone()) return Result;
 
+	// 3. 무기 데이터 테이블 조회
 	FWeaponAssets* WeaponAssets = GI->GetDataTableRow<FWeaponAssets>(GI->WeaponAssetsDataTable, WeaponID);
 	FWeaponStats* WeaponStats = GI->GetDataTableRow<FWeaponStats>(GI->WeaponStatsDataTable, WeaponID);
 
+	// 4. 데이터 패키징
 	if (WeaponAssets && WeaponStats)
 	{
+		// 공통: 무기 전용 데미지 이펙트 (독, 화염 등)
 		Result.DamageEffectClass = WeaponAssets->DamageEffectClass;
 
 		switch (ActionType)
@@ -110,10 +141,6 @@ FCombatActionData APlayerData::GetCombatActionData(ECombatActionType ActionType)
 		case ECombatActionType::WeaponSkill:
 			Result.MontageToPlay = WeaponAssets->SkillMontage.LoadSynchronous();
 			Result.DamageMultiplier = WeaponStats->SkillDamageRate;
-			break;
-
-		case ECombatActionType::UltimateSkill:
-			// 궁극기 로직 (필요시 CharacterAssets 조회)
 			break;
 		}
 	}
@@ -166,7 +193,6 @@ void APlayerData::InitializeWeaponAbilities(const FWeaponAssets* WeaponData)
 void APlayerData::InitPlayerData(FName HeroID)
 {
 	
-
 	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
 	if (!GI)
 	{
@@ -191,12 +217,7 @@ void APlayerData::InitPlayerData(FName HeroID)
 	FCharacterAssets* Assets = GI->GetDataTableRow<FCharacterAssets>(GI->CharacterAssetsDataTable, HeroID);
 	if (Assets)
 	{
-		//에셋 로드
-		if (!Assets->SkeletalMesh.IsNull())
-		{
-			this->CachedMesh = Assets->SkeletalMesh.LoadSynchronous();
-		}
-		this->CachedAnimBP = Assets->AnimBlueprint;
+		InitPlayerAssets(Assets);
 
 		UE_LOG(LogTemp, Log, TEXT("✅ [PlayerData] 데이터 로드 완료"));
 	}
