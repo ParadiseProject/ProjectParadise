@@ -5,8 +5,21 @@
 #include "Components/Image.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Components/SizeBox.h"
 
 #pragma region 생명주기
+void UParadiseSquadSlot::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+
+	// 에디터에서 설정한 Width/Height 값을 SizeBox에 즉시 반영
+	if (RootSizeBox)
+	{
+		RootSizeBox->SetWidthOverride(SlotWidth);
+		RootSizeBox->SetHeightOverride(SlotHeight);
+	}
+}
+
 void UParadiseSquadSlot::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -64,8 +77,19 @@ void UParadiseSquadSlot::UpdateSlot(const FSquadItemUIData& InData)
 
 		if (Text_Level)
 		{
-			Text_Level->SetText(FText::AsNumber(InData.LevelOrCount));
-			Text_Level->SetVisibility(ESlateVisibility::Visible);
+			// 0, 1, 2번은 캐릭터 -> 레벨 표시
+			// 3번~7번은 유닛 -> 레벨 숨김
+			bool bIsUnitSlot = (SlotIndex >= 3);
+
+			if (bIsUnitSlot)
+			{
+				Text_Level->SetVisibility(ESlateVisibility::Collapsed);
+			}
+			else
+			{
+				Text_Level->SetText(FText::AsNumber(InData.Level));
+				Text_Level->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+			}
 		}
 	}
 }

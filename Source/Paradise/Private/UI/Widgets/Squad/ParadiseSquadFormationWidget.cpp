@@ -3,7 +3,6 @@
 
 #include "UI/Widgets/Squad/ParadiseSquadFormationWidget.h"
 #include "UI/Widgets/Squad/ParadiseSquadSlot.h"
-#include "Components/WidgetSwitcher.h"
 
 #pragma region 생명주기
 void UParadiseSquadFormationWidget::NativeConstruct()
@@ -38,15 +37,6 @@ void UParadiseSquadFormationWidget::NativeConstruct()
 #pragma endregion 생명주기
 
 #pragma region 공개 함수
-void UParadiseSquadFormationWidget::SetFormationMode(bool bIsUnitMode)
-{
-	if (Switcher_Mode)
-	{
-		// 0: 캐릭터 편성 화면, 1: 유닛 덱 편성 화면
-		Switcher_Mode->SetActiveWidgetIndex(bIsUnitMode ? 1 : 0);
-	}
-}
-
 void UParadiseSquadFormationWidget::UpdateSlot(int32 SlotIndex, const FSquadItemUIData& Data)
 {
 	UParadiseSquadSlot* TargetSlot = nullptr;

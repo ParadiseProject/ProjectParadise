@@ -11,6 +11,7 @@
 class UImage;
 class UButton;
 class UTextBlock;
+class USizeBox;
 #pragma endregion 전방 선언
 
 /** @brief 슬롯 클릭 시 인덱스 전달 */
@@ -28,10 +29,13 @@ class PARADISE_API UParadiseSquadSlot : public UUserWidget
 	
 #pragma region 로직
 public:
+	/** @brief 에디터 편집 화면 및 런타임 초기화 시 크기 적용 */
+	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
-	/** * @brief 슬롯 초기화 (인덱스 지정)
+	/**
+	 * @brief 슬롯 초기화 (인덱스 지정)
 	 * @details 위젯 생성 직후 호출해 주세요.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SquadSlot")
@@ -53,8 +57,23 @@ private:
 	void OnButtonClicked();
 #pragma endregion 로직
 
+#pragma region 설정 (Config)
+public:
+	/** @brief 슬롯 가로 크기 (에디터 디테일 패널에서 수정 가능) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
+	float SlotWidth = 150.0f;
+
+	/** @brief 슬롯 세로 크기 (에디터 디테일 패널에서 수정 가능) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
+	float SlotHeight = 150.0f;
+#pragma endregion 설정
+
 #pragma region UI 바인딩
 protected:
+	/** @brief 최상위 루트 사이즈 박스 (크기 강제용) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USizeBox> RootSizeBox = nullptr;
+
 	/** @brief 캐릭터/유닛 아이콘 (채워졌을 때 보임) */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> Img_Icon = nullptr;

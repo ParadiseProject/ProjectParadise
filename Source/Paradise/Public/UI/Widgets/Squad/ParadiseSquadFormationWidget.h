@@ -8,7 +8,6 @@
 #include "ParadiseSquadFormationWidget.generated.h"
 
 #pragma region 전방 선언
-class UWidgetSwitcher;
 class UParadiseSquadSlot;
 #pragma endregion 전방 선언
 
@@ -26,13 +25,6 @@ class PARADISE_API UParadiseSquadFormationWidget : public UUserWidget
 	
 #pragma region 공개 함수
 public:
-	/**
-	 * @brief 현재 탭 상태에 따라 좌측 편성 패널의 모드를 전환합니다.
-	 * @details WidgetSwitcher를 제어하여 '캐릭터 편성(3슬롯)' 화면과 '유닛 덱 편성(5슬롯)' 화면을 교체합니다.
-	 * @param bIsUnitMode true인 경우 유닛 덱 모드(Unit Deck)로, false인 경우 캐릭터 편성 모드(Squad)로 설정합니다.
-	 */
-	void SetFormationMode(bool bIsUnitMode);
-
 	/**
 	 * @brief 지정된 인덱스를 가진 편성 슬롯의 표시 데이터를 갱신합니다.
 	 * @details 메인/서브 캐릭터 혹은 유닛 슬롯의 아이콘, 레벨, 등급 정보를 업데이트합니다.
@@ -56,10 +48,6 @@ protected:
 
 #pragma region UI 바인딩
 protected:
-	/** @brief 모드 전환 (0: 캐릭터 편성, 1: 유닛 덱 편성) */
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UWidgetSwitcher> Switcher_Mode = nullptr;
-
 	// --- 캐릭터 슬롯 ---
 	UPROPERTY(meta = (BindWidget)) TObjectPtr<UParadiseSquadSlot> Slot_Main = nullptr;
 	UPROPERTY(meta = (BindWidget)) TObjectPtr<UParadiseSquadSlot> Slot_Sub1 = nullptr;

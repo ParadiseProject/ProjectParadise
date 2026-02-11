@@ -10,6 +10,7 @@
 #pragma region 전방 선언
 class UTextBlock;
 class UButton;
+class UHorizontalBox;
 class UImage;
 #pragma endregion 전방 선언
 
@@ -18,7 +19,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDetailAction);
 
 /**
  * @class UParadiseSquadDetailWidget
- * @brief 선택된 유닛/캐릭터의 상세 정보를 보여주고, 교체/장착 액션을 트리거하는 뷰 위젯.
+ * @brief 편성 화면 좌측 하단 상세 정보 패널. 상태에 따라 교체/장비 버튼 또는 확인/취소 버튼을 표시함.
  */
 UCLASS()
 class PARADISE_API UParadiseSquadDetailWidget : public UUserWidget
@@ -33,17 +34,20 @@ public:
 	/**
 	 * @brief 받은 데이터를 UI에 표시합니다.
 	 * @param InData 표시할 UI 데이터 구조체
+	 * @param bIsFormationContext [수정] 편성창에서 클릭했는지 여부 (true: 버튼 보임, false: 버튼 숨김)
+	 * @param bIsUnit 유닛인지 여부 (true: 장비버튼 숨김)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "DetailView")
-	void ShowInfo(const FSquadItemUIData& InData);
+	void ShowInfo(const FSquadItemUIData& InData, bool bIsFormationContext, bool bIsUnit);
 
 	/**
 	 * @brief 현재 상태에 따라 버튼의 가시성을 갱신합니다.
 	 * @param CurrentState 현재 UI 상태 (Normal / EquipMode)
 	 * @param bIsUnitTab 현재 유닛(소환수) 탭인지 여부
+	 * @param bHasPendingSelection 교체할 대상이 선택되었는지 (확인 버튼 활성화용)
 	 */
 	UFUNCTION(BlueprintCallable, Category = "DetailView")
-	void UpdateButtonState(ESquadUIState CurrentState, bool bIsUnitTab);
+	void UpdateButtonState(ESquadUIState CurrentState, bool bIsUnitTab, bool bHasPendingSelection);
 
 	/** @brief 정보를 비웁니다. */
 	void ClearInfo();
@@ -57,6 +61,10 @@ private:
 	void HandleSwapEquip();
 	UFUNCTION() 
 	void HandleCancel();
+
+	// 확인 버튼 핸들러
+	UFUNCTION()
+	void HandleConfirm();
 #pragma endregion 핸들러
 
 #pragma region UI 바인딩
@@ -80,6 +88,14 @@ protected:
 	/** @brief 장비 교체 모드 취소/완료 버튼 (초기엔 숨김) */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_CancelEquipMode = nullptr;
+
+	// 교체 확정 버튼 (교체 모드에서만 보임, 처음엔 비활성)
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_Confirm = nullptr;
+
+	// 버튼들을 담는 가로 박스 (인벤토리 클릭 시 통째로 숨기기 위함)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UHorizontalBox> HBox_ButtonRoot = nullptr;
 #pragma endregion UI 바인딩
 
 #pragma region 이벤트
@@ -95,5 +111,9 @@ public:
 	/** @brief 취소 버튼 클릭 알림 */
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnDetailAction OnCancelClicked;
+
+	// 확인 버튼 클릭 알림
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnDetailAction OnConfirmClicked;
 #pragma endregion 이벤트
 };

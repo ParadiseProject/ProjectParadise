@@ -48,9 +48,9 @@ void UParadiseItemSlot::UpdateSlot(const FSquadItemUIData& InData)
 	// 2. 레벨 텍스트
 	if (Text_Level)
 	{
-		if (InData.LevelOrCount > 0)
+		if (InData.Level > 0)
 		{
-			Text_Level->SetText(FText::AsNumber(InData.LevelOrCount));
+			Text_Level->SetText(FText::AsNumber(InData.Level));
 			Text_Level->SetVisibility(ESlateVisibility::Visible);
 		}
 		else

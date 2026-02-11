@@ -74,6 +74,9 @@ private:
 
 	/** @brief 현재 상태(CurrentState)에 따라 버튼 활성/비활성 및 UI 잠금을 처리합니다. */
 	void UpdateUIState();
+
+	/** @brief 상세 패널의 버튼 상태(교체 vs 확인 / 취소)를 갱신하는 헬퍼  */ 
+	void UpdateDetailPanelState();
 #pragma endregion 로직 - 탭 및 상태 제어
 
 #pragma region 로직 - 데이터 처리
@@ -84,11 +87,11 @@ private:
 	/** 
 	 * @brief ID와 레벨 정보를 받아 UI 표시용 데이터 구조체로 변환합니다. (Factory Method)
 	 * @param ID 대상의 ID (RowName)
-	 * @param LevelOrCount 레벨 또는 수량
+	 * @param InLevel 레벨
 	 * @param TabType 어떤 종류의 테이블을 검색할지 결정
 	 * @return UI 표시용 데이터 구조체 (FSquadItemUIData)
 	 */
-	FSquadItemUIData MakeUIData(FName ID, int32 LevelOrCount, int32 TabType);
+	FSquadItemUIData MakeUIData(FName ID, int32 InLevel, int32 TabType);
 #pragma endregion 로직 - 데이터 처리
 
 #pragma region 로직 - 이벤트 핸들러
@@ -114,6 +117,14 @@ private:
 	/** @brief [취소/완료] 버튼 클릭 시 -> 일반 모드로 복귀합니다. */
 	UFUNCTION()
 	void HandleCancelEquipMode();
+
+	/** @brief [캐릭터 교체] 버튼 클릭 시 */
+	UFUNCTION()
+	void HandleSwapCharacterMode();
+
+	/** @brief [확인] 버튼 클릭 시 -> 실제 교체 수행 */
+	UFUNCTION()
+	void HandleConfirmAction();
 #pragma endregion 로직 - 이벤트 핸들러
 
 #pragma region 데이터 소스 (약한 참조)
@@ -135,6 +146,12 @@ private:
 
 	/** @brief 현재 선택된 편성 슬롯 인덱스 (장비 교체 시 대상 식별용) */
 	int32 SelectedFormationSlotIndex = -1;
+
+	/** [추가] 교체를 위해 인벤토리에서 선택한 아이템 (확인 버튼 누르기 전 대기 상태) */
+	FSquadItemUIData PendingSelection;
+
+	/** [추가] 현재 편성에 장착된 ID 목록 (인벤토리 테두리 표시용) */
+	TArray<FName> CurrentEquippedIDs;
 #pragma endregion 내부 상태
 
 };

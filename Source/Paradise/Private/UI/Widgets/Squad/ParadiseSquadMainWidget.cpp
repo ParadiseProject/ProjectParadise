@@ -57,6 +57,8 @@ void UParadiseSquadMainWidget::NativeConstruct()
 	{
 		WBP_DetailPanel->OnSwapEquipmentClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleSwapEquipmentMode);
 		WBP_DetailPanel->OnCancelClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleCancelEquipMode);
+		WBP_DetailPanel->OnSwapCharacterClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleSwapCharacterMode);
+		WBP_DetailPanel->OnConfirmClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleConfirmAction);
 	}
 
 	// 5. 초기 상태 설정 (캐릭터 탭)
@@ -71,6 +73,11 @@ void UParadiseSquadMainWidget::NativeDestruct()
 	// 자식 위젯 델리게이트는 위젯 소멸 시 자동 해제되지만, 명시적 해제가 안전함
 	if (WBP_InventoryPanel) WBP_InventoryPanel->OnItemClicked.RemoveAll(this);
 	if (WBP_FormationPanel) WBP_FormationPanel->OnSlotSelected.RemoveAll(this);
+	if (WBP_DetailPanel)
+	{
+		WBP_DetailPanel->OnSwapCharacterClicked.RemoveAll(this);
+		WBP_DetailPanel->OnConfirmClicked.RemoveAll(this);
+	}
 
 	Super::NativeDestruct();
 }
@@ -87,42 +94,64 @@ void UParadiseSquadMainWidget::SwitchTab(int32 NewTab)
 	// 같은 탭 재클릭 시 무시
 	if (CurrentTabIndex == NewTab) return;
 
-	// [Rule] 장비 교체 모드일 때는 캐릭터/유닛 탭으로 이동 불가 (UI 잠금)
-	if (CurrentState == ESquadUIState::EquipMode)
+	// 장비 교체 모드일 때는 캐릭터/유닛 탭으로 이동 불가 (UI 잠금)
+	if (CurrentState == ESquadUIState::EquipmentSwap)
 	{
-		if (NewTab == SquadTabs::Character || NewTab == SquadTabs::Unit) return;
+		if (NewTab != SquadTabs::Weapon && NewTab != SquadTabs::Armor) return;
+	}
+	else if (CurrentState == ESquadUIState::CharacterSwap)
+	{
+		if (NewTab != SquadTabs::Character && NewTab != SquadTabs::Unit) return;
 	}
 
 	CurrentTabIndex = NewTab;
 
-	// 1. 좌측 Formation 패널 모드 변경 (유닛 탭일 때만 유닛 덱 모드)
-	if (WBP_FormationPanel)
-	{
-		WBP_FormationPanel->SetFormationMode(CurrentTabIndex == SquadTabs::Unit);
-	}
+	// 1. 하단 Detail 패널 버튼 갱신 (유닛 탭은 장비 교체 버튼 숨김 등)
+	UpdateDetailPanelState();
 
-	// 2. 하단 Detail 패널 버튼 갱신 (유닛 탭은 장비 교체 버튼 숨김 등)
-	if (WBP_DetailPanel)
-	{
-		WBP_DetailPanel->UpdateButtonState(CurrentState, CurrentTabIndex == SquadTabs::Unit);
-	}
-
-	// 3. 인벤토리 리스트 데이터 갱신
+	// 2. 인벤토리 리스트 데이터 갱신
 	RefreshInventoryUI();
 }
 
 void UParadiseSquadMainWidget::UpdateUIState()
 {
 	bool bIsNormal = (CurrentState == ESquadUIState::Normal);
+	bool bIsCharSwap = (CurrentState == ESquadUIState::CharacterSwap);
+	bool bIsEquipSwap = (CurrentState == ESquadUIState::EquipmentSwap);
 
-	// 교체 모드 시 캐릭터/유닛 탭 비활성화 (시각적 처리)
-	if (Btn_Tab_Character) Btn_Tab_Character->SetIsEnabled(bIsNormal);
-	if (Btn_Tab_Unit)      Btn_Tab_Unit->SetIsEnabled(bIsNormal);
+	// 교체 모드 시 관련 없는 탭 비활성화
+	if (Btn_Tab_Character)
+	{
+		bool bEnable = bIsNormal || (bIsCharSwap && CurrentTabIndex == SquadTabs::Character);
+		Btn_Tab_Character->SetIsEnabled(bEnable);
+	}
+	if (Btn_Tab_Unit)
+	{
+		bool bEnable = bIsNormal || (bIsCharSwap && CurrentTabIndex == SquadTabs::Unit);
+		Btn_Tab_Unit->SetIsEnabled(bEnable);
+	}
+	if (Btn_Tab_Weapon)
+	{
+		bool bEnable = bIsNormal || bIsEquipSwap;
+		Btn_Tab_Weapon->SetIsEnabled(bEnable);
+	}
+	if (Btn_Tab_Armor)
+	{
+		bool bEnable = bIsNormal || bIsEquipSwap;
+		Btn_Tab_Armor->SetIsEnabled(bEnable);
+	}
 
-	// Detail 패널 버튼 모드 전환 (교체 -> 취소/완료)
+	// Detail 패널 버튼 모드 전환
+	UpdateDetailPanelState();
+}
+
+void UParadiseSquadMainWidget::UpdateDetailPanelState()
+{
 	if (WBP_DetailPanel)
 	{
-		WBP_DetailPanel->UpdateButtonState(CurrentState, CurrentTabIndex == SquadTabs::Unit);
+		bool bIsUnitTab = (CurrentTabIndex == SquadTabs::Unit);
+		bool bHasSelection = !PendingSelection.ID.IsNone();
+		WBP_DetailPanel->UpdateButtonState(CurrentState, bIsUnitTab, bHasSelection);
 	}
 }
 #pragma endregion 로직 - 탭 및 상태 제어
@@ -174,16 +203,27 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 		}
 		break;
 	}
+	//  데이터 후처리 (장착 여부 및 선택 상태 표시)
+	for (auto& Item : ListData)
+	{
+		// TODO: CurrentEquippedIDs에 포함되어 있으면 테두리 표시
+		// if (CurrentEquippedIDs.Contains(Item.ID)) Item.bIsEquipped = true;
 
+		// 교체 모드에서 선택한 아이템이면 하이라이트
+		if (CurrentState != ESquadUIState::Normal && Item.ID == PendingSelection.ID)
+		{
+			Item.bIsSelected = true;
+		}
+	}
 	// 가공된 데이터를 뷰(Inventory Panel)에 전달
 	WBP_InventoryPanel->UpdateList(CurrentTabIndex, ListData);
 }
 
-FSquadItemUIData UParadiseSquadMainWidget::MakeUIData(FName ID, int32 LevelOrCount, int32 TabType)
+FSquadItemUIData UParadiseSquadMainWidget::MakeUIData(FName ID, int32 InLevel, int32 TabType)
 {
 	FSquadItemUIData Result;
 	Result.ID = ID;
-	Result.LevelOrCount = LevelOrCount;
+	Result.Level = InLevel;
 	Result.Name = FText::FromName(ID); // 기본값 (테이블 조회 실패 대비)
 
 	if (!CachedGI.IsValid()) return Result;
@@ -245,69 +285,104 @@ FSquadItemUIData UParadiseSquadMainWidget::MakeUIData(FName ID, int32 LevelOrCou
 void UParadiseSquadMainWidget::HandleFormationSlotSelected(int32 SlotIndex)
 {
 	SelectedFormationSlotIndex = SlotIndex;
+	bool bIsUnitSlot = (SlotIndex >= 3);
 
-	// TODO: 실제로는 SquadComponent 등을 통해 해당 슬롯에 장착된 캐릭터 ID를 가져와야 함.
-	// 현재는 슬롯 선택 시 Detail 패널의 버튼 상태를 갱신하는 로직 위주로 구현.
+	// 슬롯 선택 시 상태 초기화 (교체 모드였다면 취소됨)
+	if (CurrentState != ESquadUIState::Normal)
+	{
+		HandleCancelEquipMode();
+	}
 
 	// 임시 데이터로 상세창 갱신 테스트
 	FSquadItemUIData DummyData;
-	DummyData.Name = FText::FromString(TEXT("선택된 슬롯"));
-	DummyData.LevelOrCount = SlotIndex;
-	WBP_DetailPanel->ShowInfo(DummyData);
+	DummyData.Name = FText::FromString(bIsUnitSlot ? TEXT("선택된 유닛 슬롯") : TEXT("선택된 캐릭터 슬롯"));
+	DummyData.Level = SlotIndex;
 
-	// 버튼 상태 업데이트 (Unit 슬롯(3번 이상)인 경우 장비 교체 불가능)
-	const bool bIsUnitSlot = (SlotIndex >= 3);
-	WBP_DetailPanel->UpdateButtonState(CurrentState, bIsUnitSlot);
+	// 상세 패널 갱신 (편성창 컨텍스트 = true)
+	WBP_DetailPanel->ShowInfo(DummyData, true, bIsUnitSlot);
+
+	// 버튼 상태 업데이트
+	UpdateDetailPanelState();
 }
 
 void UParadiseSquadMainWidget::HandleSwapEquipmentMode()
 {
 	// 1. 상태 변경 (장비 교체 모드)
-	CurrentState = ESquadUIState::EquipMode;
+	CurrentState = ESquadUIState::EquipmentSwap;
+	PendingSelection = FSquadItemUIData(); // 선택 초기화
 
 	// 2. 무기 탭으로 강제 이동
 	SwitchTab(SquadTabs::Weapon);
 
 	// 3. UI 잠금 처리 및 버튼 변경
 	UpdateUIState();
-
-	UE_LOG(LogTemp, Log, TEXT("[SquadMain] Entered Equipment Swap Mode."));
 }
 
 void UParadiseSquadMainWidget::HandleCancelEquipMode()
 {
 	// 1. 상태 복구 (일반 모드)
 	CurrentState = ESquadUIState::Normal;
+	PendingSelection = FSquadItemUIData(); // 선택 초기화
 
 	// 2. UI 잠금 해제 및 버튼 복구
 	UpdateUIState();
 
-	UE_LOG(LogTemp, Log, TEXT("[SquadMain] Exited Equipment Swap Mode."));
+	// 3. 인벤토리 하이라이트 제거
+	RefreshInventoryUI();
+}
+
+void UParadiseSquadMainWidget::HandleSwapCharacterMode()
+{
+	// 1. 상태 변경
+	CurrentState = ESquadUIState::CharacterSwap;
+	PendingSelection = FSquadItemUIData(); // 선택 초기화
+
+	// 2. 탭 강제 이동 (슬롯에 따라 캐릭터 or 유닛)
+	bool bIsUnitSlot = (SelectedFormationSlotIndex >= 3);
+	SwitchTab(bIsUnitSlot ? SquadTabs::Unit : SquadTabs::Character);
+
+	// 3. UI 잠금 처리
+	UpdateUIState();
+}
+
+void UParadiseSquadMainWidget::HandleConfirmAction()
+{
+	if (PendingSelection.ID.IsNone()) return;
+
+	UE_LOG(LogTemp, Log, TEXT("[SquadMain] CONFIRM SWAP: Slot[%d] <-> Item[%s]"), SelectedFormationSlotIndex, *PendingSelection.ID.ToString());
+
+	// TODO: InventoryComponent에 실제 교체 요청
+	// if (CurrentState == CharacterSwap) Inventory->EquipCharacter(...)
+	// else if (CurrentState == EquipMode) Inventory->EquipItem(...)
+
+	// 교체 완료 후 일반 모드로 복귀
+	HandleCancelEquipMode();
 }
 
 void UParadiseSquadMainWidget::HandleInventoryItemClicked(FSquadItemUIData ItemData)
 {
-	if (CurrentState == ESquadUIState::EquipMode)
+	// 교체 모드일 때
+	if (CurrentState != ESquadUIState::Normal)
 	{
-		// [장비 교체 로직]
-		// EquipmentComponent->EquipItem(ItemData.ID) 등을 호출해야 함.
-		UE_LOG(LogTemp, Log, TEXT("[SquadMain] Try Equip Item: %s to Slot: %d"), *ItemData.ID.ToString(), SelectedFormationSlotIndex);
+		// 1. 선택한 아이템 임시 저장 (Pending)
+		PendingSelection = ItemData;
 
-		// 장착 후 모드 유지 (사용자가 완료 버튼을 누를 때까지)
+		// 2. 인벤토리 갱신 (선택된 아이템 하이라이트)
+		RefreshInventoryUI();
+
+		// 3. 상세 패널 갱신 (확인 버튼 활성화 및 정보 표시)
+		if (WBP_DetailPanel)
+		{
+			// 인벤토리 컨텍스트(false)지만 교체 모드에서는 버튼 상태 업데이트 필요
+			WBP_DetailPanel->ShowInfo(ItemData, false, (CurrentTabIndex == SquadTabs::Unit));
+			UpdateDetailPanelState(); // 확인 버튼 켜기
+		}
 	}
 	else
 	{
 		// [일반 모드]
-		if (CurrentTabIndex == SquadTabs::Character)
-		{
-			// 캐릭터 탭이면 캐릭터 교체 시도
-			UE_LOG(LogTemp, Log, TEXT("[SquadMain] Try Swap Character: %s"), *ItemData.ID.ToString());
-		}
-		else
-		{
-			// 그 외에는 단순 정보 표시
-			WBP_DetailPanel->ShowInfo(ItemData);
-		}
+		// 단순 정보 표시 (버튼은 상세 패널 내부 로직에 의해 숨겨짐)
+		WBP_DetailPanel->ShowInfo(ItemData, false, (CurrentTabIndex == SquadTabs::Unit));
 	}
 }
 #pragma endregion 로직 - 이벤트 핸들러

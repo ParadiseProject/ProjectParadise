@@ -13,8 +13,9 @@ class UTexture2D;
 UENUM(BlueprintType)
 enum class ESquadUIState : uint8
 {
-	Normal,     ///< 일반 보기 모드 (탭 자유 이동)
-	EquipMode   ///< 장비 교체 모드 (캐릭터/유닛 탭 잠금)
+	Normal,			// 일반 상태 (상세 정보만 표시)
+	CharacterSwap,	// 캐릭터/유닛 교체 모드
+	EquipmentSwap	// 장비 교체 모드
 };
 
 /** @brief 탭 인덱스 상수 (가독성용) */
@@ -53,12 +54,16 @@ struct FSquadItemUIData
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag RankTag;
 
-	/** @brief 레벨 또는 수량 */
+	/** @brief 레벨 */
 	UPROPERTY(BlueprintReadOnly)
-	int32 LevelOrCount = 0;
+	int32 Level = 0;
 
-	/** @brief 현재 장착 여부 (UI 표시용) */
-	UPROPERTY(BlueprintReadOnly)
+	/** @brief 현재 편성에 장착 중인지 여부 (인벤토리 테두리 표시용) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsEquipped = false;
+
+	/** @brief 교체를 위해 선택된 상태인지 여부 (인벤토리 하이라이트용) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsSelected = false;
 };
 #pragma endregion UI 데이터 구조체
