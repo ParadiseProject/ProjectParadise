@@ -16,6 +16,8 @@ void UParadiseSquadDetailWidget::NativeConstruct()
 	if (Btn_SwapEquipment)   Btn_SwapEquipment->OnClicked.AddDynamic(this, &UParadiseSquadDetailWidget::HandleSwapEquip);
 	if (Btn_CancelEquipMode) Btn_CancelEquipMode->OnClicked.AddDynamic(this, &UParadiseSquadDetailWidget::HandleCancel);
 	if (Btn_Confirm)         Btn_Confirm->OnClicked.AddDynamic(this, &UParadiseSquadDetailWidget::HandleConfirm);
+
+	SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UParadiseSquadDetailWidget::NativeDestruct()
@@ -32,6 +34,8 @@ void UParadiseSquadDetailWidget::NativeDestruct()
 #pragma region 공개 함수
 void UParadiseSquadDetailWidget::ShowInfo(const FSquadItemUIData& InData, bool bIsFormationContext, bool bIsUnit)
 {
+	SetVisibility(ESlateVisibility::Visible);
+
 	// 1. 이름
 	if (Text_Name)
 	{

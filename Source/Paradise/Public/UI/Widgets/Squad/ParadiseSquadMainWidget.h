@@ -17,6 +17,9 @@ class UParadiseGameInstance;
 class UDataTable;
 #pragma endregion 전방 선언
 
+/** @brief 편성 화면에서 뒤로가기 요청 시 발생하는 델리게이트 */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSquadBackRequested);
+
 /**
  * @class UParadiseSquadMainWidget
  * @brief 편성(Squad) 시스템의 메인 컨트롤러 (Mediator Pattern) 위젯
@@ -57,6 +60,10 @@ protected:
 	UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> Btn_Tab_Weapon = nullptr;
 	UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> Btn_Tab_Armor = nullptr;
 	UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> Btn_Tab_Unit = nullptr;
+
+	/** @brief 뒤로가기 버튼 (로비로 복귀) */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_Back = nullptr;
 #pragma endregion UI 컴포넌트 바인딩
 
 #pragma region 로직 - 탭 및 상태 제어
@@ -80,10 +87,11 @@ private:
 #pragma endregion 로직 - 탭 및 상태 제어
 
 #pragma region 로직 - 데이터 처리
-private:
+public:
 	/** @brief 현재 탭에 맞는 데이터를 수집하여 인벤토리 패널을 갱신합니다. */
 	void RefreshInventoryUI();
 
+private:
 	/** 
 	 * @brief ID와 레벨 정보를 받아 UI 표시용 데이터 구조체로 변환합니다. (Factory Method)
 	 * @param ID 대상의 ID (RowName)
@@ -125,6 +133,10 @@ private:
 	/** @brief [확인] 버튼 클릭 시 -> 실제 교체 수행 */
 	UFUNCTION()
 	void HandleConfirmAction();
+
+	/** @brief [뒤로가기] 버튼 클릭 시 -> 상위 위젯(LobbyHUD)에 신호 전달 */
+	UFUNCTION()
+	void HandleBackClicked();
 #pragma endregion 로직 - 이벤트 핸들러
 
 #pragma region 데이터 소스 (약한 참조)
@@ -153,5 +165,12 @@ private:
 	/** [추가] 현재 편성에 장착된 ID 목록 (인벤토리 테두리 표시용) */
 	TArray<FName> CurrentEquippedIDs;
 #pragma endregion 내부 상태
+
+#pragma region 델리게이트
+public:
+	/** @brief 뒤로가기 요청 시 발생하는 이벤트 (LobbyHUD에서 구독) */
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnSquadBackRequested OnBackRequested;
+#pragma endregion 델리게이트
 
 };

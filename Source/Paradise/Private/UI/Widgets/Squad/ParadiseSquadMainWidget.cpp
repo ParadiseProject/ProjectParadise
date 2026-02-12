@@ -41,6 +41,7 @@ void UParadiseSquadMainWidget::NativeConstruct()
 	if (Btn_Tab_Weapon)    Btn_Tab_Weapon->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::OnClickWpnTab);
 	if (Btn_Tab_Armor)     Btn_Tab_Armor->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::OnClickArmTab);
 	if (Btn_Tab_Unit)      Btn_Tab_Unit->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::OnClickUnitTab);
+	if (Btn_Back)          Btn_Back->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleBackClicked);
 
 	// 4. 자식 위젯 이벤트 구독
 	if (WBP_InventoryPanel)
@@ -59,6 +60,8 @@ void UParadiseSquadMainWidget::NativeConstruct()
 		WBP_DetailPanel->OnCancelClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleCancelEquipMode);
 		WBP_DetailPanel->OnSwapCharacterClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleSwapCharacterMode);
 		WBP_DetailPanel->OnConfirmClicked.AddDynamic(this, &UParadiseSquadMainWidget::HandleConfirmAction);
+
+		WBP_DetailPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	// 5. 초기 상태 설정 (캐릭터 탭)
@@ -167,11 +170,11 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 	switch (CurrentTabIndex)
 	{
 	case SquadTabs::Character:
-		//for (const auto& Data : CachedInventory->GetOwnedHeroes())
-		//{
-		//	// GameInstance의 테이블 조회 로직 활용
-		//	ListData.Add(MakeUIData(Data.CharacterID, Data.Level, SquadTabs::Character));
-		//}
+		for (const auto& Data : CachedInventory->GetOwnedCharacters())
+		{
+			// GameInstance의 테이블 조회 로직 활용
+			ListData.Add(MakeUIData(Data.CharacterID, Data.Level, SquadTabs::Character));
+		}
 		break;
 
 	case SquadTabs::Weapon:
@@ -383,6 +386,19 @@ void UParadiseSquadMainWidget::HandleInventoryItemClicked(FSquadItemUIData ItemD
 		// [일반 모드]
 		// 단순 정보 표시 (버튼은 상세 패널 내부 로직에 의해 숨겨짐)
 		WBP_DetailPanel->ShowInfo(ItemData, false, (CurrentTabIndex == SquadTabs::Unit));
+	}
+}
+
+void UParadiseSquadMainWidget::HandleBackClicked()
+{
+	if (WBP_DetailPanel)
+	{
+		WBP_DetailPanel->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	// LobbyHUD가 이 이벤트를 받아서 WidgetSwitcher를 메인 메뉴로 전환합니다.
+	if (OnBackRequested.IsBound())
+	{
+		OnBackRequested.Broadcast();
 	}
 }
 #pragma endregion 로직 - 이벤트 핸들러

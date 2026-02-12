@@ -70,5 +70,10 @@ public:
 
 	/** @brief 카메라 이동 시작 시 호출 (모든 UI 페이드 아웃) */
 	void OnStartCameraMove();
+
+private:
+	/** @brief 편성(Squad) 위젯에서 뒤로가기 버튼을 눌렀을 때 호출되는 콜백 */
+	UFUNCTION()
+	void HandleSquadBackRequest();
 #pragma endregion 외부 제어
 };
