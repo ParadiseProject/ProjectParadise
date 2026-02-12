@@ -42,6 +42,9 @@ public:
 	 */
 	virtual void Die();
 
+	/* @brief 현재 캐릭터의 사망여부 체크 함수 */
+	bool IsDead() const { return bIsDead; } // Getter 추가
+
 	/*
 	 * @brief 외부에서 생성된 무기 액터를 이 캐릭터의 손(Socket)에 부착하는 함수
 	 * @param NewWeapon 부착할 무기 액터

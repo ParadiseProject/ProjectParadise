@@ -75,7 +75,7 @@ public:
 
 	/**
 	 * @brief 실제 전투 데이터를 조회하는 함수
-	 * @details PlayerBase가 호출하면, GameInstance와 EquipmentComponent를 뒤져서 결과를 줍니다.
+	 * @details PlayerBase가 호출하면, GameInstance와 EquipmentComponent를 탐색하여 결과 리턴.
 	 */
 	FCombatActionData GetCombatActionData(ECombatActionType ActionType) const;
 

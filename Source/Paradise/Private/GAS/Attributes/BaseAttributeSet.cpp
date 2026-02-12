@@ -3,6 +3,7 @@
 
 #include "GAS/Attributes/BaseAttributeSet.h"
 #include "GameplayEffectExtension.h"
+#include "Characters/Base/CharacterBase.h"
 
 UBaseAttributeSet::UBaseAttributeSet()
 {
@@ -86,6 +87,22 @@ void UBaseAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 			AActor* MyOwner = GetOwningActor();
 			FString OwnerName = MyOwner ? MyOwner->GetName() : TEXT("Unknown");
 			UE_LOG(LogTemp, Log, TEXT("[%s] HP 변경 : %.2f"), *OwnerName, NewHealth);
+
+			if (NewHealth <= 0.0f)
+			{
+				// 데이터(Effect)의 대상(Target) 액터를 가져옴
+				AActor* TargetActor = Data.Target.GetAvatarActor();
+
+				// 캐릭터 베이스로 캐스팅해서 Die() 호출
+				if (ACharacterBase* Character = Cast<ACharacterBase>(TargetActor))
+				{
+					// 이미 죽어있지 않을 때만 죽음 처리 (중복 사망 방지)
+					if (!Character->IsDead())
+					{
+						Character->Die();
+					}
+				}
+			}
 		}
 	}
 }
