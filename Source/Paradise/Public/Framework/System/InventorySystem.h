@@ -26,7 +26,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEquipmentUpdated);
 #pragma endregion 델리게이트 선언
 
 /**
- * @class UCMP_Inventory
+ * @class UInventorySystem
  * @brief 플레이어(지휘관)의 자산(영웅, 병사, 장비)을 관리하는 컴포넌트
  * @details
  * - PlayerState에 부착되어 사용됩니다.
@@ -60,7 +60,7 @@ public:
 
 	#pragma region 인벤토리 관련 함수 선언
 	/**
-	 * @brief 계정 데이터로부터 인벤토리를 초기화하는 함수 (구조체 현재 미구현 타입변경예정)
+	 * @brief 계정 데이터로부터 인벤토리를 초기화하는 함수
 	 * @details GameInstance(SaveFile)에 저장된 배열을 그대로 복사하여 가져옵니다.
 	 * @param InHeroes 로드된 영웅 목록
 	 * @param InFamiliars 로드된 퍼밀리어(병사) 목록
@@ -141,7 +141,7 @@ public:
 	bool HasCharacter(FName CharacterID) const;
 
 	/**
-	 * @brief ID로 보유 캐릭터의 상세 데이터를 검색하여 반환합니다.
+	 * @brief ID로 보유 캐릭터의 상세 데이터를 (ID기반으로) 검색하여 반환합니다.
 	 * @return 데이터를 찾으면 포인터 반환, 없으면 nullptr
 	 */
 	const FOwnedCharacterData* GetCharacterDataByID(FName CharacterID) const;

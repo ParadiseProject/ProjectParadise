@@ -83,8 +83,12 @@ public:
 	*/
 	virtual void Die() override;
 
-	/*
-	 * @brief 스폰 직후 PlayerState가 이 함수를 호출해 외형등 데이터연결
+	/**
+	 * @brief 캐릭터 스폰 직후, 영혼(PlayerData)과 육체를 연결하고 외형을 초기화합니다.
+	 * @details
+	 * - GAS의 오너(Owner)와 아바타(Avatar) 관계를 설정합니다.
+	 * - 연결된 영혼이 보유한 장비 데이터를 기반으로 즉시 비주얼을 렌더링합니다.
+	 * @param InPlayerData 이 육체를 제어할 데이터 주체(영혼) 액터
 	 */
 	void InitializePlayer(APlayerData* InPlayerData);
 	/*

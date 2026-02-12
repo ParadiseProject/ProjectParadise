@@ -130,8 +130,11 @@ private:
 #pragma region 데이터 소스 (약한 참조)
 private:
 	//0212 김성현 - 인벤토리 시스템 Getter 함수로 캐싱 로직 대체
-	/** @brief [추가] 인벤토리 시스템 접근 헬퍼 함수 */
-	class UInventorySystem* GetInventorySystem() const;
+	/**
+	 * @brief 현재 게임 세션의 전역 인벤토리 서브시스템을 반환합니다.
+	 * @return UInventorySystem 포인터
+	 */
+	UInventorySystem* GetInventorySystem() const;
 
 	/** @brief 데이터 테이블 접근용 (순환 참조 방지) */
 	TWeakObjectPtr<UParadiseGameInstance> CachedGI = nullptr;
