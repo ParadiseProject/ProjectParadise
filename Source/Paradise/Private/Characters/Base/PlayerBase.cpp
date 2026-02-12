@@ -8,7 +8,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Framework/System/ParadiseSaveGame.h"
 #include "Framework/System/InventorySystem.h"
-#include "Framework/Core/ParadiseGameInstance.h"
 #include "Framework/InGame/InGameController.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
