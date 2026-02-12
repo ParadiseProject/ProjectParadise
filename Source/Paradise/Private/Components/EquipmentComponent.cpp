@@ -2,7 +2,7 @@
 
 
 #include "Components/EquipmentComponent.h"
-#include "Components/InventoryComponent.h"
+#include "Framework/System/InventorySystem.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Characters/Base/PlayerBase.h"
 #include "Characters/Player/PlayerData.h"
@@ -17,20 +17,13 @@ UEquipmentComponent::UEquipmentComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UEquipmentComponent::SetLinkedInventory(UInventoryComponent* InInventory)
-{
-    if (InInventory)
-    {
-        LinkedInventory = InInventory;
-        UE_LOG(LogTemp, Log, TEXT("🔗 [Equipment] 인벤토리 연결 성공!"));
-    }
-}
 
 void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 {
-	if (!LinkedInventory)
+	UInventorySystem* InvSys = GetInventorySystem();
+	if (!InvSys)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ [TestEquippedItem] 인벤토리 컴포넌트가 연결되지 않았습니다."));
+		UE_LOG(LogTemp, Error, TEXT("❌ [TestEquippedItem] 인벤토리 시스템을 찾을 수 없습니다."));
 		return;
 	}
 
@@ -42,7 +35,7 @@ void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 	FName MyHeroID = OwnerData->CharacterID;
 	FGuid MyCharUID;
 
-	for (const FOwnedCharacterData& CharData : LinkedInventory->GetOwnedCharacters())
+	for (const FOwnedCharacterData& CharData : InvSys->GetOwnedCharacters())
 	{
 		if (CharData.CharacterID == MyHeroID)
 		{
@@ -55,10 +48,10 @@ void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 	if (!MyCharUID.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Debug] 캐릭터가 없어 강제 생성합니다: %s"), *MyHeroID.ToString());
-		LinkedInventory->AddCharacter(MyHeroID);
+		InvSys->AddCharacter(MyHeroID);
 
 		// 다시 검색
-		for (const FOwnedCharacterData& CharData : LinkedInventory->GetOwnedCharacters())
+		for (const FOwnedCharacterData& CharData : InvSys->GetOwnedCharacters())
 		{
 			if (CharData.CharacterID == MyHeroID)
 			{
@@ -72,7 +65,7 @@ void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 	FGuid TargetItemUID;
 
 	// 인벤토리에 해당 ID의 아이템이 있는지 검색
-	const TArray<FOwnedItemData>& Items = LinkedInventory->GetOwnedItems();
+	const TArray<FOwnedItemData>& Items = InvSys->GetOwnedItems();
 	for (const FOwnedItemData& Item : Items)
 	{
 		if (Item.ItemID == ItemID)
@@ -86,10 +79,10 @@ void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 	if (!TargetItemUID.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Debug] 인벤토리에 아이템이 없어 강제 생성합니다: %s"), *ItemID.ToString());
-		LinkedInventory->AddItem(ItemID, 1);
+		InvSys->AddItem(ItemID, 1);
 
 		// 방금 만든거 다시 찾기
-		const TArray<FOwnedItemData>& NewItems = LinkedInventory->GetOwnedItems();
+		const TArray<FOwnedItemData>& NewItems = InvSys->GetOwnedItems();
 		for (int32 i = NewItems.Num() - 1; i >= 0; --i)
 		{
 			if (NewItems[i].ItemID == ItemID)
@@ -107,7 +100,7 @@ void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 	}
 
 	//위에서 강제로 만들었으므로 무조건 통과
-	LinkedInventory->EquipItemToCharacter(MyCharUID, TargetItemUID);
+	InvSys->EquipItemToCharacter(MyCharUID, TargetItemUID);
 
 	//비주얼 강제 업데이트
 	APlayerBase* VisualTarget =  nullptr;
@@ -120,11 +113,11 @@ void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 
 	if (VisualTarget)
 	{
-		for (const FOwnedCharacterData& CharData : LinkedInventory->GetOwnedCharacters())
+		for (const FOwnedCharacterData& CharData : InvSys->GetOwnedCharacters())
 		{
 			if (CharData.CharacterUID == MyCharUID)
 			{
-				InitializeEquipment(CharData.EquipmentMap, LinkedInventory);
+				InitializeEquipment(CharData.EquipmentMap);
 				
 				UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetWorld()->GetGameInstance());
 				if (!GI)
@@ -141,11 +134,11 @@ void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 	}
 }
 
-void UEquipmentComponent::InitializeEquipment(const TMap<EEquipmentSlot, FGuid>& InEquipmentMap, UInventoryComponent* InInventory)
+void UEquipmentComponent::InitializeEquipment(const TMap<EEquipmentSlot, FGuid>& InEquipmentMap)
 {
-	if (!InInventory)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Equipment] 인벤토리 참조가 유효하지 않아 장비를 초기화할 수 없습니다."));
+	UInventorySystem* InvSys = GetInventorySystem();
+	if (!InvSys) {
+		UE_LOG(LogTemp, Error, TEXT("[UEquipmentComponent] 인벤토리 시스템이 존재하지 않습니다."));
 		return;
 	}
 
@@ -168,16 +161,19 @@ void UEquipmentComponent::InitializeEquipment(const TMap<EEquipmentSlot, FGuid>&
 
 FName UEquipmentComponent::GetEquippedItemID(EEquipmentSlot Slot) const
 {
+	UInventorySystem* InvSys = GetInventorySystem();
+	if (!InvSys) {
+		UE_LOG(LogTemp, Error, TEXT("[UEquipmentComponent] 인벤토리 시스템이 존재하지 않습니다."));
+		return NAME_None;
+	}
+
     //해당 슬롯에 GUID가 없으면 None
     if (!EquippedItems.Contains(Slot)) return NAME_None;
 
     FGuid TargetUID = EquippedItems[Slot];
 
-    //인벤토리가 없으면 조회를 못하므로 None
-    if (!LinkedInventory) return NAME_None;
-
     //인벤토리에게 물어봐서 데이터 가져오기
-    if (FOwnedItemData* ItemData = LinkedInventory->GetItemByGUID(TargetUID))
+    if (FOwnedItemData* ItemData = InvSys->GetItemByGUID(TargetUID))
     {
         //인벤토리에서 찾아서 FName 반환
         return ItemData->ItemID;
@@ -188,11 +184,16 @@ FName UEquipmentComponent::GetEquippedItemID(EEquipmentSlot Slot) const
 
 bool UEquipmentComponent::GetEquippedItemData(EEquipmentSlot Slot, FOwnedItemData& OutData) const
 {
-    if (!LinkedInventory) return false;
+	UInventorySystem* InvSys = GetInventorySystem();
+	if (!InvSys) {
+		UE_LOG(LogTemp, Error, TEXT("[UEquipmentComponent] 인벤토리 시스템이 존재하지 않습니다."));
+		return false;
+	}
+    
 
     if (const FGuid* FoundGUID = EquippedItems.Find(Slot))
     {
-        if (FOwnedItemData* RealData = LinkedInventory->GetItemByGUID(*FoundGUID))
+        if (FOwnedItemData* RealData = InvSys->GetItemByGUID(*FoundGUID))
         {
             OutData = *RealData;
             return true;
@@ -201,11 +202,20 @@ bool UEquipmentComponent::GetEquippedItemData(EEquipmentSlot Slot, FOwnedItemDat
     return false;
 }
 
+UInventorySystem* UEquipmentComponent::GetInventorySystem() const
+{
+	if (UGameInstance* GI = GetWorld()->GetGameInstance())
+	{
+		return GI->GetSubsystem<UInventorySystem>();
+	}
+	return nullptr;
+}
+
 void UEquipmentComponent::UpdateVisuals(APlayerBase* TargetCharacter)
 {
 	// 타겟이 없으면 컴포넌트 소유자를 사용
 	APlayerBase* Char = TargetCharacter ? TargetCharacter : Cast<APlayerBase>(GetOwner());
-	if (!Char || !LinkedInventory) return;
+	if (!Char) return;
 
 	UE_LOG(LogTemp, Log, TEXT("🎨 [Visual] 캐릭터 외형 업데이트 시작..."));
 

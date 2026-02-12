@@ -6,8 +6,8 @@
 #include "Data/Structs/ItemStructs.h"
 #include "Data/Structs/UnitStructs.h"
 #include "Data/Structs/InventoryStruct.h"
-#include "Components/ActorComponent.h"
-#include "InventoryComponent.generated.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "InventorySystem.generated.h"
 
 #pragma region 델리게이트 선언
 
@@ -33,13 +33,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEquipmentUpdated);
  * - GameInstance로부터 데이터를 받아 초기화(Init)합니다.
  * - 획득(Add) 및 소모(Remove) 시 데이터 테이블을 통해 ID 유효성을 검증합니다.
  */
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class PARADISE_API UInventoryComponent : public UActorComponent
+UCLASS()
+class PARADISE_API UInventorySystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
 public:	
-	UInventoryComponent();
+	UInventorySystem();
 
 	#pragma region 장비 관련 함수 선언
 	/**
@@ -141,6 +141,12 @@ public:
 	bool HasCharacter(FName CharacterID) const;
 
 	/**
+	 * @brief ID로 보유 캐릭터의 상세 데이터를 검색하여 반환합니다.
+	 * @return 데이터를 찾으면 포인터 반환, 없으면 nullptr
+	 */
+	const FOwnedCharacterData* GetCharacterDataByID(FName CharacterID) const;
+
+	/**
 	 * @brief 아이템 ID를 기반으로 장착되어야 할 슬롯을 찾습니다.
 	 * @details 무기/방어구 테이블을 조회하고 태그를 비교합니다.
 	 */
@@ -148,8 +154,7 @@ public:
 
 	#pragma endregion 헬퍼 함수 선언
 
-protected:
-	virtual void BeginPlay() override;
+
 
 
 private:

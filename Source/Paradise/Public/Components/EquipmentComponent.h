@@ -11,7 +11,7 @@
 
 class UDataTable;
 class APlayerBase;
-class UInventoryComponent;
+class UInventorySystem;
 
 
 
@@ -39,7 +39,7 @@ public:
 	 * @param InInventory 아이템의 실제 데이터(ID, 모델링 등)를 찾기 위해 참조할 글로벌 인벤토리 포인터
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Equipment|Init")
-	void InitializeEquipment(const TMap<EEquipmentSlot, FGuid>& InEquipmentMap, class UInventoryComponent* InInventory);
+	void InitializeEquipment(const TMap<EEquipmentSlot, FGuid>& InEquipmentMap);
 
 	/**
 	 * @brief 현재 특정 슬롯에 장착된 아이템 ID를 반환합니다.
@@ -61,9 +61,9 @@ public:
 	const TMap<EEquipmentSlot, FGuid>& GetEquippedItems() const { return EquippedItems; }
 
 	/**
-	* @brief 연결된 인벤토리 컴포넌트 반환 
+	* @brief 인벤토리 시스템 찾기
 	*/
-	const UInventoryComponent* GetLinkedInventory() const { return LinkedInventory; }
+	UInventorySystem* GetInventorySystem() const;
 
 	/**
 	 * @brief 현재 장비 상태에 맞춰 대상 캐릭터(육체)의 외형을 갱신합니다.
@@ -74,11 +74,6 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Equipment|Visual")
 	void UpdateVisuals(APlayerBase* TargetCharacter);
-
-	/* * @brief 소유 확인을 위해 인벤토리 컴포넌트 참조 설정
-	 * @details PlayerData 생성 시점에 주입해줍니다.
-	 */
-	void SetLinkedInventory(UInventoryComponent* InInventory);
 
 
 	UFUNCTION(BlueprintCallable, Category = "Test")
@@ -106,11 +101,6 @@ protected:
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment|State")
 	TMap<EEquipmentSlot, FGuid> EquippedItems;
-		
-	UPROPERTY()
-	TObjectPtr<UInventoryComponent> LinkedInventory = nullptr; // 소유권 확인용
-
-
 
 private:
 	/** 현재 스폰된 무기 액터 (관리용) */

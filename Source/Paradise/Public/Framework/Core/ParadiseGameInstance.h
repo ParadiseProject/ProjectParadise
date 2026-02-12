@@ -11,7 +11,7 @@
 
 #pragma region 전방 선언
 class ULoadingWidget; 
-class UInventoryComponent;
+class UInventorySystem;
 #pragma endregion 전방 선언
 
 /**
@@ -151,18 +151,8 @@ public:
 
 #pragma region 인벤토리 
 
-	/**
-	 * @brief 전역 인벤토리 컴포넌트
-	 * @details 영구적으로 관리합니다.
-	 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Global Data")
-	TObjectPtr<UInventoryComponent> MainInventory;
-
-	/**
-	 * @brief 인벤토리 접근자
-	 */
-	UFUNCTION(BlueprintPure, Category = "Global Data")
-	UInventoryComponent* GetMainInventory() const { return MainInventory; }
+	UFUNCTION(BlueprintCallable, Category = "System")
+	UInventorySystem* GetMainInventory() const;
 
 #pragma endregion 인벤토리
 

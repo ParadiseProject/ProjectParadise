@@ -5,7 +5,7 @@
 #include "Framework/System/LevelLoadingSubsystem.h"
 #include "Framework/System/ParadiseSaveGame.h"
 #include "Framework/InGame/InGamePlayerState.h"
-#include "Components/InventoryComponent.h"
+#include "Framework/System/InventorySystem.h"
 #include "Components/EquipmentComponent.h"
 #include "Characters/Player/PlayerData.h"
 #include "Kismet/GameplayStatics.h"
@@ -21,12 +21,6 @@ void UParadiseGameInstance::Init()
 
 	SaveGameSlotName = DefaultSaveSlot;
 
-	//메인 인벤토리가 없으면 새로 생성 
-	if (!MainInventory)
-	{
-		MainInventory = NewObject<UInventoryComponent>(this, TEXT("MainInventory"));
-		//UE_LOG(LogTemp, Log, TEXT("✅ [GameInstance] 메인 인벤토리 생성 완료"));
-	}
 
 	//게임 세이브 데이터 로드 함수 호출
 	LoadGameData();
@@ -42,6 +36,7 @@ void UParadiseGameInstance::Init()
 
 void UParadiseGameInstance::SaveGameData()
 {
+	UInventorySystem* MainInventory = GetMainInventory();
 	if (!MainInventory) return;
 
 	//저장할 SaveGame 객체 생성
@@ -68,6 +63,7 @@ void UParadiseGameInstance::SaveGameData()
 
 void UParadiseGameInstance::LoadGameData()
 {
+	UInventorySystem* MainInventory = GetMainInventory();
 	if (!MainInventory) return;
 
 	//디스크에 해당 이름의 세이브 파일이 있는지 확인
@@ -95,4 +91,9 @@ void UParadiseGameInstance::LoadGameData()
 
 		//만약 튜토리얼 기본 지급 영웅/무기가 필요하다면 여기서 AddCharacter() 등을 호출하시면 됩니다.
 	}
+}
+
+UInventorySystem* UParadiseGameInstance::GetMainInventory() const
+{
+	return GetSubsystem<UInventorySystem>();
 }

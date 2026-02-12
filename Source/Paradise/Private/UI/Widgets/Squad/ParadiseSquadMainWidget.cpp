@@ -5,13 +5,11 @@
 #include "UI/Widgets/Squad/Inventory/ParadiseSquadInventoryWidget.h"
 #include "UI/Widgets/Squad/ParadiseSquadFormationWidget.h"
 #include "UI/Widgets/Squad/ParadiseSquadDetailWidget.h"
-
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Framework/InGame/InGamePlayerState.h"
-#include "Components/InventoryComponent.h"
+#include "Framework/System/InventorySystem.h"
 #include "Components/Button.h"
 #include "Engine/DataTable.h"
-
 #include "Data/Structs/UnitStructs.h"
 #include "Data/Structs/ItemStructs.h"
 
@@ -27,14 +25,8 @@ void UParadiseSquadMainWidget::NativeConstruct()
 		UE_LOG(LogTemp, Error, TEXT("[SquadMain] GameInstance is invalid! Data loading will fail."));
 	}
 
-	// 2. Inventory Component 캐싱 (보유 데이터 접근)
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		if (AInGamePlayerState* PS = PC->GetPlayerState<AInGamePlayerState>())
-		{
-			CachedInventory = PS->GetInventoryComponent();
-		}
-	}
+	//0212 김성현 - 인벤토리 게임인스턴스 시스템으로 베이스 변경에 따라 인벤토리 캐싱 로직 삭제했습니다
+
 
 	// 3. 탭 버튼 바인딩
 	if (Btn_Tab_Character) Btn_Tab_Character->OnClicked.AddDynamic(this, &UParadiseSquadMainWidget::OnClickCharTab);
@@ -63,6 +55,16 @@ void UParadiseSquadMainWidget::NativeConstruct()
 
 	// 5. 초기 상태 설정 (캐릭터 탭)
 	SwitchTab(SquadTabs::Character);
+}
+
+//인스턴스에서 인벤토리 서브시스템 Getter함수
+UInventorySystem* UParadiseSquadMainWidget::GetInventorySystem() const
+{
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		return GI->GetSubsystem<UInventorySystem>();
+	}
+	return nullptr;
 }
 
 void UParadiseSquadMainWidget::NativeDestruct()
@@ -159,7 +161,8 @@ void UParadiseSquadMainWidget::UpdateDetailPanelState()
 #pragma region 로직 - 데이터 처리
 void UParadiseSquadMainWidget::RefreshInventoryUI()
 {
-	if (!CachedInventory.IsValid() || !CachedGI.IsValid() || !WBP_InventoryPanel) return;
+	UInventorySystem* InvSys = GetInventorySystem();
+	if (!InvSys || !CachedGI.IsValid() || !WBP_InventoryPanel) return;
 
 	TArray<FSquadItemUIData> ListData;
 
@@ -167,7 +170,7 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 	switch (CurrentTabIndex)
 	{
 	case SquadTabs::Character:
-		for (const auto& Data : CachedInventory->GetOwnedCharacters())
+		for (const auto& Data : InvSys->GetOwnedCharacters())
 		{
 			// GameInstance의 테이블 조회 로직 활용
 			ListData.Add(MakeUIData(Data.CharacterID, Data.Level, SquadTabs::Character));
@@ -175,7 +178,7 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 		break;
 
 	case SquadTabs::Weapon:
-		for (const auto& Data : CachedInventory->GetOwnedItems())
+		for (const auto& Data : InvSys->GetOwnedItems())
 		{
 			// 무기 테이블에 존재하는 ID만 필터링하여 리스트에 추가
 			if (CachedGI->GetDataTableRow<FWeaponStats>(CachedGI->WeaponStatsDataTable, Data.ItemID))
@@ -186,7 +189,7 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 		break;
 
 	case SquadTabs::Armor:
-		for (const auto& Data : CachedInventory->GetOwnedItems())
+		for (const auto& Data : InvSys->GetOwnedItems())
 		{
 			// 방어구 테이블에 존재하는 ID만 필터링
 			if (CachedGI->GetDataTableRow<FArmorStats>(CachedGI->ArmorStatsDataTable, Data.ItemID))
@@ -197,7 +200,7 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 		break;
 
 	case SquadTabs::Unit:
-		for (const auto& Data : CachedInventory->GetOwnedFamiliars())
+		for (const auto& Data : InvSys->GetOwnedFamiliars())
 		{
 			ListData.Add(MakeUIData(Data.FamiliarID, Data.Level, SquadTabs::Unit));
 		}

@@ -4,10 +4,10 @@
 #include "Characters/Base/PlayerBase.h"
 #include "Characters/Player/PlayerData.h"
 #include "Components/EquipmentComponent.h"
-#include "Components/InventoryComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Framework/System/ParadiseSaveGame.h"
+#include "Framework/System/InventorySystem.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Framework/InGame/InGameController.h"
 #include "AbilitySystemComponent.h"
@@ -151,24 +151,22 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
         Mymesh->SetAnimInstanceClass(LinkedPlayerData->CachedAnimBP);
     }
 
-        // 외형 업데이트 (장비 동기화)
-        // APlayerData가 가진 장비 컴포넌트를 확인해서 내 몸에 메시를 입힘
+     // 외형 업데이트, 혹시 모를 데이터 동기화도 다시 (장비 동기화)
     if (UEquipmentComponent* EquipComp = InPlayerData->GetEquipmentComponent())
     {
-        // 1. GameInstance와 메인 인벤토리 가져오기
-        UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
-        if (GI && GI->GetMainInventory())
+        UGameInstance* GI = GetGameInstance();
+        if (GI)
         {
-            //인벤토리(보유 캐릭터 목록)에서 내 데이터 구조체 찾기
-            //UID를 적용했다면 InPlayerData->CharacterUID 로 비교하세요.
-            for (const auto& CharData : GI->GetMainInventory()->GetOwnedCharacters())
+            //서브시스템 가져오기
+            if (UInventorySystem* InvSys = GI->GetSubsystem<UInventorySystem>())
             {
-                if (CharData.CharacterID == InPlayerData->CharacterID)
+                //데이터 검색
+                if (const FOwnedCharacterData* CharData = InvSys->GetCharacterDataByID(InPlayerData->CharacterID))
                 {
-                    //찾은 데이터(EquipmentMap)를 장비 컴포넌트에 주입 -> 내부에서 자동으로 캐시 덮어쓰고 메쉬 생성!
-                    EquipComp->InitializeEquipment(CharData.EquipmentMap, GI->GetMainInventory());
+                    //장비 외형 변경 진행
+                    EquipComp->InitializeEquipment(CharData->EquipmentMap);
+
                     UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 장비 데이터 연동 및 UpdateVisuals 완료!"));
-                    break;
                 }
             }
         }
