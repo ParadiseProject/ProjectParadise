@@ -167,11 +167,11 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 	switch (CurrentTabIndex)
 	{
 	case SquadTabs::Character:
-		for (const auto& Data : CachedInventory->GetOwnedHeroes())
-		{
-			// GameInstance의 테이블 조회 로직 활용
-			ListData.Add(MakeUIData(Data.CharacterID, Data.Level, SquadTabs::Character));
-		}
+		//for (const auto& Data : CachedInventory->GetOwnedHeroes())
+		//{
+		//	// GameInstance의 테이블 조회 로직 활용
+		//	ListData.Add(MakeUIData(Data.CharacterID, Data.Level, SquadTabs::Character));
+		//}
 		break;
 
 	case SquadTabs::Weapon:
