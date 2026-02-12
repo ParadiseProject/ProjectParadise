@@ -10,6 +10,7 @@
 class UCostManageComponent;
 class UObjectPoolSubsystem;
 class AFamiliarUnit;
+class AFamiliarSpawner;
 
 USTRUCT(BlueprintType)
 struct FSummonSlotInfo
@@ -73,6 +74,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Summon")
 	FOnSummonSlotsUpdated OnSummonSlotsUpdated;
 
+public:
+	//스포너 등록 함수
+	void RegisterSpawner(AFamiliarSpawner* NewSpawner);
+
 protected:
 	/** * @brief 소환 성공 후 품절 처리하고 쿨타임 타이머 함수
 	 * @param SlotIndex 비워야 할 슬롯 번호
@@ -105,4 +110,8 @@ protected:
 
 	/** @brief 슬롯 개수 (기본 5개) */
 	const int32 MaxSlotCount = 5;
+
+	//스포너를 저장할 포인터
+	UPROPERTY()
+	AFamiliarSpawner* LinkedSpawner;
 };

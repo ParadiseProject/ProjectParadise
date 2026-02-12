@@ -7,6 +7,7 @@
 #include "Characters/AIUnit/UnitBase.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 #include "Objects/FamiliarSpawner.h"
+#include "Kismet/GameplayStatics.h"
 #include "Data/Structs/UnitStructs.h"
 #include "TimerManager.h"
 
@@ -21,6 +22,18 @@ void UFamiliarSummonComponent::BeginPlay()
 
 	// 게임 시작 시 슬롯 채우기
 	RefreshAllSlots();
+
+	// 게임 시작 시 월드에 있는 스포너 찾아서 저장함
+	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AFamiliarSpawner::StaticClass());
+	if (FoundActor)
+	{
+		LinkedSpawner = Cast<AFamiliarSpawner>(FoundActor);
+		UE_LOG(LogTemp, Log, TEXT("✅ 스포너를 찾아서 연결했습니다."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ 월드에 배치된 AFamiliarSpawner가 없습니다!"));
+	}
 }
 
 void UFamiliarSummonComponent::RefreshAllSlots()
@@ -83,30 +96,28 @@ bool UFamiliarSummonComponent::RequestPurchase(int32 SlotIndex)
 		return false;
 	}
 
-	//TArray<AActor*> FoundSpawners;
-	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFamiliarSpawner::StaticClass(), FoundSpawners);
+	if (LinkedSpawner)
+	{
+		//ID를 넘겨서 실제 소환 수행
+		LinkedSpawner->SpawnFamiliarByID(SlotInfo.FamiliarID);
 
-	//if (FoundSpawners.Num() > 0)
-	//{
-	//	AFamiliarSpawner* Spawner = Cast<AFamiliarSpawner>(FoundSpawners[0]);
-	//	if (Spawner)
-	//	{
-
-	//		// ★ 인덱스가 아니라 슬롯에 저장된 실제 'ID(이름)'를 넘겨줌 ★
-	//		Spawner->SpawnFamiliarByID(SlotInfo.FamiliarID);
-
-			//소환 성공 후 슬롯 처리 로직
-			ConsumeSpecificSlot(SlotIndex);
-			return true;
-
-	//	}
-	//}
-
-	//UE_LOG(LogTemp, Error, TEXT("❌ 월드에서 AFamiliarSpawner를 찾을 수 없습니다!"));
-	//return false;
-
+		//소환 성공 후 슬롯 처리 로직
+		ConsumeSpecificSlot(SlotIndex);
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ 월드에서 AFamiliarSpawner를 찾을 수 없습니다!"));
+		return false;
+	}
 }
 
+
+void UFamiliarSummonComponent::RegisterSpawner(AFamiliarSpawner* NewSpanwer)
+{
+	LinkedSpawner = NewSpanwer;
+	UE_LOG(LogTemp, Warning, TEXT("✅ Familiar Spawner Linked 성공"));
+}
 
 //구매한 슬롯 비우고 쿨타임시작
 void UFamiliarSummonComponent::ConsumeSpecificSlot(int32 SlotIndex)
