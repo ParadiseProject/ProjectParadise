@@ -204,7 +204,13 @@ bool UEquipmentComponent::GetEquippedItemData(EEquipmentSlot Slot, FOwnedItemDat
 
 UInventorySystem* UEquipmentComponent::GetInventorySystem() const
 {
-	if (UGameInstance* GI = GetWorld()->GetGameInstance())
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	if (UGameInstance* GI = World->GetGameInstance())
 	{
 		return GI->GetSubsystem<UInventorySystem>();
 	}
