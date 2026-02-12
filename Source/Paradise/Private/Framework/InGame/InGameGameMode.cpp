@@ -23,7 +23,7 @@ void AInGameGameMode::BeginPlay()
 	CurrentPhase = EGamePhase::Result;
 
 	//게임 시작 상태 Ready로 설정
-	SetGamePhase(EGamePhase::Ready);
+	SetGamePhase(EGamePhase::Combat);
 }
 
 void AInGameGameMode::OnStageTimerElapsed()
