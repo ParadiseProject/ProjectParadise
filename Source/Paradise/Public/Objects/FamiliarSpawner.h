@@ -16,5 +16,5 @@ public:
 	TArray<FName> FamiliarSlots;
 
 	UFUNCTION(BlueprintCallable, Category = "Spawning")
-	void SpawnFamiliarBySlot(int32 SlotIndex);
+	void SpawnFamiliarByID(FName UnitID);
 };

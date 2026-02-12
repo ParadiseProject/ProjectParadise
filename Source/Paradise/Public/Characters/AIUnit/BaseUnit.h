@@ -45,4 +45,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Unit|Logic")
 	bool IsEnemy(ABaseUnit* OtherUnit);
+
+	void SetUnitID(FName InID) { UnitID = InID; }
+
+	// ID 반환 함수
+	FName GetUnitID() const { return UnitID; }
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Unit")
+	FName UnitID;
 };

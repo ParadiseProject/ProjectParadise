@@ -9,6 +9,7 @@
 #include "Characters/AIUnit/BaseUnit.h"
 #include "Objects/HomeBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "Framework/Core/ParadiseGameInstance.h"
 
 AMyAIController::AMyAIController()
 {
@@ -42,32 +43,41 @@ void AMyAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
-    if (BTAsset && BBAsset)
+    UBlackboardComponent* BBComp = Blackboard.Get();
+    if (BTAsset && BBAsset && UseBlackboard(BBAsset, BBComp))
     {
-        UBlackboardComponent* BBRawPtr = Blackboard.Get();
-        if (UseBlackboard(BBAsset, BBRawPtr))
-        {
-            ABaseUnit* SelfUnit = Cast<ABaseUnit>(InPawn);
+        Blackboard = BBComp;
+        ABaseUnit* SelfUnit = Cast<ABaseUnit>(InPawn);
+        UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
 
+        if (SelfUnit && GI)
+        {
+            // 1. 사거리 데이터 로드
+            FEnemyStats* MyStats = GI->GetDataTableRow<FEnemyStats>(GI->EnemyStatsDataTable, SelfUnit->GetUnitID());
+            if (MyStats)
+            {
+                Blackboard->SetValueAsFloat(TEXT("TargetAttackRange"), MyStats->AttackRange);
+            }
+
+            // 2. 적대적인 기지만 찾아내기
             TArray<AActor*> FoundBases;
             UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHomeBase::StaticClass(), FoundBases);
-
-            UE_LOG(LogTemp, Warning, TEXT("[%s] Found %d Bases in World"), *InPawn->GetName(), FoundBases.Num());
 
             for (AActor* Actor : FoundBases)
             {
                 AHomeBase* HomeBase = Cast<AHomeBase>(Actor);
-
-                if (HomeBase && SelfUnit && SelfUnit->IsEnemy(HomeBase) && Actor->ActorHasTag(TEXT("Base")))
+                if (HomeBase)
                 {
-                    Blackboard->SetValueAsObject(TEXT("HomeBaseActor"), Actor);
-                    UE_LOG(LogTemp, Warning, TEXT("[%s] Target Base Set: %s"), *InPawn->GetName(), *Actor->GetName());
-                    break;
+                    if (SelfUnit->IsEnemy(HomeBase))
+                    {
+                        Blackboard->SetValueAsObject(TEXT("HomeBaseActor"), HomeBase);
+                        UE_LOG(LogTemp, Log, TEXT("🚀 [%s] Target Base Found: %s"), *SelfUnit->GetName(), *HomeBase->GetName());
+                        break;
+                    }
                 }
             }
-
-            RunBehaviorTree(BTAsset);
         }
+        RunBehaviorTree(BTAsset);
     }
 }
 
@@ -85,17 +95,6 @@ void AMyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
         return;
     }
 
-    AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(BB_KEYS::TargetActor));
-
-    if (CurrentTarget && CurrentTarget->IsValidLowLevel())
-    {
-        if (CurrentTarget == Actor && !Stimulus.WasSuccessfullySensed())
-        {
-            Blackboard->ClearValue(BB_KEYS::TargetActor);
-        }
-        return;
-    }
-
     if (Stimulus.WasSuccessfullySensed())
     {
         ABaseUnit* TargetUnit = Cast<ABaseUnit>(Actor);
@@ -104,6 +103,15 @@ void AMyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
         if (TargetUnit && SelfUnit && SelfUnit->IsEnemy(TargetUnit))
         {
             Blackboard->SetValueAsObject(BB_KEYS::TargetActor, Actor);
+        }
+    }
+    else
+    {
+        // 시야에서 사라졌을 때 타겟 클리어
+        AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(BB_KEYS::TargetActor));
+        if (CurrentTarget == Actor)
+        {
+            Blackboard->ClearValue(BB_KEYS::TargetActor);
         }
     }
 }
