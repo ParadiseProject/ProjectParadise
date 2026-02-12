@@ -40,77 +40,77 @@ AMyAIController::AMyAIController()
 
 void AMyAIController::OnPossess(APawn* InPawn)
 {
-	Super::OnPossess(InPawn);
+    Super::OnPossess(InPawn);
 
-	if (BTAsset && BBAsset)
-	{
-		UBlackboardComponent* BBRawPtr = Blackboard.Get();
-		if (UseBlackboard(BBAsset, BBRawPtr))
-		{
-			// 유닛에 이미 ID가 부여되어 있다면 즉시 스탯 로드
-			if (ABaseUnit* SelfUnit = Cast<ABaseUnit>(InPawn))
-			{
-				if (!SelfUnit->GetUnitID().IsNone())
-				{
-					LoadUnitStatsFromTable();
-				}
-			}
-			RunBehaviorTree(BTAsset);
-		}
-	}
-}
+    UBlackboardComponent* BBComp = Blackboard.Get();
+    if (BTAsset && BBAsset && UseBlackboard(BBAsset, BBComp))
+    {
+        Blackboard = BBComp;
+        ABaseUnit* SelfUnit = Cast<ABaseUnit>(InPawn);
+        UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
 
-void AMyAIController::LoadUnitStatsFromTable()
-{
-	ABaseUnit* SelfUnit = Cast<ABaseUnit>(GetPawn());
-	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
+        if (SelfUnit && GI)
+        {
+            // 1. 사거리 데이터 로드
+            FEnemyStats* MyStats = GI->GetDataTableRow<FEnemyStats>(GI->EnemyStatsDataTable, SelfUnit->GetUnitID());
+            if (MyStats)
+            {
+                Blackboard->SetValueAsFloat(TEXT("TargetAttackRange"), MyStats->AttackRange);
+            }
 
-	if (SelfUnit && GI && Blackboard)
-	{
-		// GameInstance의 템플릿 함수를 사용하여 데이터 테이블 행 검색
-		FEnemyStats* MyStats = GI->GetDataTableRow<FEnemyStats>(GI->EnemyStatsDataTable, SelfUnit->GetUnitID());
+            // 2. 적대적인 기지만 찾아내기
+            TArray<AActor*> FoundBases;
+            UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHomeBase::StaticClass(), FoundBases);
 
-		if (MyStats)
-		{
-			// 블랙보드 키 "TargetAttackRange"에 데이터 테이블의 AttackRange 값을 저장
-			Blackboard->SetValueAsFloat(TEXT("TargetAttackRange"), MyStats->AttackRange);
-			UE_LOG(LogTemp, Log, TEXT("[%s] Blackboard 'TargetAttackRange' set to: %f"), *SelfUnit->GetName(), MyStats->AttackRange);
-		}
-	}
+            for (AActor* Actor : FoundBases)
+            {
+                AHomeBase* HomeBase = Cast<AHomeBase>(Actor);
+                if (HomeBase)
+                {
+                    if (SelfUnit->IsEnemy(HomeBase))
+                    {
+                        Blackboard->SetValueAsObject(TEXT("HomeBaseActor"), HomeBase);
+                        UE_LOG(LogTemp, Log, TEXT("🚀 [%s] Target Base Found: %s"), *SelfUnit->GetName(), *HomeBase->GetName());
+                        break;
+                    }
+                }
+            }
+        }
+        RunBehaviorTree(BTAsset);
+    }
 }
 
 void AMyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 {
-	if (Blackboard == nullptr || Actor == nullptr) return;
+    if (Blackboard == nullptr || Actor == nullptr) return;
 
-	if (Actor->IsHidden())
-	{
-		AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(BB_KEYS::TargetActor));
-		if (CurrentTarget == Actor)
-		{
-			Blackboard->ClearValue(BB_KEYS::TargetActor);
-		}
-		return;
-	}
+    if (Actor->IsHidden())
+    {
+        AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(BB_KEYS::TargetActor));
+        if (CurrentTarget == Actor)
+        {
+            Blackboard->ClearValue(BB_KEYS::TargetActor);
+        }
+        return;
+    }
 
-	AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(BB_KEYS::TargetActor));
-	if (CurrentTarget && CurrentTarget->IsValidLowLevel())
-	{
-		if (CurrentTarget == Actor && !Stimulus.WasSuccessfullySensed())
-		{
-			Blackboard->ClearValue(BB_KEYS::TargetActor);
-		}
-		return;
-	}
+    if (Stimulus.WasSuccessfullySensed())
+    {
+        ABaseUnit* TargetUnit = Cast<ABaseUnit>(Actor);
+        ABaseUnit* SelfUnit = Cast<ABaseUnit>(GetPawn());
 
-	if (Stimulus.WasSuccessfullySensed())
-	{
-		ABaseUnit* TargetUnit = Cast<ABaseUnit>(Actor);
-		ABaseUnit* SelfUnit = Cast<ABaseUnit>(GetPawn());
-
-		if (TargetUnit && SelfUnit && SelfUnit->IsEnemy(TargetUnit))
-		{
-			Blackboard->SetValueAsObject(BB_KEYS::TargetActor, Actor);
-		}
-	}
+        if (TargetUnit && SelfUnit && SelfUnit->IsEnemy(TargetUnit))
+        {
+            Blackboard->SetValueAsObject(BB_KEYS::TargetActor, Actor);
+        }
+    }
+    else
+    {
+        // 시야에서 사라졌을 때 타겟 클리어
+        AActor* CurrentTarget = Cast<AActor>(Blackboard->GetValueAsObject(BB_KEYS::TargetActor));
+        if (CurrentTarget == Actor)
+        {
+            Blackboard->ClearValue(BB_KEYS::TargetActor);
+        }
+    }
 }

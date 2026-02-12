@@ -44,10 +44,7 @@ void AUnitSpawner::SpawnUnit()
 	EnemyRowName = WaveConfigs[CurrentWaveIndex].UnitRowName;
 	UObjectPoolSubsystem* PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>();
 
-	if (!PoolSubsystem || !UnitClass || !StatsDataTable || !AssetsDataTable || EnemyRowName.IsNone())
-	{
-		return;
-	}
+	if (!PoolSubsystem || !UnitClass || EnemyRowName.IsNone()) return;
 
 	FVector SpawnLocation = GetRandomSpawnLocation() + FVector(0.f, 0.f, 100.0f);
 	FRotator SpawnRotation = FRotator(0.f, FMath::RandRange(0.f, 360.f), 0.f);
@@ -58,20 +55,20 @@ void AUnitSpawner::SpawnUnit()
 	{
 		NewUnit->SetActorLocationAndRotation(SpawnLocation, SpawnRotation, false, nullptr, ETeleportType::ResetPhysics);
 
-		// 스폰된 유닛에게 UnitID 부여
+		// 1. 유닛에게 ID 부여
 		NewUnit->SetUnitID(EnemyRowName);
 
+		// 2. 데이터 테이블에서 에셋 정보 가져오기
 		FEnemyStats* StatData = StatsDataTable->FindRow<FEnemyStats>(EnemyRowName, TEXT(""));
 		FEnemyAssets* AssetData = AssetsDataTable->FindRow<FEnemyAssets>(EnemyRowName, TEXT(""));
 
 		if (StatData && AssetData)
 		{
+			// 유닛 외형 및 기본 스탯 초기화
 			NewUnit->InitializeUnit(StatData, AssetData);
 
-			// AI 컨트롤러 확인
+			// 3. AI 컨트롤러 설정
 			AMyAIController* AIC = Cast<AMyAIController>(NewUnit->GetController());
-
-			// 컨트롤러가 없다면 생성
 			if (!AIC)
 			{
 				NewUnit->SpawnDefaultController();
@@ -80,13 +77,10 @@ void AUnitSpawner::SpawnUnit()
 
 			if (AIC)
 			{
-				/** * [핵심 수정] AIC->Possess(NewUnit) 수동 호출을 제거합니다.
-				 */
+				// AIC의 OnPossess가 호출되며 GI에서 데이터를 가져옴
+				AIC->Possess(NewUnit);
 
-				 // 1. 블랙보드에 데이터 테이블 스탯 주입
-				AIC->LoadUnitStatsFromTable();
-
-				// 2. 비헤이비어 트리 실행
+				// 데이터 테이블에 등록된 BT 실행
 				if (!AssetData->BehaviorTree.IsNull())
 				{
 					UBehaviorTree* BT = AssetData->BehaviorTree.LoadSynchronous();
@@ -100,6 +94,7 @@ void AUnitSpawner::SpawnUnit()
 		}
 	}
 
+	// 웨이브 관리 로직
 	CurrentSpawnCountInWave++;
 	if (CurrentSpawnCountInWave >= WaveConfigs[CurrentWaveIndex].SpawnCount)
 	{
@@ -111,9 +106,8 @@ void AUnitSpawner::SpawnUnit()
 
 		if (WaveConfigs.IsValidIndex(CurrentWaveIndex))
 		{
-			float NextDelay = WaveConfigs[FinishedIdx].NextWaveDelay;
 			GetWorldTimerManager().SetTimer(SpawnTimerHandle, this, &AUnitSpawner::SpawnUnit,
-				WaveConfigs[CurrentWaveIndex].SpawnInterval, true, NextDelay);
+				WaveConfigs[CurrentWaveIndex].SpawnInterval, true, WaveConfigs[FinishedIdx].NextWaveDelay);
 		}
 	}
 }
