@@ -4,12 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AbilitySystemInterface.h"
+#include "Interfaces/CombatInterface.h"
 #include "CharacterBase.generated.h"
 
-
+class UAbilitySystemComponent;
+class UAttributeSet;
 class APlayerData;
+
 UCLASS()
-class PARADISE_API ACharacterBase : public ACharacter
+class PARADISE_API ACharacterBase : public ACharacter, public ICombatInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -17,6 +21,20 @@ public:
 	ACharacterBase();
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	// 2. 인터페이스 구현 (가상 함수) -> 자식들이 override 할 필요 없이 여기서 공통 처리
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+
+	// 3. 어트리뷰트 셋 Getter (선택 사항이지만 추천)
+	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
+
+	/**
+	 * @brief 현재 장착된 무기를 기반으로 특정 행동(평타/스킬)에 필요한 전투 데이터를 반환합니다.
+	 * @detail UnitBase와 PlayerBase는 이를 오버라이딩하여 
+	 * 서로 다른 데이터 테이블을 참조하여 구조체를 리턴
+	 * @return FCombatActionData 몽타주, 데미지 이펙트 클래스, 데미지 계수가 포함된 구조체.
+	 */
+	virtual FCombatActionData GetCombatActionData(ECombatActionType ActionType) const override { return FCombatActionData();}
 
 	/*
 	 * @brief 죽은후 Destroy() 하는 함수
@@ -98,6 +116,11 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<AActor> CurrentWeaponActor = nullptr;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+
+	UPROPERTY()
+	TObjectPtr<UAttributeSet> AttributeSet;
 private:
 		
 	/*

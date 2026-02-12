@@ -16,7 +16,7 @@ struct FInputActionValue;
  * 
  */
 UCLASS()
-class PARADISE_API APlayerBase : public ACharacterBase, public IAbilitySystemInterface, public ICombatInterface
+class PARADISE_API APlayerBase : public ACharacterBase
 {
 	GENERATED_BODY()
 	
@@ -27,8 +27,6 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	virtual void BeginPlay() override;
 	/**
