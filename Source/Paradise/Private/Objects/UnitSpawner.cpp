@@ -63,8 +63,8 @@ void AUnitSpawner::SpawnUnit()
         // 선언된 테이블 변수를 사용하여 데이터 찾기
         if (GI->EnemyStatsDataTable && GI->EnemyAssetsDataTable)
         {
-            FEnemyStats* StatData = GI->EnemyStatsDataTable->FindRow<FEnemyStats>(EnemyRowName, TEXT(""));
-            FEnemyAssets* AssetData = GI->EnemyAssetsDataTable->FindRow<FEnemyAssets>(EnemyRowName, TEXT(""));
+            FEnemyStats* StatData = GI->GetDataTableRow<FEnemyStats>(GI->EnemyStatsDataTable, NewUnit->GetUnitID());
+            FEnemyAssets* AssetData = GI->GetDataTableRow<FEnemyAssets>(GI->EnemyAssetsDataTable, NewUnit->GetUnitID());
 
             if (StatData && AssetData)
             {
