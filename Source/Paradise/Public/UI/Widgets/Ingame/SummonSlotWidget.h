@@ -54,6 +54,7 @@ public:
 	// * @brief 쿨타임 상태를 갱신합니다. (GAS로부터 호출 권장)
 	// * @param CurrentTime 남은 시간
 	// * @param MaxTime 전체 쿨타임 (재설정 필요 시)
+	// * @note 26/02/12, 지금은 안쓰는 코드
 	// */
 	//UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
 	//void RefreshCooldown(float CurrentTime, float MaxTime);
@@ -65,7 +66,10 @@ private:
 	UFUNCTION()
 	void OnSummonButtonClicked();
 
-	///** @brief 타이머에 의해 주기적으로 호출되어 쿨타임 UI를 갱신합니다. */
+	///**
+	// * @brief 타이머에 의해 주기적으로 호출되어 쿨타임 UI를 갱신합니다.
+	// * @note 26/02/12, 지금은 안쓰는 코드
+	// */
 	//UFUNCTION()
 	//void UpdateCooldownVisual();
 
@@ -92,10 +96,12 @@ private:
 	TObjectPtr<UImage> Img_SummonIcon = nullptr;
 
 	///** @brief 쿨타임 진행바 */
+	///  * @note 26/02/12, 지금은 안쓰는 코드
 	//UPROPERTY(meta = (BindWidget))
 	//TObjectPtr<UProgressBar> PB_Cooldown = nullptr;
 
 	///** @brief 남은 시간을 표시할 텍스트 */
+	///  * @note 26/02/12, 지금은 안쓰는 코드
 	//UPROPERTY(meta = (BindWidget))
 	//TObjectPtr<UTextBlock> Text_CooldownTime = nullptr;
 

@@ -97,9 +97,10 @@ private:
 	 * @param ID 대상의 ID (RowName)
 	 * @param InLevel 레벨
 	 * @param TabType 어떤 종류의 테이블을 검색할지 결정
+	 * @param bUseBodyIcon 캐릭터의 경우 BodyIcon(전신)을 사용할지 여부 (기본값: false = FaceIcon)
 	 * @return UI 표시용 데이터 구조체 (FSquadItemUIData)
 	 */
-	FSquadItemUIData MakeUIData(FName ID, int32 InLevel, int32 TabType);
+	FSquadItemUIData MakeUIData(FName ID, int32 InLevel, int32 TabType, bool bUseBodyIcon = false);
 #pragma endregion 로직 - 데이터 처리
 
 #pragma region 로직 - 이벤트 핸들러
@@ -159,10 +160,10 @@ private:
 	/** @brief 현재 선택된 편성 슬롯 인덱스 (장비 교체 시 대상 식별용) */
 	int32 SelectedFormationSlotIndex = -1;
 
-	/** [추가] 교체를 위해 인벤토리에서 선택한 아이템 (확인 버튼 누르기 전 대기 상태) */
+	/** @brief 교체를 위해 인벤토리에서 선택한 아이템 (확인 버튼 누르기 전 대기 상태) */
 	FSquadItemUIData PendingSelection;
 
-	/** [추가] 현재 편성에 장착된 ID 목록 (인벤토리 테두리 표시용) */
+	/** @brief 현재 편성에 장착된 ID 목록 (인벤토리 테두리 표시용) */
 	TArray<FName> CurrentEquippedIDs;
 #pragma endregion 내부 상태
 

@@ -28,11 +28,12 @@ void UParadiseSquadMainWidget::NativeConstruct()
 	}
 
 	// 2. Inventory Component 캐싱 (보유 데이터 접근)
-	if (APlayerController* PC = GetOwningPlayer())
+	if (CachedGI.IsValid())
 	{
-		if (AInGamePlayerState* PS = PC->GetPlayerState<AInGamePlayerState>())
+		CachedInventory = CachedGI->GetMainInventory();
+		if (!CachedInventory.IsValid())
 		{
-			CachedInventory = PS->GetInventoryComponent();
+			UE_LOG(LogTemp, Warning, TEXT("[SquadMain] MainInventory Not Found in GI. Ensure LoadGameData was called."));
 		}
 	}
 
@@ -72,12 +73,18 @@ void UParadiseSquadMainWidget::NativeDestruct()
 {
 	// 델리게이트 안전 해제
 	if (Btn_Tab_Character) Btn_Tab_Character->OnClicked.RemoveAll(this);
+	if (Btn_Tab_Weapon) Btn_Tab_Weapon->OnClicked.RemoveAll(this);
+	if (Btn_Tab_Armor) Btn_Tab_Armor->OnClicked.RemoveAll(this);
+	if (Btn_Tab_Unit) Btn_Tab_Unit->OnClicked.RemoveAll(this);
+	if (Btn_Back) Btn_Back->OnClicked.RemoveAll(this);
 
 	// 자식 위젯 델리게이트는 위젯 소멸 시 자동 해제되지만, 명시적 해제가 안전함
 	if (WBP_InventoryPanel) WBP_InventoryPanel->OnItemClicked.RemoveAll(this);
 	if (WBP_FormationPanel) WBP_FormationPanel->OnSlotSelected.RemoveAll(this);
 	if (WBP_DetailPanel)
 	{
+		WBP_DetailPanel->OnSwapCharacterClicked.RemoveAll(this);
+		WBP_DetailPanel->OnConfirmClicked.RemoveAll(this);
 		WBP_DetailPanel->OnSwapCharacterClicked.RemoveAll(this);
 		WBP_DetailPanel->OnConfirmClicked.RemoveAll(this);
 	}
@@ -173,7 +180,7 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 		for (const auto& Data : CachedInventory->GetOwnedCharacters())
 		{
 			// GameInstance의 테이블 조회 로직 활용
-			ListData.Add(MakeUIData(Data.CharacterID, Data.Level, SquadTabs::Character));
+			ListData.Add(MakeUIData(Data.CharacterID, Data.Level, SquadTabs::Character, true));
 		}
 		break;
 
@@ -222,7 +229,7 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 	WBP_InventoryPanel->UpdateList(CurrentTabIndex, ListData);
 }
 
-FSquadItemUIData UParadiseSquadMainWidget::MakeUIData(FName ID, int32 InLevel, int32 TabType)
+FSquadItemUIData UParadiseSquadMainWidget::MakeUIData(FName ID, int32 InLevel, int32 TabType, bool bUseBodyIcon)
 {
 	FSquadItemUIData Result;
 	Result.ID = ID;
@@ -242,7 +249,8 @@ FSquadItemUIData UParadiseSquadMainWidget::MakeUIData(FName ID, int32 InLevel, i
 		}
 		if (auto* Asset = CachedGI->GetDataTableRow<FCharacterAssets>(CachedGI->CharacterAssetsDataTable, ID))
 		{
-			Result.Icon = Asset->FaceIcon.LoadSynchronous();
+			TSoftObjectPtr<UTexture2D> TargetIcon = bUseBodyIcon ? Asset->BodyIcon : Asset->FaceIcon;
+			Result.Icon = TargetIcon.LoadSynchronous();
 		}
 	}
 	else if (TabType == SquadTabs::Weapon)
