@@ -125,6 +125,15 @@ void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 			if (CharData.CharacterUID == MyCharUID)
 			{
 				InitializeEquipment(CharData.EquipmentMap, LinkedInventory);
+				
+				UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetWorld()->GetGameInstance());
+				if (!GI)
+				{
+					UE_LOG(LogTemp, Error, TEXT("❌ [PlayerData] GameInstance 없음!"));
+					return;
+				}
+				FWeaponAssets* WeaponAssets = GI->GetDataTableRow<FWeaponAssets>(GI->WeaponAssetsDataTable, ItemID);
+				OwnerData->InitializeWeaponAbilities(WeaponAssets);
 				UE_LOG(LogTemp, Log, TEXT("💪 [Debug] %s 장착 및 비주얼 갱신 완료!"), *ItemID.ToString());
 				break;
 			}
