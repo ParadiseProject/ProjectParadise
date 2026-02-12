@@ -80,7 +80,13 @@ void AInGamePlayerState::InitSquad(const TArray<FName>& StartingHeroIDs)
 
 UInventorySystem* AInGamePlayerState::GetInventorySystem() const
 {
-    if (UGameInstance* GI = GetWorld()->GetGameInstance())
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    if (UGameInstance* GI = World->GetGameInstance())
     {
         return GI->GetSubsystem<UInventorySystem>();
     }
