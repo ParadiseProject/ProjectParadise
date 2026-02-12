@@ -36,8 +36,8 @@ void AFamiliarSpawner::SpawnFamiliarByID(FName UnitID)
 		// GI에 등록된 Familiar 전용 테이블 참조
 		if (GI->FamiliarStatsDataTable && GI->FamiliarAssetsDataTable)
 		{
-			FFamiliarStats* StatData = GI->FamiliarStatsDataTable->FindRow<FFamiliarStats>(UnitID, TEXT(""));
-			FFamiliarAssets* AssetData = GI->FamiliarAssetsDataTable->FindRow<FFamiliarAssets>(UnitID, TEXT(""));
+			FFamiliarStats* StatData = GI->GetDataTableRow<FFamiliarStats>(GI->FamiliarStatsDataTable, UnitID);
+			FFamiliarAssets* AssetData = GI->GetDataTableRow<FFamiliarAssets>(GI->FamiliarAssetsDataTable, UnitID);
 
 			if (StatData && AssetData)
 			{
