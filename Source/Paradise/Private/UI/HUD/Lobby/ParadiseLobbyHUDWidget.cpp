@@ -127,7 +127,12 @@ void UParadiseLobbyHUDWidget::UpdateMenuStats(EParadiseLobbyMenu InCurrentMenu)
 void UParadiseLobbyHUDWidget::HandleSquadBackRequest()
 {
     // 편성 화면에서 뒤로가기를 누르면 메인 로비(None)로 상태를 변경합니다.
-    UpdateMenuStats(EParadiseLobbyMenu::None);
+	if (ALobbyPlayerController* PC = GetOwningPlayer<ALobbyPlayerController>())
+	{
+		// 컨트롤러의 CurrentMenu 변수를 'None(0)'으로 갱신시킵니다.
+		// 컨트롤러가 내부적으로 다시 HUD->UpdateMenuStats(None)을 호출해주므로 화면도 정상적으로 바뀝니다.
+		PC->SetLobbyMenu(EParadiseLobbyMenu::None);
+	}
 }
 
 void UParadiseLobbyHUDWidget::OnStartCameraMove()

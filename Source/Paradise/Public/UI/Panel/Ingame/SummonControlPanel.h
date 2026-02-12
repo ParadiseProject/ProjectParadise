@@ -11,6 +11,8 @@ class USummonSlotWidget;
 class USummonCostWidget;
 class UTexture2D;
 class UCostManageComponent;
+class UFamiliarSummonComponent;
+struct FSummonSlotInfo;
 #pragma endregion 전방 선언
 
 /**
@@ -27,17 +29,31 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
-#pragma region 내부 로직
+#pragma region 시스템 초기화
 private:
-	/** @brief PlayerState가 준비될 때까지 기다렸다가 연결하는 함수 */
-	void InitCostSystem();
+	/** @brief PlayerState및 필요 컴포넌트 연결 시도 */
+	void InitComponents();
 	/**
 	 * @brief 코스트 변경 델리게이트 핸들러 (직접 바인딩)
 	 * @details UFUNCTION 필수
 	 */
 	UFUNCTION()
 	void HandleCostUpdate(float CurrentCost, float MaxCost);
-#pragma endregion 내부 로직
+
+	/** @brief 슬롯 정보 변경 시 UI 업데이트 핸들러*/
+	UFUNCTION()
+	void HandleSummonSlotsUpdate(const TArray<FSummonSlotInfo>& Slots);
+#pragma endregion 시스템 초기화
+
+#pragma region 입력 처리
+private:
+	/**
+	 * @brief 하위 슬롯 위젯이 클릭되었을 때 호출되는 함수
+	 * @param SlotIndex 클릭된 슬롯의 인덱스
+	 */
+	UFUNCTION()
+	void HandleSlotClickRequest(int32 SlotIndex);
+#pragma endregion 입력 처리
 
 #pragma region 외부 인터페이스
 public:
@@ -46,9 +62,10 @@ public:
 	 * @param SlotIndex 슬롯 번호 (0 ~ N)
 	 * @param Icon 아이콘 텍스처
 	 * @param MaxCooldown 최대 쿨타임
+	 * @param InCost 소환 비용
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown);
+	void SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown, int32 InCost);
 
 	/**
 	 * @brief 특정 슬롯의 쿨타임 상태를 업데이트합니다.
@@ -95,6 +112,9 @@ private:
 
 	/** @brief 델리게이트 해제를 위한 컴포넌트 약참조 */
 	TWeakObjectPtr<UCostManageComponent> CachedCostComponent = nullptr;
+
+	/** @brief 소환 컴포넌트 약참조 */
+	TWeakObjectPtr<UFamiliarSummonComponent> CachedSummonComponent = nullptr;
 
 	/** @brief 재시도용 타이머 핸들 */
 	FTimerHandle TimerHandle_InitCost;

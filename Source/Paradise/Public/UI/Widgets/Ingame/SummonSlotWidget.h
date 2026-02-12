@@ -14,6 +14,9 @@ class UTextBlock;
 class UTexture2D;
 #pragma endregion 전방 선언
 
+/** @brief 슬롯 클릭 시 인덱스를 전달하는 델리게이트 */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSummonSlotClicked, int32, SlotIndex);
+
 /**
  * @class USummonSlotWidget
  * @brief 소환수 아이콘 표시, 클릭 입력 처리 및 쿨타임 시각화를 담당하는 단일 슬롯 위젯입니다.
@@ -33,12 +36,19 @@ protected:
 #pragma region 외부 인터페이스
 public:
 	/**
+	 * @brief 슬롯의 인덱스를 초기화합니다.
+	 * @param InIndex 할당할 슬롯 번호
+	 */
+	void InitSlot(int32 InIndex);
+
+	/**
 	 * @brief 소환수 데이터를 설정하고 UI를 초기화합니다.
 	 * @param IconTexture 표시할 소환수 아이콘 (nullptr일 경우 빈 슬롯 처리)
 	 * @param InMaxCooldown 해당 소환수의 최대 쿨타임
+	 * @param InCost 소환 비용
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown);
+	void UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown, int32 InCost);
 
 	/**
 	 * @brief 쿨타임 상태를 갱신합니다. (GAS로부터 호출 권장)
@@ -88,10 +98,22 @@ private:
 	/** @brief 남은 시간을 표시할 텍스트 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_CooldownTime = nullptr;
+
+	/** @brief 유닛의 코스트를 표시할 텍스트 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> Text_CostValue = nullptr;
 #pragma endregion 위젯 바인딩
 
 #pragma region 데이터
+public:
+	/** @brief 슬롯 클릭 알림 델리게이트 */
+	UPROPERTY(BlueprintAssignable, Category = "Paradise|Event")
+	FOnSummonSlotClicked OnSlotClicked;
+
 private:
+	/** @brief 이 슬롯의 고유 인덱스 (0~4) */
+	int32 SlotIndex = -1;
+
 	/** @brief 최대 쿨타임 변수 */
 	UPROPERTY()
 	float MaxCooldownTime = 0.0f;

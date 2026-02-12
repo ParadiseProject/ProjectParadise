@@ -2,7 +2,6 @@
 
 
 #include "UI/Widgets/Ingame/SummonSlotWidget.h"
-
 #include "UI/Widgets/Ingame/ParadiseCommonButton.h"
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
@@ -36,7 +35,12 @@ void USummonSlotWidget::NativeDestruct()
 #pragma endregion 생명주기
 
 #pragma region 외부 인터페이스 구현
-void USummonSlotWidget::UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown)
+void USummonSlotWidget::InitSlot(int32 InIndex)
+{
+	SlotIndex = InIndex;
+}
+
+void USummonSlotWidget::UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown, int32 InCost)
 {
 	StopCooldownTimer();
 	MaxCooldownTime = InMaxCooldown;
@@ -50,11 +54,19 @@ void USummonSlotWidget::UpdateSummonData(UTexture2D* IconTexture, float InMaxCoo
 			
 			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(true);
 		}
-		else
+		//else
+		//{
+		//	Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
+		//	// 데이터가 없으면 비활성화 (빈 슬롯)
+		//	if(Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
+		//}
+	}
+	if (Text_CostValue)
+	{
+		if (IconTexture) // 유효한 데이터가 있을 때만 코스트 표시
 		{
-			Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
-			// 데이터가 없으면 비활성화 (빈 슬롯)
-			if(Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
+			Text_CostValue->SetText(FText::AsNumber(InCost));
+			Text_CostValue->SetVisibility(ESlateVisibility::HitTestInvisible);
 		}
 	}
 }
@@ -87,8 +99,11 @@ void USummonSlotWidget::RefreshCooldown(float CurrentTime, float MaxTime)
 #pragma region 내부 로직
 void USummonSlotWidget::OnSummonButtonClicked()
 {
-	// 실제 소환 로직 요청 (델리게이트 브로드캐스트 등)
-	// 예: OnSummonRequested.Broadcast();
+	// 인덱스가 유효한 경우에만 상위 패널로 이벤트 전파
+	if (SlotIndex >= 0)
+	{
+		OnSlotClicked.Broadcast(SlotIndex);
+	}
 }
 
 void USummonSlotWidget::UpdateCooldownVisual()
