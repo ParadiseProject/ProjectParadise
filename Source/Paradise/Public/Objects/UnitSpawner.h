@@ -44,7 +44,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
-	TSubclassOf<class ABaseUnit> UnitClass;
+	TSubclassOf<class AUnitBase> UnitClass;
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
 	class UDataTable* StatsDataTable;
