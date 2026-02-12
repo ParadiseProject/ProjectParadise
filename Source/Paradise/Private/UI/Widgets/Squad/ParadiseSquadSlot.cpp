@@ -50,6 +50,20 @@ void UParadiseSquadSlot::NativeDestruct()
 void UParadiseSquadSlot::InitSlot(int32 InSlotIndex)
 {
 	SlotIndex = InSlotIndex;
+
+	if (Text_Level)
+	{
+		// 3번 인덱스 이상은 유닛 슬롯 -> 레벨 표기 안 함
+		if (SlotIndex >= 3)
+		{
+			Text_Level->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		else
+		{
+			// 캐릭터 슬롯은 일단 보이도록 설정 (데이터가 없으면 나중에 꺼짐)
+			Text_Level->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
+	}
 }
 
 void UParadiseSquadSlot::UpdateSlot(const FSquadItemUIData& InData)
@@ -77,10 +91,8 @@ void UParadiseSquadSlot::UpdateSlot(const FSquadItemUIData& InData)
 
 		if (Text_Level)
 		{
-			// 0, 1, 2번은 캐릭터 -> 레벨 표시
-			// 3번~7번은 유닛 -> 레벨 숨김
-			bool bIsUnitSlot = (SlotIndex >= 3);
-
+			// 여기서도 이중 체크 (안전장치)
+			const bool bIsUnitSlot = (SlotIndex >= 3);
 			if (bIsUnitSlot)
 			{
 				Text_Level->SetVisibility(ESlateVisibility::Collapsed);
