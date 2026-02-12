@@ -26,6 +26,10 @@ void UEquipmentComponent::SetLinkedInventory(UInventoryComponent* InInventory)
     }
 }
 
+void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
+{
+}
+
 void UEquipmentComponent::InitializeEquipment(const TMap<EEquipmentSlot, FGuid>& InEquipmentMap, UInventoryComponent* InInventory)
 {
 	if (!InInventory)

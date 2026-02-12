@@ -80,6 +80,9 @@ public:
 	 */
 	void SetLinkedInventory(UInventoryComponent* InInventory);
 
+
+	UFUNCTION(BlueprintCallable, Category = "Test")
+	void TestEquippedItem(EEquipmentSlot Slot, FName ItemID);
 private:
 
 	/**
