@@ -146,6 +146,8 @@ void USummonControlPanel::HandleSummonSlotsUpdate(const TArray<FSummonSlotInfo>&
 			if (Slots[i].bIsSoldOut)
 			{
 				SummonSlots[i]->UpdateSummonData(nullptr, 0.0f, 0);
+
+				//SummonSlots[i]->RefreshCooldown(3.0f, 3.0f);
 			}
 			else
 			{
@@ -162,7 +164,6 @@ void USummonControlPanel::HandleSlotClickRequest(int32 SlotIndex)
 {
 	if (CachedSummonComponent.IsValid())
 	{
-		// ★ 핵심: 슬롯 UI 클릭 -> 컴포넌트에 구매 요청
 		// 컴포넌트 내부에서 CostManageComponent를 통해 코스트를 차감함
 		bool bSuccess = CachedSummonComponent->RequestPurchase(SlotIndex);
 
@@ -195,10 +196,10 @@ void USummonControlPanel::SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, f
 
 void USummonControlPanel::UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime)
 {
-	if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
-	{
-		SummonSlots[SlotIndex]->RefreshCooldown(CurrentTime, MaxTime);
-	}
+	//if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
+	//{
+	//	//SummonSlots[SlotIndex]->RefreshCooldown(CurrentTime, MaxTime);
+	//}
 }
 void USummonControlPanel::UpdateCostDisplay(float CurrentCost, float MaxCost)
 {

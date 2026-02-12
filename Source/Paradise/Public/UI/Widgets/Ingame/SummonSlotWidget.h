@@ -50,13 +50,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
 	void UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown, int32 InCost);
 
-	/**
-	 * @brief 쿨타임 상태를 갱신합니다. (GAS로부터 호출 권장)
-	 * @param CurrentTime 남은 시간
-	 * @param MaxTime 전체 쿨타임 (재설정 필요 시)
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void RefreshCooldown(float CurrentTime, float MaxTime);
+	///**
+	// * @brief 쿨타임 상태를 갱신합니다. (GAS로부터 호출 권장)
+	// * @param CurrentTime 남은 시간
+	// * @param MaxTime 전체 쿨타임 (재설정 필요 시)
+	// */
+	//UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
+	//void RefreshCooldown(float CurrentTime, float MaxTime);
 #pragma endregion 외부 인터페이스
 
 #pragma region 내부 로직
@@ -65,13 +65,13 @@ private:
 	UFUNCTION()
 	void OnSummonButtonClicked();
 
-	/** @brief 타이머에 의해 주기적으로 호출되어 쿨타임 UI를 갱신합니다. */
-	UFUNCTION()
-	void UpdateCooldownVisual();
+	///** @brief 타이머에 의해 주기적으로 호출되어 쿨타임 UI를 갱신합니다. */
+	//UFUNCTION()
+	//void UpdateCooldownVisual();
 
-	/** @brief 쿨타임 UI를 숨기고 상태를 리셋합니다. */
-	UFUNCTION()
-	void StopCooldownTimer();
+	///** @brief 쿨타임 UI를 숨기고 상태를 리셋합니다. */
+	//UFUNCTION()
+	//void StopCooldownTimer();
 #pragma endregion 내부 로직
 
 #pragma region 쿨타임 설정
@@ -91,13 +91,13 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> Img_SummonIcon = nullptr;
 
-	/** @brief 쿨타임 진행바 */
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UProgressBar> PB_Cooldown = nullptr;
+	///** @brief 쿨타임 진행바 */
+	//UPROPERTY(meta = (BindWidget))
+	//TObjectPtr<UProgressBar> PB_Cooldown = nullptr;
 
-	/** @brief 남은 시간을 표시할 텍스트 */
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock> Text_CooldownTime = nullptr;
+	///** @brief 남은 시간을 표시할 텍스트 */
+	//UPROPERTY(meta = (BindWidget))
+	//TObjectPtr<UTextBlock> Text_CooldownTime = nullptr;
 
 	/** @brief 유닛의 코스트를 표시할 텍스트 */
 	UPROPERTY(meta = (BindWidget))
