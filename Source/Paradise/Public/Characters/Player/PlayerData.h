@@ -121,7 +121,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
 
-	/* * 장비 관리 컴포넌트
+	/**
+	 * @brief 장비 관리 컴포넌트
 	 * @details 인게임에서 착용 중인 장비의 로직과 데이터를 처리합니다.
 	 */
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "Equipment")

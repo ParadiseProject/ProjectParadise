@@ -8,19 +8,20 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Framework/System/ParadiseSaveGame.h"
-#include "AbilitySystemComponent.h"
-#include "Camera/CameraComponent.h"
+#include "Framework/Core/ParadiseGameInstance.h"
 #include "Framework/InGame/InGameController.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "GAS/Attributes/BaseAttributeSet.h"
+#include "Camera/CameraComponent.h"
 #include "InputActionValue.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Framework/Core/ParadiseGameInstance.h"
 #include "Data/Structs/ItemStructs.h"
 #include "Data/Structs/InputStructs.h"
 #include "Data/Assets/ParadiseInputConfig.h" 
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "AbilitySystemBlueprintLibrary.h"
 
 APlayerBase::APlayerBase()
 {
@@ -133,10 +134,13 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
     // GAS 연결
     // Owner(APlayerData): HeroDataActor (데이터/로직의 주체)
     // Avatar(APlayerBase): This Character (애니메이션/물리의 주체)
-    UAbilitySystemComponent* ASC = InPlayerData->GetAbilitySystemComponent();
-    if (ASC)
+    AbilitySystemComponent = InPlayerData->GetAbilitySystemComponent();
+    AttributeSet = InPlayerData->GetAttributeSet();
+
+    if (AbilitySystemComponent)
     {
-        ASC->InitAbilityActorInfo(InPlayerData, this);
+        AbilitySystemComponent->InitAbilityActorInfo(InPlayerData, this);
+        UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] GAS 초기화 완료!"));
     }
 
     // 캐릭터 에셋 외형 업데이트
@@ -218,11 +222,6 @@ void APlayerBase::CheckHit()
         UE_LOG(LogTemp, Warning, TEXT("👊 [PlayerBase] 타격 성공! 대상: %s"), *HitActor->GetName());
 
     }
-}
-
-UAbilitySystemComponent* APlayerBase::GetAbilitySystemComponent() const
-{
-	return LinkedPlayerData.IsValid() ? LinkedPlayerData->GetAbilitySystemComponent() : nullptr;
 }
 
 void APlayerBase::BeginPlay()
@@ -369,16 +368,15 @@ void APlayerBase::OnMoveInput(const FInputActionValue& InValue)
 
 void APlayerBase::SendAbilityInputToASC(EInputID InputId, bool bIsPressed)
 {
-    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
-    if (!ASC) return;
+    if (!AbilitySystemComponent) return;;
 
     if (bIsPressed)
     {
-        ASC->AbilityLocalInputPressed(static_cast<int32>(InputId));
+        AbilitySystemComponent->AbilityLocalInputPressed(static_cast<int32>(InputId));
     }
     else
     {
-        ASC->AbilityLocalInputReleased(static_cast<int32>(InputId));
+        AbilitySystemComponent->AbilityLocalInputReleased(static_cast<int32>(InputId));
     }
 }
 
