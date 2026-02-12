@@ -1,18 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Components/InventoryComponent.h"
+#include "Framework/System/InventorySystem.h"
 #include "Framework/Core/ParadiseGameInstance.h"
 
 // Sets default values for this component's properties
-UInventoryComponent::UInventoryComponent()
+UInventorySystem::UInventorySystem()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UInventoryComponent::InitInventory(const TArray<FOwnedCharacterData>& InHeroes, const TArray<FOwnedFamiliarData>& InFamiliars, const TArray<FOwnedItemData>& InItems)
+void UInventorySystem::InitInventory(const TArray<FOwnedCharacterData>& InHeroes, const TArray<FOwnedFamiliarData>& InFamiliars, const TArray<FOwnedItemData>& InItems)
 {
 	UParadiseGameInstance* GI = GetParadiseGI();
 	if (!GI) return;
@@ -97,7 +94,7 @@ void UInventoryComponent::InitInventory(const TArray<FOwnedCharacterData>& InHer
 		OwnedCharacters.Num(), OwnedFamiliars.Num(), OwnedItems.Num());
 }
 
-void UInventoryComponent::AddItem(FName ItemID, int32 Count, int32 EnhancementLvl)
+void UInventorySystem::AddItem(FName ItemID, int32 Count, int32 EnhancementLvl)
 {
 	UParadiseGameInstance* GI = GetParadiseGI();
 	if (!GI) return;
@@ -135,7 +132,7 @@ void UInventoryComponent::AddItem(FName ItemID, int32 Count, int32 EnhancementLv
 	if (OnInventoryUpdated.IsBound()) OnInventoryUpdated.Broadcast();
 }
 
-void UInventoryComponent::AddCharacter(FName CharacterID)
+void UInventorySystem::AddCharacter(FName CharacterID)
 {
 	UParadiseGameInstance* GI = GetParadiseGI();
 	if (!GI) return;
@@ -174,7 +171,7 @@ void UInventoryComponent::AddCharacter(FName CharacterID)
 	}
 }
 
-void UInventoryComponent::AddFamiliar(FName FamiliarID)
+void UInventorySystem::AddFamiliar(FName FamiliarID)
 {
 	UParadiseGameInstance* GI = GetParadiseGI();
 	if (!GI) return;
@@ -205,7 +202,7 @@ void UInventoryComponent::AddFamiliar(FName FamiliarID)
 	if (OnInventoryUpdated.IsBound()) OnInventoryUpdated.Broadcast();
 }
 
-bool UInventoryComponent::RemoveObjectByGUID(FGuid TargetGUID, int32 Count)
+bool UInventorySystem::RemoveObjectByGUID(FGuid TargetGUID, int32 Count)
 {
 	if (!TargetGUID.IsValid()) return false;
 
@@ -262,7 +259,7 @@ bool UInventoryComponent::RemoveObjectByGUID(FGuid TargetGUID, int32 Count)
 	return false;
 }
 
-int32 UInventoryComponent::GetItemQuantity(FName ItemID) const
+int32 UInventorySystem::GetItemQuantity(FName ItemID) const
 {
 	if (ItemID.IsNone()) return 0;
 	int32 TotalCount = 0;
@@ -277,13 +274,8 @@ int32 UInventoryComponent::GetItemQuantity(FName ItemID) const
 	return TotalCount;
 }
 
-// Called when the game starts
-void UInventoryComponent::BeginPlay()
-{
-	Super::BeginPlay();
-}
 
-FOwnedItemData* UInventoryComponent::GetItemByGUID(FGuid TargetUID)
+FOwnedItemData* UInventorySystem::GetItemByGUID(FGuid TargetUID)
 {
 	if (!TargetUID.IsValid()) return nullptr;
 
@@ -297,7 +289,7 @@ FOwnedItemData* UInventoryComponent::GetItemByGUID(FGuid TargetUID)
 	return nullptr;
 }
 
-bool UInventoryComponent::HasCharacter(FName CharacterID) const
+bool UInventorySystem::HasCharacter(FName CharacterID) const
 {
 	for (const auto& Hero : OwnedCharacters)
 	{
@@ -306,7 +298,21 @@ bool UInventoryComponent::HasCharacter(FName CharacterID) const
 	return false;
 }
 
-UParadiseGameInstance* UInventoryComponent::GetParadiseGI() const
+const FOwnedCharacterData* UInventorySystem::GetCharacterDataByID(FName CharacterID) const
+{
+	// 보유한 캐릭터 배열을 순회하며 ID가 일치하는지 확인
+	for (const FOwnedCharacterData& CharData : OwnedCharacters)
+	{
+		if (CharData.CharacterID == CharacterID)
+		{
+			// 찾았으면 해당 데이터의 주소값 반환
+			return &CharData;
+		}
+	}
+	return nullptr;
+}
+
+UParadiseGameInstance* UInventorySystem::GetParadiseGI() const
 {
 	if (UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetOuter()))
 	{
@@ -316,7 +322,7 @@ UParadiseGameInstance* UInventoryComponent::GetParadiseGI() const
 }
 
 
-EEquipmentSlot UInventoryComponent::FindEquipmentSlot(FName ItemID) const
+EEquipmentSlot UInventorySystem::FindEquipmentSlot(FName ItemID) const
 {
 	if (ItemID.IsNone()) return EEquipmentSlot::Unknown;
 
@@ -347,7 +353,7 @@ EEquipmentSlot UInventoryComponent::FindEquipmentSlot(FName ItemID) const
 	return EEquipmentSlot::Unknown;
 }
 
-void UInventoryComponent::EquipItemToCharacter(FGuid CharacterUID, FGuid ItemUID)
+void UInventorySystem::EquipItemToCharacter(FGuid CharacterUID, FGuid ItemUID)
 {
 	//인벤토리에 실제 아이템이 있는지 유효성 검사
 	FOwnedItemData* ItemData = GetItemByGUID(ItemUID);
@@ -390,7 +396,7 @@ void UInventoryComponent::EquipItemToCharacter(FGuid CharacterUID, FGuid ItemUID
 	UE_LOG(LogTemp, Log, TEXT("⚔️ [%s] 캐릭터에게 장비 장착 완료: %s"), *CharacterUID.ToString(), *ItemUID.ToString());
 }
 
-void UInventoryComponent::UnEquipItemFromCharacter(FGuid CharacterUID, EEquipmentSlot Slot)
+void UInventorySystem::UnEquipItemFromCharacter(FGuid CharacterUID, EEquipmentSlot Slot)
 {
 	for (auto& Char : OwnedCharacters)
 	{
