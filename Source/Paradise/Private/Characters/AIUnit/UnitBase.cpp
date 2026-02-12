@@ -3,6 +3,8 @@
 #include "Characters/AIUnit/UnitBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "AbilitySystemComponent.h"
+#include "GAS/Attributes/BaseAttributeSet.h"
 #include "AIController.h"
 #include "BrainComponent.h"
 #include "Framework/System/ObjectPoolSubsystem.h"
@@ -12,6 +14,9 @@ AUnitBase::AUnitBase()
 	PrimaryActorTick.bCanEverTick = false;
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	bIsDead = false;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AttributeSet = CreateDefaultSubobject<UBaseAttributeSet>(TEXT("AttributeSet"));
 }
 
 void AUnitBase::OnPoolActivate_Implementation()
@@ -46,20 +51,63 @@ void AUnitBase::OnPoolDeactivate_Implementation()
 	SetActorTickEnabled(false);
 }
 
+FCombatActionData AUnitBase::GetCombatActionData(ECombatActionType ActionType) const
+{
+	FCombatActionData Result;
+
+	if (ActionType == ECombatActionType::BasicAttack)
+	{
+		Result.MontageToPlay = CachedAttackMontage;
+		Result.DamageEffectClass = CachedDamageEffectClass;
+		Result.DamageMultiplier = 1.0f; // 기본 데미지 배율
+	}
+	else if (ActionType == ECombatActionType::WeaponSkill)
+	{
+		// 몬스터 전용 스킬 로직이 필요하다면 여기서 분기 처리
+		// 예: Result.MontageToPlay = CachedSkillMontage;
+	}
+
+	return Result;
+}
+
 void AUnitBase::InitializeUnit(FAIUnitStats* InStats, FAIUnitAssets* InAssets)
 {
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+
 	if (InStats)
 	{
-		MaxHP = InStats->BaseMaxHP;
-		HP = MaxHP;
+		// ✅ [Status] AttributeSet 초기화 (HP, MP, 공격력 등)
+		if (UBaseAttributeSet* BaseSet = Cast<UBaseAttributeSet>(AttributeSet))
+		{
+			BaseSet->InitMaxHealth(InStats->BaseMaxHP);
+			BaseSet->InitHealth(BaseSet->GetMaxHealth());
+			BaseSet->InitAttackPower(InStats->BaseAttackPower);
+			BaseSet->InitDefense(InStats->BaseDefense);
+			// ... 나머지 스탯 초기화
+		}
+
+		// ✅ [Tag] 소속 태그 적용 (데이터 테이블 -> 멤버 변수)
 		this->FactionTag = InStats->FactionTag;
 
+		// ⭐ 중요: GAS 시스템에도 태그 등록 (타겟팅/필터링용)
+		if (AbilitySystemComponent && FactionTag.IsValid())
+		{
+			// 기존 태그가 있다면 제거 (재활용 시 꼬임 방지)
+			AbilitySystemComponent->RemoveLooseGameplayTag(FactionTag);
+
+			// 새 태그 등록
+			AbilitySystemComponent->AddLooseGameplayTag(FactionTag);
+		}
+
+		// [Movement]
 		if (GetCharacterMovement())
 		{
 			GetCharacterMovement()->MaxWalkSpeed = InStats->BaseMoveSpeed;
 		}
 	}
-
 	if (InAssets)
 	{
 		// 유닛 크기 설정
@@ -77,28 +125,52 @@ void AUnitBase::InitializeUnit(FAIUnitStats* InStats, FAIUnitAssets* InAssets)
 		{
 			GetMesh()->SetAnimInstanceClass(InAssets->AnimBlueprint);
 		}
+
+		// 전투 데이터 캐싱 (멤버 변수에 저장)
+		CachedDamageEffectClass = InAssets->BasicAttackEffect;
+		CachedAttackMontage = InAssets->AttackMontage.LoadSynchronous(); // 미리 로드해둠
+
+		// 어빌리티 부여 (Grant Ability)
+		if (AbilitySystemComponent)
+		{
+			// 평타 (Basic Ability)
+			if (BasicAbilityHandle.IsValid())
+			{
+				AbilitySystemComponent->ClearAbility(BasicAbilityHandle); // 재사용 시 초기화
+			}
+
+			if (InAssets->BasicAbility)
+			{
+				FGameplayAbilitySpec Spec(InAssets->BasicAbility, 1, -1);
+				BasicAbilityHandle = AbilitySystemComponent->GiveAbility(Spec);
+			}
+
+			// 스킬 (Skills) - 보스 사용
+			for (const auto& Handle : SkillAbilityHandles)
+			{
+				AbilitySystemComponent->ClearAbility(Handle);
+			}
+			SkillAbilityHandles.Empty();
+
+			for (const auto& SkillClass : InAssets->SkillAbilities)
+			{
+				if (SkillClass)
+				{
+					FGameplayAbilitySpec Spec(SkillClass, 1, -1);
+					SkillAbilityHandles.Add(AbilitySystemComponent->GiveAbility(Spec));
+				}
+			}
+		}
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("[%s] Initialized. Faction: %s"), *GetName(), *FactionTag.ToString());
 }
 
-float AUnitBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	if (bIsDead) return 0.0f;
-
-	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	HP -= ActualDamage;
-
-	if (HP <= 0.0f)
-	{
-		bIsDead = true;
-		Die();
-	}
-	return ActualDamage;
-}
-
 void AUnitBase::Die()
 {
+	if (bIsDead) return;
+	bIsDead = true;
+
 	if (UWorld* World = GetWorld())
 	{
 		if (UObjectPoolSubsystem* PoolSubsystem = World->GetSubsystem<UObjectPoolSubsystem>())

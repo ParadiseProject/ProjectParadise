@@ -28,7 +28,7 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 	AUnitBase* TargetUnit = Cast<AUnitBase>(CurrentTarget);
 
 	// 2. 이미 타겟이 있고, 그 타겟이 살아있다면
-	if (TargetUnit && !TargetUnit->bIsDead)
+	if (TargetUnit && !TargetUnit->IsDead())
 	{
 		// 타겟을 바꾸지는 않지만, 거리는 매 틱(0.2초)마다 업데이트
 		float CurrentDistance = FVector::Dist(SelfUnit->GetActorLocation(), TargetUnit->GetActorLocation());
@@ -45,7 +45,7 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 		AUnitBase* OtherUnit = *It;
 
 		// 나 자신이 아니고, 죽지 않았으며, 적군인 경우만 체크
-		if (OtherUnit != SelfUnit && !OtherUnit->bIsDead && SelfUnit->IsEnemy(OtherUnit))
+		if (OtherUnit != SelfUnit && !OtherUnit->IsDead() && SelfUnit->IsEnemy(OtherUnit))
 		{
 			float Distance = FVector::Dist(SelfUnit->GetActorLocation(), OtherUnit->GetActorLocation());
 			if (Distance < MinDistance)

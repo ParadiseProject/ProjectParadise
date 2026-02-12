@@ -6,9 +6,9 @@
 
 AHomeBase::AHomeBase()
 {
-	MaxHP = 500.f;
-	HP = MaxHP;
-	bIsDead = false;
+	//MaxHP = 500.f;
+	//HP = MaxHP;
+	//bIsDead = false;
 
 	PrimaryActorTick.bCanEverTick = false;
 }

@@ -27,7 +27,7 @@ void UBTService_CheckTargetDeath::TickNode(UBehaviorTreeComponent& OwnerComp, ui
 	{
 		// 2. 타겟이 BaseUnit인지 확인하고 죽었는지 체크
 		AUnitBase* UnitBase = Cast<AUnitBase>(TargetActor);
-		if (UnitBase && UnitBase->bIsDead)
+		if (UnitBase && UnitBase->IsDead())
 		{
 			// 3. 죽었다면 블랙보드 키를 비워줌
 			BB->ClearValue(TargetActorKey.SelectedKeyName);
