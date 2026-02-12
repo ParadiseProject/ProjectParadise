@@ -6,7 +6,7 @@
 #include "AI/MonsterAI.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
-#include "Characters/AIUnit/BaseUnit.h"
+#include "Characters/AIUnit/UnitBase.h"
 #include "Objects/HomeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Framework/Core/ParadiseGameInstance.h"
@@ -46,7 +46,7 @@ void AMyAIController::OnPossess(APawn* InPawn)
     if (BTAsset && BBAsset && UseBlackboard(BBAsset, BBComp))
     {
         Blackboard = BBComp;
-        ABaseUnit* SelfUnit = Cast<ABaseUnit>(InPawn);
+        AUnitBase* SelfUnit = Cast<AUnitBase>(InPawn);
         UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetGameInstance());
 
         if (SelfUnit && GI)
@@ -96,8 +96,8 @@ void AMyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 
     if (Stimulus.WasSuccessfullySensed())
     {
-        ABaseUnit* TargetUnit = Cast<ABaseUnit>(Actor);
-        ABaseUnit* SelfUnit = Cast<ABaseUnit>(GetPawn());
+        AUnitBase* TargetUnit = Cast<AUnitBase>(Actor);
+        AUnitBase* SelfUnit = Cast<AUnitBase>(GetPawn());
 
         if (TargetUnit && SelfUnit && SelfUnit->IsEnemy(TargetUnit))
         {

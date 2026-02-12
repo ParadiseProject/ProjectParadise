@@ -3,7 +3,7 @@
 #include "AI/BTService_FindClosestTarget.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
-#include "Characters/AIUnit/BaseUnit.h"
+#include "Characters/AIUnit/UnitBase.h"
 #include "EngineUtils.h"
 
 UBTService_FindClosestTarget::UBTService_FindClosestTarget()
@@ -17,7 +17,7 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 
 	APawn* ControllingPawn = OwnerComp.GetAIOwner()->GetPawn();
-	ABaseUnit* SelfUnit = Cast<ABaseUnit>(ControllingPawn);
+	AUnitBase* SelfUnit = Cast<AUnitBase>(ControllingPawn);
 	if (!SelfUnit) return;
 
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
@@ -25,7 +25,7 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 
 	// 1. 현재 블랙보드에 등록된 타겟을 가져옴
 	AActor* CurrentTarget = Cast<AActor>(BB->GetValueAsObject(TargetActorKey.SelectedKeyName));
-	ABaseUnit* TargetUnit = Cast<ABaseUnit>(CurrentTarget);
+	AUnitBase* TargetUnit = Cast<AUnitBase>(CurrentTarget);
 
 	// 2. 이미 타겟이 있고, 그 타겟이 살아있다면
 	if (TargetUnit && !TargetUnit->bIsDead)
@@ -37,12 +37,12 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 	}
 
 	// 3. 타겟이 없거나 죽었다면 새로운 적을 찾음
-	ABaseUnit* ClosestEnemy = nullptr;
+	AUnitBase* ClosestEnemy = nullptr;
 	float MinDistance = SearchRadius;
 
-	for (TActorIterator<ABaseUnit> It(GetWorld()); It; ++It)
+	for (TActorIterator<AUnitBase> It(GetWorld()); It; ++It)
 	{
-		ABaseUnit* OtherUnit = *It;
+		AUnitBase* OtherUnit = *It;
 
 		// 나 자신이 아니고, 죽지 않았으며, 적군인 경우만 체크
 		if (OtherUnit != SelfUnit && !OtherUnit->bIsDead && SelfUnit->IsEnemy(OtherUnit))

@@ -7,15 +7,15 @@
 #include "Interfaces/ObjectPoolInterface.h"
 #include "Data/Structs/UnitStructs.h"
 #include "GameplayTagContainer.h"
-#include "BaseUnit.generated.h"
+#include "UnitBase.generated.h"
 
 UCLASS()
-class PARADISE_API ABaseUnit : public ACharacter, public IObjectPoolInterface
+class PARADISE_API AUnitBase : public ACharacter, public IObjectPoolInterface
 {
 	GENERATED_BODY()
 
 public:
-	ABaseUnit();
+	AUnitBase();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unit|Status")
 	float HP;
@@ -49,7 +49,7 @@ public:
 	virtual void Die();
 
 	UFUNCTION(BlueprintCallable, Category = "Unit|Logic")
-	bool IsEnemy(ABaseUnit* OtherUnit);
+	bool IsEnemy(AUnitBase* OtherUnit);
 
 	void PlayRangeAttack();
 };

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Objects/UnitSpawner.h"
-#include "Characters/AIUnit/BaseUnit.h"
+#include "Characters/AIUnit/UnitBase.h"
 #include "Framework/System/ObjectPoolSubsystem.h"
 #include "Framework/InGame/MyAIController.h"
 #include "Framework/Core/ParadiseGameInstance.h"
@@ -23,7 +23,7 @@ void AUnitSpawner::BeginPlay()
 	{
 		for (int32 i = 0; i < PreSpawnCount; i++)
 		{
-			ABaseUnit* TempUnit = PoolSubsystem->SpawnPoolActor<ABaseUnit>(UnitClass, GetActorLocation(), GetActorRotation(), this, nullptr);
+			AUnitBase* TempUnit = PoolSubsystem->SpawnPoolActor<AUnitBase>(UnitClass, GetActorLocation(), GetActorRotation(), this, nullptr);
 			if (TempUnit) PoolSubsystem->ReturnToPool(TempUnit);
 		}
 	}
@@ -53,7 +53,7 @@ void AUnitSpawner::SpawnUnit()
     FVector SpawnLocation = GetRandomSpawnLocation() + FVector(0.f, 0.f, 100.0f);
     FRotator SpawnRotation = FRotator(0.f, FMath::RandRange(0.f, 360.f), 0.f);
 
-    ABaseUnit* NewUnit = PoolSubsystem->SpawnPoolActor<ABaseUnit>(UnitClass, SpawnLocation, SpawnRotation, this, nullptr);
+    AUnitBase* NewUnit = PoolSubsystem->SpawnPoolActor<AUnitBase>(UnitClass, SpawnLocation, SpawnRotation, this, nullptr);
 
     if (NewUnit)
     {

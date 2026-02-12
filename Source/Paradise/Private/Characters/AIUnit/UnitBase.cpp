@@ -1,20 +1,20 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Characters/AIUnit/BaseUnit.h"
+#include "Characters/AIUnit/UnitBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "AIController.h"
 #include "BrainComponent.h"
 #include "Framework/System/ObjectPoolSubsystem.h"
 
-ABaseUnit::ABaseUnit()
+AUnitBase::AUnitBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	bIsDead = false;
 }
 
-void ABaseUnit::OnPoolActivate_Implementation()
+void AUnitBase::OnPoolActivate_Implementation()
 {
 	bIsDead = false;
 	SetActorHiddenInGame(false);
@@ -29,7 +29,7 @@ void ABaseUnit::OnPoolActivate_Implementation()
 	}
 }
 
-void ABaseUnit::OnPoolDeactivate_Implementation()
+void AUnitBase::OnPoolDeactivate_Implementation()
 {
 	// 풀로 돌아갈 때 AI 로직 중지 및 컨트롤러 해제
 	if (AAIController* AIC = Cast<AAIController>(GetController()))
@@ -46,7 +46,7 @@ void ABaseUnit::OnPoolDeactivate_Implementation()
 	SetActorTickEnabled(false);
 }
 
-void ABaseUnit::InitializeUnit(FAIUnitStats* InStats, FAIUnitAssets* InAssets)
+void AUnitBase::InitializeUnit(FAIUnitStats* InStats, FAIUnitAssets* InAssets)
 {
 	if (InStats)
 	{
@@ -82,7 +82,7 @@ void ABaseUnit::InitializeUnit(FAIUnitStats* InStats, FAIUnitAssets* InAssets)
 	UE_LOG(LogTemp, Warning, TEXT("[%s] Initialized. Faction: %s"), *GetName(), *FactionTag.ToString());
 }
 
-float ABaseUnit::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+float AUnitBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	if (bIsDead) return 0.0f;
 
@@ -97,7 +97,7 @@ float ABaseUnit::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 	return ActualDamage;
 }
 
-void ABaseUnit::Die()
+void AUnitBase::Die()
 {
 	if (UWorld* World = GetWorld())
 	{
@@ -109,14 +109,14 @@ void ABaseUnit::Die()
 	}
 }
 
-bool ABaseUnit::IsEnemy(ABaseUnit* OtherUnit)
+bool AUnitBase::IsEnemy(AUnitBase* OtherUnit)
 {
 	if (!OtherUnit || OtherUnit == this) return false;
 	// 태그가 다르면 적군으로 간주
 	return !this->FactionTag.MatchesTag(OtherUnit->FactionTag);
 }
 
-void ABaseUnit::PlayRangeAttack()
+void AUnitBase::PlayRangeAttack()
 {
 	// 공격 몽타주 실행 또는 발사체 생성 로직
 	UE_LOG(LogTemp, Log, TEXT("%s 유닛이 원거리 공격을 수행합니다."), *GetName());

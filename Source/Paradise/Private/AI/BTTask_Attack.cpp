@@ -4,7 +4,7 @@
 #include "AIController.h"
 #include "Kismet/GameplayStatics.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Characters/AIUnit/BaseUnit.h"
+#include "Characters/AIUnit/UnitBase.h"
 
 UBTTask_Attack::UBTTask_Attack()
 {
@@ -18,7 +18,7 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	if (!AIController || !BB) return EBTNodeResult::Failed;
 
 	// 내 유닛 정보
-	ABaseUnit* MyUnit = Cast<ABaseUnit>(AIController->GetPawn());
+	AUnitBase* MyUnit = Cast<AUnitBase>(AIController->GetPawn());
 
 	// 타겟 액터 확보
 	AActor* Target = Cast<AActor>(BB->GetValueAsObject(TEXT("TargetActor")));
@@ -28,7 +28,7 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	}
 
 	// 타겟 유닛 정보
-	ABaseUnit* TargetUnit = Cast<ABaseUnit>(Target);
+	AUnitBase* TargetUnit = Cast<AUnitBase>(Target);
 
 	// 타겟이 존재하고, 나와 적 관계일 때만 데미지 적용
 	if (MyUnit && TargetUnit && MyUnit->IsEnemy(TargetUnit))
