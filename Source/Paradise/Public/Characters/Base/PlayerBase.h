@@ -99,6 +99,14 @@ public:
 	void InitializePlayer(APlayerData* InPlayerData);
 
 
+
+	/**
+	 * @brief 입력 액션이 들어오면 ASC로 신호를 보내는 배달부 함수
+	 * @param InputId : 어떤 키인가? (Enum)
+	 * @param bIsPressed : 눌렀는가(true), 뗐는가(false)
+	 */
+	void SendAbilityInputToASC(EInputID InputId, bool bIsPressed);
+
 protected:
 
 	/*
@@ -108,12 +116,6 @@ protected:
 	UFUNCTION()
 	void OnMoveInput(const FInputActionValue& InValue);
 
-	/**
-	 * @brief 입력 액션이 들어오면 ASC로 신호를 보내는 배달부 함수
-	 * @param InputId : 어떤 키인가? (Enum)
-	 * @param bIsPressed : 눌렀는가(true), 뗐는가(false)
-	 */
-	void SendAbilityInputToASC(EInputID InputId, bool bIsPressed);
 
 protected:
 
