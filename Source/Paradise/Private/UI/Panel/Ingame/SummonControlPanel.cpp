@@ -41,6 +41,9 @@ void USummonControlPanel::NativeConstruct()
 			SummonSlots[i]->OnSlotClicked.AddDynamic(this, &USummonControlPanel::HandleSlotClickRequest);
 		}
 	}
+	// 3. (추가) 시간표 배열 초기화 - 처음에는 딜레이 없이 즉시 다 보이도록 0.0f 할당
+	SlotRevealTimes.Init(0.0f, SummonSlots.Num());
+	NextAvailableRefillTime = 0.0f;
 
 	InitComponents();
 }
@@ -134,27 +137,65 @@ void USummonControlPanel::HandleCostUpdate(float CurrentCost, float MaxCost)
 }
 void USummonControlPanel::HandleSummonSlotsUpdate(const TArray<FSummonSlotInfo>& Slots)
 {
-	// Data-Driven: 컴포넌트의 데이터 변경사항을 UI에 반영
-	for (int32 i = 0; i < Slots.Num(); ++i)
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+
+	// 1. 시간표 갱신
+	if (LastClickedSlotIndex >= 0 && SlotRevealTimes.IsValidIndex(LastClickedSlotIndex))
 	{
-		if (SummonSlots.IsValidIndex(i) && SummonSlots[i])
+		SlotRevealTimes.RemoveAt(LastClickedSlotIndex);
+
+		if (NextAvailableRefillTime < CurrentTime)
 		{
-			// FSummonSlotInfo에 아이콘이 TSoftObjectPtr이라고 가정
-			UTexture2D* LoadedIcon = Slots[i].FamiliarIcon.LoadSynchronous();
+			NextAvailableRefillTime = CurrentTime;
+		}
+		NextAvailableRefillTime += SlotRefillDelay;
+		SlotRevealTimes.Add(NextAvailableRefillTime);
 
-			// SoldOut 상태라면 아이콘을 null로 처리하거나 별도 로직 적용
-			if (Slots[i].bIsSoldOut)
-			{
-				SummonSlots[i]->UpdateSummonData(nullptr, 0.0f, 0);
+		// ★ 최적화: O(N²) → O(N) 개선
+		int32 ExcessCount = SlotRevealTimes.Num() - Slots.Num();
+		if (ExcessCount > 0)
+		{
+			SlotRevealTimes.RemoveAt(0, ExcessCount);  // 한 번에 여러 개 제거
+		}
+	}
 
-				//SummonSlots[i]->RefreshCooldown(3.0f, 3.0f);
-			}
-			else
+	// 2. UI 갱신 (중복 제거)
+	for (int32 i = 0; i < SummonSlots.Num(); ++i)
+	{
+		if (!SummonSlots.IsValidIndex(i) || !SummonSlots[i] || !Slots.IsValidIndex(i))
+			continue;
+
+		// ★ 중복 로딩 제거
+		UTexture2D* LoadedIcon = nullptr;
+		if (!Slots[i].FamiliarIcon.IsNull())
+		{
+			LoadedIcon = Slots[i].FamiliarIcon.LoadSynchronous();
+		}
+		int32 Cost = Slots[i].FamiliarCost;
+
+		// 시간표 체크 후 UI 업데이트
+		if (SlotRevealTimes.IsValidIndex(i) && CurrentTime < SlotRevealTimes[i])
+		{
+			float TimeLeft = SlotRevealTimes[i] - CurrentTime;
+			SummonSlots[i]->ScheduleReveal(LoadedIcon, Cost, TimeLeft);
+		}
+		else
+		{
+			SummonSlots[i]->UpdateSlotInfo(LoadedIcon, Cost);
+		}
+	}
+
+	// 3. 애니메이션
+	if (LastClickedSlotIndex >= 0)
+	{
+		for (int32 i = LastClickedSlotIndex; i < SummonSlots.Num() - 1; ++i)
+		{
+			if (SummonSlots.IsValidIndex(i) && SummonSlots[i])
 			{
-				// TODO: 쿨타임 정보는 별도로 관리된다면 인자 수정 필요. 현재는 0.0f로 설정.
-				SummonSlots[i]->UpdateSummonData(LoadedIcon, 0.0f, Slots[i].FamiliarCost);
+				SummonSlots[i]->PlayShiftAnimation();
 			}
 		}
+		LastClickedSlotIndex = -1;
 	}
 }
 #pragma endregion 시스템 초기화
@@ -164,43 +205,70 @@ void USummonControlPanel::HandleSlotClickRequest(int32 SlotIndex)
 {
 	if (CachedSummonComponent.IsValid())
 	{
-		// 컴포넌트 내부에서 CostManageComponent를 통해 코스트를 차감함
+		LastClickedSlotIndex = SlotIndex;
 		bool bSuccess = CachedSummonComponent->RequestPurchase(SlotIndex);
 
-		if (bSuccess)
+		if (!bSuccess)
 		{
-			UE_LOG(LogTemp, Log, TEXT("[SummonPanel] 슬롯 %d 구매 요청 성공"), SlotIndex);
-			// 성공 시 UI 업데이트는 HandleSummonSlotsUpdate 델리게이트를 통해 자동으로 처리됨 (Data-Driven)
+			LastClickedSlotIndex = -1;
+			UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 구매 실패: %d"), SlotIndex);
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 슬롯 %d 구매 요청 실패 (코스트 부족 등)"), SlotIndex);
-			// 실패 피드백 (예: 흔들림 애니메이션 등) 추가 가능
-		}
+		// ★ SlotRevealTimes 조작 코드 전부 삭제 (146-163줄 제거)
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[SummonPanel] SummonComponent가 연결되지 않았습니다."));
-	}
+
+	//if (CachedSummonComponent.IsValid())
+	//{
+	//	LastClickedSlotIndex = SlotIndex;
+	//	bool bSuccess = CachedSummonComponent->RequestPurchase(SlotIndex);
+
+	//	if (bSuccess)
+	//	{
+	//		// (추가) 구매 성공 시 시간표 배열도 왼쪽으로 당기고, 새 슬롯의 등장 시간을 추가
+	//		if (SlotRevealTimes.IsValidIndex(SlotIndex))
+	//		{
+	//			SlotRevealTimes.RemoveAt(SlotIndex);
+
+	//			float CurrentTime = GetWorld()->GetTimeSeconds();
+
+	//			// 1. 만약 대기열이 비어있다면(앞에 기다리는 놈이 없다면), 기준 시간은 '지금'
+	//			// 2. 만약 앞에 기다리는 놈이 있다면, 기준 시간은 '앞사람이 끝나는 시간'
+	//			if (NextAvailableRefillTime < CurrentTime)
+	//			{
+	//				NextAvailableRefillTime = CurrentTime;
+	//			}
+
+	//			// 기준 시간에 1초(SlotRefillDelay)를 더해서 내 번호표로 만듦
+	//			NextAvailableRefillTime += SlotRefillDelay;
+
+	//			// 배열 맨 끝(빈자리)에 내 번호표를 등록
+	//			SlotRevealTimes.Add(NextAvailableRefillTime);
+	//		}
+	//	}
+	//	else
+	//	{
+	//		LastClickedSlotIndex = -1;
+	//		UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 구매 실패: %d"), SlotIndex);
+	//	}
+	//}
 }
 #pragma endregion 입력 처리
-
+	
 #pragma region 외부 인터페이스 구현
-void USummonControlPanel::SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown, int32 InCost)
+void USummonControlPanel::SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, int32 InCost)
 {
 	if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
 	{
-		SummonSlots[SlotIndex]->UpdateSummonData(Icon, MaxCooldown, InCost);
+		SummonSlots[SlotIndex]->UpdateSlotInfo(Icon, InCost);
 	}
 }
 
-void USummonControlPanel::UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime)
-{
-	//if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
-	//{
-	//	//SummonSlots[SlotIndex]->RefreshCooldown(CurrentTime, MaxTime);
-	//}
-}
+//void USummonControlPanel::UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime)
+//{
+//	//if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
+//	//{
+//	//	//SummonSlots[SlotIndex]->RefreshCooldown(CurrentTime, MaxTime);
+//	//}
+//}
 void USummonControlPanel::UpdateCostDisplay(float CurrentCost, float MaxCost)
 {
 	if (CostWidget)

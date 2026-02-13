@@ -91,6 +91,13 @@ public:
 	/** @brief 현재 탭에 맞는 데이터를 수집하여 인벤토리 패널을 갱신합니다. */
 	void RefreshInventoryUI();
 
+	/**
+	 * @brief 패널의 상태를 초기화합니다. (뒤로가기 후 재진입 시 호출)
+	 * @details 선택된 슬롯 해제, 상세창 닫기, 탭 초기화 등을 수행합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|Squad")
+	void ResetPanelState();
+
 private:
 	/** 
 	 * @brief ID와 레벨 정보를 받아 UI 표시용 데이터 구조체로 변환합니다. (Factory Method)

@@ -30,6 +30,11 @@ void USummonSlotWidget::NativeConstruct()
 void USummonSlotWidget::NativeDestruct()
 {
 	//StopCooldownTimer();
+	if (Btn_SummonAction)
+	{
+		// 델리게이트 해제는 안전하게
+		Btn_SummonAction->OnClicked().RemoveAll(this);
+	}
 	Super::NativeDestruct();
 }
 #pragma endregion 생명주기
@@ -40,33 +45,100 @@ void USummonSlotWidget::InitSlot(int32 InIndex)
 	SlotIndex = InIndex;
 }
 
-void USummonSlotWidget::UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown, int32 InCost)
+void USummonSlotWidget::UpdateSlotInfo(UTexture2D* IconTexture, int32 InCost)
 {
-	/*StopCooldownTimer();
-	MaxCooldownTime = InMaxCooldown;*/
+	// =================================================================
+	// [임시 하드코딩] 데이터가 없어도 무조건 보이게 강제 설정
+	// =================================================================
 
+	// 1. 아이콘 처리
 	if (Img_SummonIcon)
 	{
+		// 텍스처가 있으면 넣고, 없으면 그냥 흰색 네모라도 뜨게 둠
 		if (IconTexture)
 		{
 			Img_SummonIcon->SetBrushFromTexture(IconTexture);
-			Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible); // 클릭 통과
-			
-			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(true);
 		}
-		//else
-		//{
-		//	Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
-		//	// 데이터가 없으면 비활성화 (빈 슬롯)
-		//	if(Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
-		//}
+
+		// 조건 없이 무조건 보이게 설정 (Hidden 처리 삭제함)
+		Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
+
+	// 2. 버튼 처리
+	if (Btn_SummonAction)
+	{
+		// 테스트용: 무조건 활성화 (데이터 없어도 눌러서 애니메이션 테스트 가능하게)
+		Btn_SummonAction->SetIsEnabled(true);
+	}
+
+	// 3. 텍스트 처리
 	if (Text_CostValue)
 	{
 		Text_CostValue->SetText(FText::AsNumber(InCost));
 		Text_CostValue->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 
+//	// 1. 아이콘 처리
+//	if (Img_SummonIcon)
+//	
+//			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(true);
+//		{
+//		if (IconTexture)
+//		{
+//			Img_SummonIcon->SetBrushFromTexture(IconTexture);
+//			Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
+//}
+//		else
+//		{
+//			// 아이콘이 없으면 숨김 (혹은 빈 슬롯 이미지)
+//			Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
+//
+//			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
+//		}
+//	}
+//
+//	// 2. 텍스트 처리
+//	if (Text_CostValue)
+//	{
+//		Text_CostValue->SetText(FText::AsNumber(InCost));
+//		Text_CostValue->SetVisibility(ESlateVisibility::HitTestInvisible);
+//	}
+}
+
+void USummonSlotWidget::ScheduleReveal(UTexture2D* IconTexture, int32 InCost, float DelayTime)
+{
+	// 1. 기존 타이머 리셋 및 데이터 임시 저장 (캡슐화)
+	GetWorld()->GetTimerManager().ClearTimer(RevealTimerHandle);
+	PendingIcon = IconTexture;
+	PendingCost = InCost;
+
+	// 2. 당겨질 때 '빈 칸'으로 보이도록 UI 강제 숨김 처리
+	if (Img_SummonIcon) Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
+	if (Text_CostValue) Text_CostValue->SetVisibility(ESlateVisibility::Hidden);
+
+	// 아직 비어있는 칸이므로 클릭을 막아 연타 버그를 예방합니다.
+	if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
+
+	// 3. 타이머 가동 (DelayTime 초 뒤에 OnRevealTimerFinished 호출)
+	GetWorld()->GetTimerManager().SetTimer(RevealTimerHandle, this, &USummonSlotWidget::OnRevealTimerFinished, DelayTime, false);
+}
+
+void USummonSlotWidget::PlayIntroAnimation()
+{
+	if (Anim_Intro)
+	{
+		// 처음부터 재생 (Forward), 1배속, 루프 없음
+		PlayAnimation(Anim_Intro, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f);
+	}
+}
+
+void USummonSlotWidget::PlayShiftAnimation()
+{
+	if (Anim_Shift)
+	{
+		// 처음부터 1배속으로 재생
+		PlayAnimation(Anim_Shift, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f);
+	}
 }
 
 //void USummonSlotWidget::RefreshCooldown(float CurrentTime, float MaxTime)
@@ -102,6 +174,16 @@ void USummonSlotWidget::OnSummonButtonClicked()
 	{
 		OnSlotClicked.Broadcast(SlotIndex);
 	}
+}
+
+void USummonSlotWidget::OnRevealTimerFinished()
+{
+	// 지연 시간이 만료되었으므로, 저장해둔 임시 데이터로 UI를 실제 갱신하고 애니메이션을 재생합니다.
+	UpdateSlotInfo(PendingIcon, PendingCost);
+	PlayIntroAnimation();
+
+	// 피드백 복구: 다시 선명하게 만듦
+	if (Img_SummonIcon) Img_SummonIcon->SetOpacity(1.0f);
 }
 
 //void USummonSlotWidget::UpdateCooldownVisual()

@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Data/Enums/GameEnums.h"
 #include "ActionControlPanel.generated.h"
 
 #pragma region 전방 선언
 class UCommonButtonBase;
 class USkillSlotWidget;
+class APlayerBase;
 #pragma endregion 전방 선언
 
 /**
@@ -41,6 +43,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
 	void UpdateTagButtons(int32 ActiveCharIndex);
 #pragma endregion 외부 인터페이스
+private:
+#pragma region 내부 로직
+	/** @brief 공격 버튼 클릭 시 발생할 이벤트 핸들러 */
+	UFUNCTION()
+	void OnAttackButtonClicked();
+
+	/**
+	 * @brief UI 버튼 입력을 통합하여 플레이어의 ASC로 전달하는 중앙 제어 함수입니다.
+	 * @details 하드코딩된 개별 콜백 함수들을 대체하며, 입력 ID에 따라 적절한 어빌리티 신호를 송신합니다.
+	 * @param InputID 어빌리티 시스템(GAS)과 매핑된 입력 식별자 (Attack, Skill, Ultimate 등)
+	 */
+	UFUNCTION()
+	void ProcessAbilityInput(EInputID InputID);
+#pragma endregion 내부 로직
 
 private:
 #pragma region 위젯 바인딩
@@ -71,5 +87,8 @@ private:
 	/** @brief 버튼 일괄 처리를 위한 내부 캐싱 배열 */
 	UPROPERTY()
 	TArray<TObjectPtr<UCommonButtonBase>> TagButtons;
+
+	/** @brief 캐싱된 플레이어 참조 (가비지 컬렉션 및 안전성을 위해 TWeakObjectPtr 사용) */
+	TWeakObjectPtr<APlayerBase> CachedPlayer;
 #pragma endregion 내부 데이터
 };

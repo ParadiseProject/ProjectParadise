@@ -3,6 +3,7 @@
 
 #include "UI/Panel/Ingame/ActionControlPanel.h"
 
+#include "Characters/Base/PlayerBase.h"
 #include "CommonButtonBase.h"
 #include "UI/Widgets/InGame/SkillSlotWidget.h"
 
@@ -18,6 +19,25 @@ void UActionControlPanel::NativeConstruct()
 	if (TagBtn_B) TagButtons.Add(TagBtn_B);
 	if (TagBtn_C) TagButtons.Add(TagBtn_C);
 #pragma endregion 태그 버튼 배열화 및 캐싱
+
+	// 2. 기본 공격 버튼 바인딩
+	if (AttackBtn)
+	{
+		// Common UI의 OnSelected 혹은 OnClicked를 사용합니다.
+		AttackBtn->OnClicked().AddUObject(this, &UActionControlPanel::OnAttackButtonClicked);
+	}
+
+	// 3. 액티브 스킬 슬롯 내 버튼 바인딩
+	if (SkillSlot_Active && SkillSlot_Active->GetSlotButton())
+	{
+		SkillSlot_Active->GetSlotButton()->OnClicked().AddUObject(this, &UActionControlPanel::ProcessAbilityInput, EInputID::Skill);
+	}
+
+	// 4. 궁극기 스킬 슬롯 내 버튼 바인딩
+	if (SkillSlot_Ultimate && SkillSlot_Ultimate->GetSlotButton())
+	{
+		SkillSlot_Ultimate->GetSlotButton()->OnClicked().AddUObject(this, &UActionControlPanel::ProcessAbilityInput, EInputID::Ultimate);
+	}
 }
 
 #pragma region 외부 인터페이스 구현
@@ -51,4 +71,20 @@ void UActionControlPanel::UpdateTagButtons(int32 ActiveCharIndex)
 		}
 	}
 }
+void UActionControlPanel::OnAttackButtonClicked()
+{
+	if (CachedPlayer.IsValid())
+	{
+		CachedPlayer->SendAbilityInputToASC(EInputID::Attack, true);
+	}
+}
+
+void UActionControlPanel::ProcessAbilityInput(EInputID InputID)
+{
+	if (CachedPlayer.IsValid())
+	{
+		CachedPlayer->SendAbilityInputToASC(InputID, true);
+	}
+}
+
 #pragma endregion 외부 인터페이스 구현

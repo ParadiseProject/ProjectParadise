@@ -49,6 +49,15 @@ public:
 	void RefreshCooldown(float CurrentTime, float MaxTime);
 #pragma endregion 데이터 업데이트
 
+#pragma region Getter
+	/**
+	 * @brief 내부 버튼에 접근하기 위한 Getter입니다.
+	 * @return 버튼 위젯의 포인터를 반환합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
+	UCommonButtonBase* GetSlotButton() const { return Btn_SkillAction; }
+#pragma endregion Getter
+
 private:
 #pragma region 내부 로직 (최적화)
 	/** @brief 버튼 클릭 시 호출될 델리게이트 바인딩 함수입니다. */

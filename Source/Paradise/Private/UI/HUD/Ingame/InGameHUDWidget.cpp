@@ -108,7 +108,7 @@ void UInGameHUDWidget::HandleGamePhaseChanged(EGamePhase NewPhase)
 	UE_LOG(LogTemp, Log, TEXT("[InGameHUD] 페이즈 변경 감지: %d"), (int32)NewPhase);
 
 	// 결과 화면인가? (승리 혹은 패배)
-	bool bIsResultPhase = (NewPhase == EGamePhase::Victory || NewPhase == EGamePhase::Defeat);
+	bool bIsResultPhase = (NewPhase == EGamePhase::Victory || NewPhase == EGamePhase::Defeat || NewPhase == EGamePhase::Result);
 
 	// 1. 인게임 UI (조이스틱, 타이머 등) 제어
 	// 결과창이 뜨면 조작 UI는 숨긴다.
@@ -118,6 +118,10 @@ void UInGameHUDWidget::HandleGamePhaseChanged(EGamePhase NewPhase)
 	if (GameTimerWidget) GameTimerWidget->SetVisibility(InGameUIVisibility);
 	if (ActionControlPanel) ActionControlPanel->SetVisibility(InGameUIVisibility);
 	if (SummonControlPanel) SummonControlPanel->SetVisibility(InGameUIVisibility);
+	if (PartyStatusPanel) PartyStatusPanel->SetVisibility(InGameUIVisibility);
+
+	if (Btn_AutoMode) Btn_AutoMode->SetVisibility(InGameUIVisibility);
+	if (Btn_Setting) Btn_Setting->SetVisibility(InGameUIVisibility);
 
 	// 2. 팝업 표시 로직
 	switch (NewPhase)
@@ -172,6 +176,10 @@ void UInGameHUDWidget::HandleGamePhaseChanged(EGamePhase NewPhase)
 			if (Widget_VictoryPopup) Widget_VictoryPopup->SetVisibility(ESlateVisibility::Collapsed);
 		}
 		break;
+	case EGamePhase::Result:
+		// Result 페이즈는 승리/패배 팝업이 계속 떠 있어야 하는 상태이므로
+		// 아무것도 숨기지 않고 그대로 둡니다.
+		break;
 
 	default:
 		// 전투 중이거나 준비 상태 등에서는 팝업을 모두 숨김
@@ -209,15 +217,20 @@ void UInGameHUDWidget::OnJoystickInput(FVector2D InputVector)
 	// 조이스틱 입력이 오면 폰(캐릭터)에게 이동 명령 전달
 	if (APawn* OwnedPawn = GetOwningPlayerPawn())
 	{
+		// 조이스틱에서 넘어온 순수 입력값을 90도 회전하여 보정
+		FVector2D TransformedInput;
+		TransformedInput.X = InputVector.Y;
+		TransformedInput.Y = -InputVector.X;
+
 		const FRotator ControlRot = GetOwningPlayer()->GetControlRotation();
 		const FRotator YawRot(0, ControlRot.Yaw, 0);
 
 		const FVector ForwardDir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
 		const FVector RightDir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
-		// InputVector.Y에 -1.0f를 곱해서 '위로 드래그' = '전진'이 되도록 수정
-		OwnedPawn->AddMovementInput(ForwardDir, InputVector.Y * -1.0f);
-		OwnedPawn->AddMovementInput(RightDir, InputVector.X);
+		// 보정된 벡터(TransformedInput)를 기준으로 캐릭터 이동 적용
+		OwnedPawn->AddMovementInput(ForwardDir, TransformedInput.Y * -1.0f);
+		OwnedPawn->AddMovementInput(RightDir, TransformedInput.X);
 	}
 }
 

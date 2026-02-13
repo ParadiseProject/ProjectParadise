@@ -56,8 +56,8 @@ void UParadiseSquadMainWidget::NativeConstruct()
 		WBP_DetailPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
-	// 5. 초기 상태 설정 (캐릭터 탭)
-	SwitchTab(SquadTabs::Character);
+	// 5. 초기 상태 설정 
+	ResetPanelState();
 }
 
 //인스턴스에서 인벤토리 서브시스템 Getter함수
@@ -117,6 +117,16 @@ void UParadiseSquadMainWidget::SwitchTab(int32 NewTab)
 
 	CurrentTabIndex = NewTab;
 
+	// 다른 인벤토리 탭을 눌렀을 때 포메이션 선택 해제 및 상세창 닫기
+	if (CurrentState == ESquadUIState::Normal)
+	{
+		SelectedFormationSlotIndex = -1;
+		PendingSelection = FSquadItemUIData();
+
+		if (WBP_FormationPanel) WBP_FormationPanel->HighlightSlot(-1);
+		if (WBP_DetailPanel) WBP_DetailPanel->ClearInfo();
+	}
+
 	// 1. 하단 Detail 패널 버튼 갱신 (유닛 탭은 장비 교체 버튼 숨김 등)
 	UpdateDetailPanelState();
 
@@ -158,12 +168,27 @@ void UParadiseSquadMainWidget::UpdateUIState()
 
 void UParadiseSquadMainWidget::UpdateDetailPanelState()
 {
-	if (WBP_DetailPanel)
+	if (!WBP_DetailPanel) return;
+
+	// 선택된 데이터가 있는지 판별
+	bool bHasFormationSelection = (SelectedFormationSlotIndex != -1);
+	bool bHasInventorySelection = (!PendingSelection.ID.IsNone());
+
+	// 편성 슬롯을 눌렀거나, 인벤토리 아이템을 눌렀을 때만 상세창을 켭니다.
+	if (bHasFormationSelection || bHasInventorySelection)
 	{
-		bool bIsUnitTab = (CurrentTabIndex == SquadTabs::Unit);
-		bool bHasSelection = !PendingSelection.ID.IsNone();
-		WBP_DetailPanel->UpdateButtonState(CurrentState, bIsUnitTab, bHasSelection);
+		WBP_DetailPanel->SetVisibility(ESlateVisibility::Visible);
 	}
+	else
+	{
+		// 아무것도 선택하지 않은 상태면 상세창 위젯 전체를 아예 숨겨버립니다.
+		WBP_DetailPanel->SetVisibility(ESlateVisibility::Collapsed);
+		return; // 패널이 꺼졌으므로 내부 버튼 상태 업데이트는 불필요
+	}
+
+	// 켜져 있다면 내부 버튼 가시성을 상태에 맞게 갱신
+	bool bIsUnitSlot = (SelectedFormationSlotIndex >= 3 && SelectedFormationSlotIndex <= 7);
+	WBP_DetailPanel->UpdateButtonState(CurrentState, bIsUnitSlot, bHasInventorySelection);
 }
 #pragma endregion 로직 - 탭 및 상태 제어
 
@@ -222,13 +247,34 @@ void UParadiseSquadMainWidget::RefreshInventoryUI()
 		// if (CurrentEquippedIDs.Contains(Item.ID)) Item.bIsEquipped = true;
 
 		// 교체 모드에서 선택한 아이템이면 하이라이트
-		if (CurrentState != ESquadUIState::Normal && Item.ID == PendingSelection.ID)
+		if (Item.ID == PendingSelection.ID)
 		{
 			Item.bIsSelected = true;
 		}
 	}
 	// 가공된 데이터를 뷰(Inventory Panel)에 전달
 	WBP_InventoryPanel->UpdateList(CurrentTabIndex, ListData);
+}
+
+void UParadiseSquadMainWidget::ResetPanelState()
+{
+	// 1. 모든 교체 상태 및 펜딩 초기화
+	CurrentState = ESquadUIState::Normal;
+	PendingSelection = FSquadItemUIData();
+	SelectedFormationSlotIndex = -1;
+
+	// 2. 포메이션 하이라이트 해제 및 디테일창 닫기
+	if (WBP_FormationPanel) WBP_FormationPanel->HighlightSlot(-1);
+	if (WBP_DetailPanel)
+	{
+		WBP_DetailPanel->ClearInfo();
+		WBP_DetailPanel->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	// 3. 탭 버튼 상태 리셋 및 캐릭터 탭으로 전환
+	CurrentTabIndex = -1; // 강제 업데이트 유도
+	SwitchTab(SquadTabs::Character);
+	UpdateUIState();
 }
 
 FSquadItemUIData UParadiseSquadMainWidget::MakeUIData(FName ID, int32 InLevel, int32 TabType, bool bUseBodyIcon)
@@ -309,7 +355,7 @@ void UParadiseSquadMainWidget::HandleFormationSlotSelected(int32 SlotIndex)
 	// 임시 데이터로 상세창 갱신 테스트
 	FSquadItemUIData DummyData;
 	DummyData.Name = FText::FromString(bIsUnitSlot ? TEXT("선택된 유닛 슬롯") : TEXT("선택된 캐릭터 슬롯"));
-	DummyData.Level = SlotIndex;
+	DummyData.Level = 1;
 
 	// 상세 패널 갱신 (편성창 컨텍스트 = true)
 	WBP_DetailPanel->ShowInfo(DummyData, true, bIsUnitSlot);

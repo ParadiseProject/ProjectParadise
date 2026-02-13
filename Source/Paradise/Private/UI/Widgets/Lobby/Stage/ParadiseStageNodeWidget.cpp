@@ -68,7 +68,7 @@ void UParadiseStageNodeWidget::OnClickEnter()
 	// 2. 비상용 하드코딩
 	if (LevelToOpen.IsNone())
 	{
-		LevelToOpen = FName("Stage1-1");
+		LevelToOpen = FName("L_Stage1_1");
 	}
 	// 3. 서브시스템을 통한 로딩 요청
 	if (UGameInstance* GI = GetGameInstance())
