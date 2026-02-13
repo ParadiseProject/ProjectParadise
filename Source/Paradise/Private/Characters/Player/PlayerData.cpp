@@ -12,6 +12,8 @@
 
 APlayerData::APlayerData()
 {
+	PrimaryActorTick.bCanEverTick = false;
+
 	bReplicates = false; 
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
@@ -207,6 +209,8 @@ void APlayerData::InitPlayerData(FName HeroID)
 	if (Stats)
 	{
 		InitCombatAttributes(Stats);
+
+		this->FactionTag = Stats->FactionTag;
 	}
 	else
 	{

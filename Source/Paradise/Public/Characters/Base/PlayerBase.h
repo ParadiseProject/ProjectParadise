@@ -29,6 +29,12 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void BeginPlay() override;
+
+	/**
+	 * @brief 생성자에서 컴포넌트를 생성합니다.
+	 */
+	void InitializeComponents();
+
 	/**
 	 * @brief 슬롯에 해당하는 스켈레탈 메쉬 컴포넌트를 반환합니다.
 	 * @details EquipmentComponent에서 외형 변경 시 호출합니다.
@@ -91,14 +97,7 @@ public:
 	 * @param InPlayerData 이 육체를 제어할 데이터 주체(영혼) 액터
 	 */
 	void InitializePlayer(APlayerData* InPlayerData);
-	/*
-	 * @brief GAS 필수 인터페이스 
-	 */
 
-	/*
-	 * @brief 애니메이션 노티파이에서 매 프레임 호출할 함수
-	 */
-	void CheckHit();
 
 protected:
 
@@ -109,13 +108,6 @@ protected:
 	UFUNCTION()
 	void OnMoveInput(const FInputActionValue& InValue);
 
-	/*
-	 * @brief 공격이 새로 시작될 때 목록 비우기 (NotifyBegin 같은 곳에서 호출 필요, 혹은 몽타주 시작 시)
-	 */
-	void ResetHitActors() { HitActors.Empty(); }
-
-public:
-	//26.02.13 담당자: 최지원 (임시로 개발 편의상 Public으로 옮겨 놓음)
 	/**
 	 * @brief 입력 액션이 들어오면 ASC로 신호를 보내는 배달부 함수
 	 * @param InputId : 어떤 키인가? (Enum)
@@ -141,6 +133,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
 	TObjectPtr<USkeletalMeshComponent> BootsMesh= nullptr;
 
+	/** 
+	  * @brief 무기 전용 메쉬 컴포넌트
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual|Weapon")
+	TObjectPtr<USkeletalMeshComponent> WeaponMesh = nullptr;
+
 	/*
 	 * @brief 입력 액션 Move
 	 */
@@ -152,27 +150,27 @@ protected:
 	 * @brief 전투 스킬(GAS)용 입력 설정 데이터 에셋
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<class UParadiseInputConfig> InputConfig;
+	TObjectPtr<class UParadiseInputConfig> InputConfig = nullptr;
 
 	/*
 	 * @brief 스프링암 컴포넌트
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	TObjectPtr<class USpringArmComponent> CameraBoom;
+	TObjectPtr<class USpringArmComponent> CameraBoom = nullptr;
 
 
 	/*
 	 * @brief 카메라 컴포넌트
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	TObjectPtr<class UCameraComponent> FollowCamera;
+	TObjectPtr<class UCameraComponent> FollowCamera = nullptr;
 
 	
 	/*
 	 * @brief 클래스 타입 변경예정 ,실제 데이터를 가진 액터
 	 */
 	UPROPERTY()
-	TWeakObjectPtr<class APlayerData> LinkedPlayerData;
+	TWeakObjectPtr<class APlayerData> LinkedPlayerData = nullptr;
 
 	/*
 	 * @brief 무기 붙일 소켓 이름
@@ -180,10 +178,4 @@ protected:
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	FName WeaponSocketName;
-
-	/*
-	 * @brief 이미 때린 적을 중복 타격하지 않게 저장하는 목록
-	 */
-	UPROPERTY()
-	TArray<AActor*> HitActors;
 };

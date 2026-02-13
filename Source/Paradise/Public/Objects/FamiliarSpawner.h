@@ -12,9 +12,6 @@ class PARADISE_API AFamiliarSpawner : public AUnitSpawner
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, Category = "Spawning")
-	TArray<FName> FamiliarSlots;
-
 	UFUNCTION(BlueprintCallable, Category = "Spawning")
 	void SpawnFamiliarByID(FName UnitID);
 };

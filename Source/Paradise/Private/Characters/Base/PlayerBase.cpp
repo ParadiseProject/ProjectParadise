@@ -36,6 +36,15 @@ APlayerBase::APlayerBase()
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false; // 카메라는 스프링암만 따라감
 
+    InitializeComponents();
+
+    bUseControllerRotationYaw = false;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
+}
+
+void APlayerBase::InitializeComponents()
+{
     HelmetMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HelmetMesh"));
     HelmetMesh->SetupAttachment(GetMesh()); // 부모 메쉬에 붙임
     HelmetMesh->SetLeaderPoseComponent(GetMesh()); // 애니메이션 동기화
@@ -52,9 +61,10 @@ APlayerBase::APlayerBase()
     BootsMesh->SetupAttachment(GetMesh());
     BootsMesh->SetLeaderPoseComponent(GetMesh());
 
-    bUseControllerRotationYaw = false;
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
+    WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMeshComp"));
+    WeaponMesh->SetupAttachment(GetMesh(), TEXT("hand_r")); // 기본 소켓
+    WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 무기 자체 충돌은 끔
+    WeaponMesh->SetComponentTickEnabled(false); // 무기 자체 틱은 불필요하므로 끔 (최적화)
 }
 
 void APlayerBase::PossessedBy(AController* NewController)
@@ -153,72 +163,30 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
      // 외형 업데이트, 혹시 모를 데이터 동기화도 다시 (장비 동기화)
     if (UEquipmentComponent* EquipComp = InPlayerData->GetEquipmentComponent())
     {
-        UGameInstance* GI = GetGameInstance();
-        if (GI)
-        {
-            //서브시스템 가져오기
-            if (UInventorySystem* InvSys = GI->GetSubsystem<UInventorySystem>())
-            {
-                //데이터 검색
-                if (const FOwnedCharacterData* CharData = InvSys->GetCharacterDataByID(InPlayerData->CharacterID))
-                {
-                    //장비 외형 변경 진행
-                    EquipComp->InitializeEquipment(CharData->EquipmentMap);
 
-                    UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 장비 데이터 연동 및 UpdateVisuals 완료!"));
-                }
-            }
-        }
+        EquipComp->UpdateVisuals(this);
+        //UGameInstance* GI = GetGameInstance();
+        //if (GI)
+        //{
+        //    //서브시스템 가져오기
+        //    if (UInventorySystem* InvSys = GI->GetSubsystem<UInventorySystem>())
+        //    {
+        //        //데이터 검색
+        //        if (const FOwnedCharacterData* CharData = InvSys->GetCharacterDataByID(InPlayerData->CharacterID))
+        //        {
+        //            //장비 외형 변경 진행
+        //            EquipComp->InitializeEquipment(CharData->EquipmentMap);
+
+        //            UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 장비 데이터 연동 및 UpdateVisuals 완료!"));
+        //        }
+        //    }
+        //}
     }
+
+    // 소속 태그 내 몸에 적용
+    this->FactionTag = InPlayerData->FactionTag;
 
     UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 육체 초기화 완료!"));
-}
-
-void APlayerBase::CheckHit()
-{
-    FVector SocketLocation = GetMesh()->GetSocketLocation(TEXT("hand_r")); // 무기 소켓 이름
-
-    // 2. 트레이스 설정 (반경 50cm짜리 구체를 그림)
-    TArray<AActor*> ActorsToIgnore;
-    ActorsToIgnore.Add(this); // 나는 때리면 안 됨
-
-    FHitResult HitResult;
-    bool bHit = UKismetSystemLibrary::SphereTraceSingle(
-        GetWorld(),
-        SocketLocation,      // 시작점
-        SocketLocation,      // 끝점 (제자리에서 구체 검사)
-        50.0f,               // 반경 (큐브 크기에 맞춰 조절)
-        UEngineTypes::ConvertToTraceType(ECC_Pawn), // 폰(캐릭터)만 검사
-        false,               // 복잡한 충돌(Mesh) 말고 단순 캡슐 충돌 검사
-        ActorsToIgnore,
-        EDrawDebugTrace::ForDuration, // 디버그 선 그리기 (빨간 공 보임)
-        HitResult,
-        true
-    );
-
-    // 3. 무언가 맞았다면?
-    if (bHit && HitResult.GetActor())
-    {
-        AActor* HitActor = HitResult.GetActor();
-
-        // 4. 이미 때린 놈이면 패스 (다단히트 방지)
-        if (HitActors.Contains(HitActor)) return;
-        HitActors.Add(HitActor); // 목록에 추가
-
-        // 5. [핵심] GAS로 "나 때렸어!" 신호 보내기
-        // MeleeBase.cpp에서 기다리는 태그: "Event.Montage.Hit"
-        FGameplayEventData Payload;
-        Payload.Instigator = this;
-        Payload.Target = HitActor;
-
-        // 태그: MeleeBase의 HitEventTag와 똑같아야 함!
-        FGameplayTag HitTag = FGameplayTag::RequestGameplayTag(FName("Event.Montage.Hit"));
-
-        UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, HitTag, Payload);
-
-        UE_LOG(LogTemp, Warning, TEXT("👊 [PlayerBase] 타격 성공! 대상: %s"), *HitActor->GetName());
-
-    }
 }
 
 void APlayerBase::BeginPlay()
@@ -234,7 +202,7 @@ USkeletalMeshComponent* APlayerBase::GetArmorComponent(EEquipmentSlot Slot) cons
     case EEquipmentSlot::Chest:  return ChestMesh;
     case EEquipmentSlot::Gloves: return GlovesMesh;
     case EEquipmentSlot::Boots:  return BootsMesh;
-    // Weapon은 별도 액터로 붙이므로 여기선 nullptr 반환
+    case EEquipmentSlot::Weapon:  return WeaponMesh;
     default: return nullptr;
     }
 }

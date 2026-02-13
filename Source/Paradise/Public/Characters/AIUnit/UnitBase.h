@@ -33,7 +33,9 @@ public:
 
 	void SetUnitID(FName InID) { UnitID = InID; }
 	FName GetUnitID() const { return UnitID; }
-
+	FGameplayTag GetFactionTag()const {
+		return FactionTag;
+	}
 	virtual void Die()override;
 
 	UFUNCTION(BlueprintCallable, Category = "Unit|Logic")
@@ -41,9 +43,6 @@ public:
 
 	void PlayRangeAttack();
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Unit|Status")
-	FGameplayTag FactionTag;
-
 	/** @brief 데이터 테이블 조회를 위한 RowName 저장 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Unit|Data")
 	FName UnitID;
