@@ -36,6 +36,15 @@ APlayerBase::APlayerBase()
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false; // 카메라는 스프링암만 따라감
 
+    InitializeComponents();
+
+    bUseControllerRotationYaw = false;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
+}
+
+void APlayerBase::InitializeComponents()
+{
     HelmetMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("HelmetMesh"));
     HelmetMesh->SetupAttachment(GetMesh()); // 부모 메쉬에 붙임
     HelmetMesh->SetLeaderPoseComponent(GetMesh()); // 애니메이션 동기화
@@ -52,9 +61,10 @@ APlayerBase::APlayerBase()
     BootsMesh->SetupAttachment(GetMesh());
     BootsMesh->SetLeaderPoseComponent(GetMesh());
 
-    bUseControllerRotationYaw = false;
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
+    WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMeshComp"));
+    WeaponMesh->SetupAttachment(GetMesh(), TEXT("hand_r")); // 기본 소켓
+    WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 무기 자체 충돌은 끔
+    WeaponMesh->SetComponentTickEnabled(false); // 무기 자체 틱은 불필요하므로 끔 (최적화)
 }
 
 void APlayerBase::PossessedBy(AController* NewController)
@@ -153,22 +163,24 @@ void APlayerBase::InitializePlayer(APlayerData* InPlayerData)
      // 외형 업데이트, 혹시 모를 데이터 동기화도 다시 (장비 동기화)
     if (UEquipmentComponent* EquipComp = InPlayerData->GetEquipmentComponent())
     {
-        UGameInstance* GI = GetGameInstance();
-        if (GI)
-        {
-            //서브시스템 가져오기
-            if (UInventorySystem* InvSys = GI->GetSubsystem<UInventorySystem>())
-            {
-                //데이터 검색
-                if (const FOwnedCharacterData* CharData = InvSys->GetCharacterDataByID(InPlayerData->CharacterID))
-                {
-                    //장비 외형 변경 진행
-                    EquipComp->InitializeEquipment(CharData->EquipmentMap);
 
-                    UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 장비 데이터 연동 및 UpdateVisuals 완료!"));
-                }
-            }
-        }
+        EquipComp->UpdateVisuals(this);
+        //UGameInstance* GI = GetGameInstance();
+        //if (GI)
+        //{
+        //    //서브시스템 가져오기
+        //    if (UInventorySystem* InvSys = GI->GetSubsystem<UInventorySystem>())
+        //    {
+        //        //데이터 검색
+        //        if (const FOwnedCharacterData* CharData = InvSys->GetCharacterDataByID(InPlayerData->CharacterID))
+        //        {
+        //            //장비 외형 변경 진행
+        //            EquipComp->InitializeEquipment(CharData->EquipmentMap);
+
+        //            UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 장비 데이터 연동 및 UpdateVisuals 완료!"));
+        //        }
+        //    }
+        //}
     }
 
     UE_LOG(LogTemp, Log, TEXT("💪 [PlayerBase] 육체 초기화 완료!"));
@@ -234,7 +246,7 @@ USkeletalMeshComponent* APlayerBase::GetArmorComponent(EEquipmentSlot Slot) cons
     case EEquipmentSlot::Chest:  return ChestMesh;
     case EEquipmentSlot::Gloves: return GlovesMesh;
     case EEquipmentSlot::Boots:  return BootsMesh;
-    // Weapon은 별도 액터로 붙이므로 여기선 nullptr 반환
+    case EEquipmentSlot::Weapon:  return WeaponMesh;
     default: return nullptr;
     }
 }

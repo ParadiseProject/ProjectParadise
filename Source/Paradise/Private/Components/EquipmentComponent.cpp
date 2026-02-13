@@ -219,134 +219,40 @@ UInventorySystem* UEquipmentComponent::GetInventorySystem() const
 
 void UEquipmentComponent::UpdateVisuals(APlayerBase* TargetCharacter)
 {
-	// 타겟이 없으면 컴포넌트 소유자를 사용
+	//타겟이 없으면 컴포넌트 소유자를 사용
 	APlayerBase* Char = TargetCharacter ? TargetCharacter : Cast<APlayerBase>(GetOwner());
 	if (!Char) return;
 
-	UE_LOG(LogTemp, Log, TEXT("🎨 [Visual] 캐릭터 외형 업데이트 시작..."));
+	UE_LOG(LogTemp, Log, TEXT("🎨 [Visual] 캐릭터 외형 업데이트 시작... (Optimized)"));
 
-	//무기 처리 (Weapon Slot)
-	FOwnedItemData WeaponData;
-	if (GetEquippedItemData(EEquipmentSlot::Weapon, WeaponData))
-	{
-		// 무기 데이터가 있으면 액터 생성 및 부착
-		AttachWeaponActor(Char, WeaponData.ItemID);
-	}
-	else
-	{
-		// 무기가 없으면 기존 액터 파괴
-		if (SpawnedWeaponActor)
-		{
-			SpawnedWeaponActor->Destroy();
-			SpawnedWeaponActor = nullptr;
-		}
-	}
-
-	//방어구 처리 (Armor Slots)
-	// (필요한 모든 방어구 슬롯을 순회합니다)
-	const TArray<EEquipmentSlot> ArmorSlots = {
+	//무기(Weapon)를 포함한 모든 슬롯을 하나의 배열로 관리
+	const TArray<EEquipmentSlot> AllSlots = {
+		EEquipmentSlot::Weapon,
 		EEquipmentSlot::Helmet,
 		EEquipmentSlot::Chest,
 		EEquipmentSlot::Gloves,
 		EEquipmentSlot::Boots
 	};
 
-	for (EEquipmentSlot Slot : ArmorSlots)
+	for (EEquipmentSlot Slot : AllSlots)
 	{
-		FOwnedItemData ArmorData;
-		// 해당 슬롯에 장착된 아이템이 있는지 확인
-		if (GetEquippedItemData(Slot, ArmorData))
+		FOwnedItemData ItemData;
+
+		//해당 슬롯에 장착된 아이템 데이터 조회 (GUID -> ItemData)
+		if (GetEquippedItemData(Slot, ItemData))
 		{
-			SetArmorMesh(Char, Slot, ArmorData.ItemID);
+			//장착 상태: 통합 함수 호출 (무기/방어구 자동 분기 처리)
+			SetEquipmentMesh(Char, Slot, ItemData.ItemID);
 		}
 		else
 		{
-			// 장착 해제 상태라면 빈 이름(NAME_None)을 전달하여 메쉬를 비움
-			SetArmorMesh(Char, Slot, NAME_None);
+			//미장착 상태: None 전달 -> 메쉬 비우기 & 숨김 처리
+			SetEquipmentMesh(Char, Slot, NAME_None);
 		}
 	}
 }
 
-void UEquipmentComponent::AttachWeaponActor(APlayerBase* Char, FName ItemID)
-{
-	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetWorld()->GetGameInstance());
-	if (!GI || !Char) return;
-
-	//데이터 테이블 조회
-	FWeaponAssets* WeaponAssets = GI->GetDataTableRow<FWeaponAssets>(GI->WeaponAssetsDataTable, ItemID);
-	if (!WeaponAssets) return;
-
-	//기존 무기 제거 (교체 시)
-	if (SpawnedWeaponActor)
-	{
-		SpawnedWeaponActor->Destroy();
-		SpawnedWeaponActor = nullptr;
-	}
-
-	//메쉬 로드 (SoftReference -> Hard Load)
-	USkeletalMesh* LoadedMesh = WeaponAssets->ItemMesh.LoadSynchronous();
-	if (!LoadedMesh)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Visual] 무기 메쉬 로드 실패: %s"), *ItemID.ToString());
-		return;
-	}
-
-	//무기 액터 스폰 (SkeletalMeshActor 사용)
-	FActorSpawnParameters Params;
-	Params.Owner = Char;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	ASkeletalMeshActor* NewWeapon = GetWorld()->SpawnActor<ASkeletalMeshActor>(
-		ASkeletalMeshActor::StaticClass(),
-		FVector::ZeroVector,
-		FRotator::ZeroRotator,
-		Params);
-
-	if (NewWeapon)
-	{
-		USkeletalMeshComponent* WeaponComp = NewWeapon->GetSkeletalMeshComponent();
-		if (WeaponComp)
-		{
-			WeaponComp->SetSkeletalMesh(LoadedMesh);
-			WeaponComp->SetMobility(EComponentMobility::Movable);
-			WeaponComp->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 캐릭터 충돌 방지
-		}
-
-		FName SocketName = WeaponAssets->AttachmentSocket;
-
-		UE_LOG(LogTemp, Warning, TEXT("🔍 [Debug] 아이템: %s | 테이블 소켓값: '%s'"),
-			*ItemID.ToString(), *SocketName.ToString());
-
-		//소켓 값이 비어있는 경우 (None)
-		if (SocketName.IsNone())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("⚠️ [Debug] 소켓 이름이 None입니다. 기본값 'hand_r'을 사용합니다."));
-			SocketName = TEXT("hand_r");
-		}
-		//소켓 값이 있는 경우
-		else
-		{
-			//캐릭터 메쉬에 해당 소켓이 진짜 있는지 확인
-			if (Char->GetMesh()->DoesSocketExist(SocketName))
-			{
-				UE_LOG(LogTemp, Log, TEXT("✅ [Debug] 소켓 '%s' 존재 확인됨. 부착 시도."), *SocketName.ToString());
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("❌ [Debug] 소켓 '%s'이(가) 캐릭터 메쉬에 없습니다! (오타 확인 필요)"), *SocketName.ToString());
-			}
-		}
-
-		// 최종 부착
-		NewWeapon->AttachToComponent(Char->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
-
-		SpawnedWeaponActor = NewWeapon;
-
-		UE_LOG(LogTemp, Log, TEXT("⚔️ [Visual] 무기 장착 완료: %s"), *ItemID.ToString());
-	}
-}
-
-void UEquipmentComponent::SetArmorMesh(APlayerBase* Char, EEquipmentSlot Slot, FName ItemID)
+void UEquipmentComponent::SetEquipmentMesh(APlayerBase* Char, EEquipmentSlot Slot, FName ItemID)
 {
 	if (!Char) return;
 
@@ -354,71 +260,88 @@ void UEquipmentComponent::SetArmorMesh(APlayerBase* Char, EEquipmentSlot Slot, F
 	USkeletalMeshComponent* TargetMeshComp = Char->GetArmorComponent(Slot);
 	if (!TargetMeshComp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Visual] 캐릭터에 해당 슬롯(%d) 컴포넌트가 없습니다."), (int32)Slot);
+		// 무기가 없거나 해당 슬롯이 없는 경우
 		return;
 	}
 
-	//장착 해제 처리 (None)
+	//장착 해제 (ItemID가 None인 경우)
 	if (ItemID.IsNone())
 	{
-		//초기화
 		TargetMeshComp->SetSkeletalMesh(nullptr);
-		TargetMeshComp->SetLeaderPoseComponent(nullptr);
-		TargetMeshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+		TargetMeshComp->SetLeaderPoseComponent(nullptr); // 리더 포즈 해제
+		TargetMeshComp->SetHiddenInGame(true); // 안 보이게 숨김 (최적화)
 		return;
 	}
 
 	UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetWorld()->GetGameInstance());
 	if (!GI) return;
 
-	//데이터 테이블 조회
-	FArmorAssets* ArmorAssets = GI->GetDataTableRow<FArmorAssets>(GI->ArmorAssetsDataTable, ItemID);
-	if (!ArmorAssets) return;
+	//데이터 테이블 조회 및 에셋 로드
+	USkeletalMesh* LoadedMesh = nullptr;
+	FName SocketName = NAME_None;
 
-	//메쉬 로드
-	USkeletalMesh* LoadedMesh = ArmorAssets->ItemMesh.LoadSynchronous();
-	if (!LoadedMesh) return;
+	//무기인 경우
+	if (Slot == EEquipmentSlot::Weapon)
+	{
+		if (FWeaponAssets* WeaponData = GI->GetDataTableRow<FWeaponAssets>(GI->WeaponAssetsDataTable, ItemID))
+		{
+			LoadedMesh = WeaponData->ItemMesh.LoadSynchronous();
+			SocketName = WeaponData->AttachmentSocket; // 무기는 반드시 소켓이 있어야 함
+		}
+	}
+	//방어구인 경우
+	else
+	{
+		if (FArmorAssets* ArmorData = GI->GetDataTableRow<FArmorAssets>(GI->ArmorAssetsDataTable, ItemID))
+		{
+			LoadedMesh = ArmorData->ItemMesh.LoadSynchronous();
+			SocketName = ArmorData->AttachmentSocket; // 방어구는 소켓이 없을 수도 있음(None)
+		}
+	}
 
-	//메쉬 적용
+	if (!LoadedMesh)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("⚠️ [Visual] 메쉬 로드 실패: %s"), *ItemID.ToString());
+		return;
+	}
+
+	//메쉬 적용 및 보이기
 	TargetMeshComp->SetSkeletalMesh(LoadedMesh);
+	TargetMeshComp->SetHiddenInGame(false);
 
-	//소켓부착
-	FName SocketName = ArmorAssets->AttachmentSocket;
+	// 부착 로직 (소켓 부착 vs 리더 포즈)
 
-	//소켓 이름이 지정된 경우
+	//무기거나, 어깨보호구 같은 소켓 부착형 방어구
 	if (!SocketName.IsNone())
 	{
-		//리더 포즈 해제 (중복 적용 방지)
+		//리더 포즈 해제 (소켓에 붙을 땐 리더 포즈 쓰면 안 됨)
 		TargetMeshComp->SetLeaderPoseComponent(nullptr);
 
-		// 소켓 존재 여부 확인
+		//소켓 존재 확인 후 부착
 		if (Char->GetMesh()->DoesSocketExist(SocketName))
 		{
-			// 3) 소켓에 부착
-			TargetMeshComp->AttachToComponent(Char->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
-			UE_LOG(LogTemp, Log, TEXT("🛡️ [Visual] 방어구 소켓 부착 완료: %s -> %s"), *ItemID.ToString(), *SocketName.ToString());
+			TargetMeshComp->AttachToComponent(
+				Char->GetMesh(),
+				FAttachmentTransformRules::SnapToTargetIncludingScale,
+				SocketName
+			);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("❌ [Visual] 소켓을 찾을 수 없음: %s (Item: %s)"), *SocketName.ToString(), *ItemID.ToString());
+			UE_LOG(LogTemp, Error, TEXT("❌ [Visual] 소켓 없음: %s. 기본값(hand_r) 사용 시도."), *SocketName.ToString());
+			TargetMeshComp->AttachToComponent(Char->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("hand_r"));
 		}
 	}
-	//소켓 이름이 없는 경우 (일반 방어구 - 리더 포즈)
+	//소켓 이름이 없다? -> 일반 방어구 (몸에 딱 붙는 옷)
 	else
 	{
-		//부착 해제 (혹시 붙어있었다면)
+		// 무기는 소켓이 없을 수 없으므로, 방어구만 여기로 옴
 		TargetMeshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
-
-		//부모 메쉬에 다시 붙임
 		TargetMeshComp->SetupAttachment(Char->GetMesh());
-
-		//리더 포즈 설정 (애니메이션 동기화)
-		TargetMeshComp->SetLeaderPoseComponent(Char->GetMesh());
-
-		UE_LOG(LogTemp, Log, TEXT("🛡️ [Visual] 방어구 리더 포즈 적용: %s (Slot: %d)"), *ItemID.ToString(), (int32)Slot);
+		TargetMeshComp->SetLeaderPoseComponent(Char->GetMesh()); // 애니메이션 동기화
 	}
+
+	UE_LOG(LogTemp, Log, TEXT("⚔️🛡️ [Visual] 장비 적용 완료: %s (Slot: %d)"), *ItemID.ToString(), (int32)Slot);
 }
-
-
 
 
