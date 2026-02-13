@@ -11,6 +11,7 @@
 class UCommonButtonBase;
 class USkillSlotWidget;
 class APlayerBase;
+class AInGameController;
 #pragma endregion 전방 선언
 
 /**
@@ -56,6 +57,13 @@ private:
 	 */
 	UFUNCTION()
 	void ProcessAbilityInput(EInputID InputID);
+
+	/**
+	 * @brief 태그 버튼 클릭 시 컨트롤러에 캐릭터 교체를 요청하는 핸들러입니다.
+	 * @details 델리게이트 페이로드(Payload)를 통해 인덱스를 전달받으므로 UFUNCTION을 붙이지 않습니다.
+	 * @param CharacterIndex 교체할 대상 캐릭터의 스쿼드 인덱스 (0, 1, 2)
+	 */
+	void OnTagButtonClicked(int32 CharacterIndex);
 #pragma endregion 내부 로직
 
 private:
