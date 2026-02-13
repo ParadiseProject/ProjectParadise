@@ -41,9 +41,6 @@ public:
 
 	void PlayRangeAttack();
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Unit|Status")
-	FGameplayTag FactionTag;
-
 	/** @brief 데이터 테이블 조회를 위한 RowName 저장 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Unit|Data")
 	FName UnitID;

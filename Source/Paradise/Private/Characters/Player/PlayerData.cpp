@@ -207,6 +207,8 @@ void APlayerData::InitPlayerData(FName HeroID)
 	if (Stats)
 	{
 		InitCombatAttributes(Stats);
+
+		this->FactionTag = Stats->FactionTag;
 	}
 	else
 	{

@@ -9,6 +9,7 @@
 #include "GameplayAbilitySpecHandle.h"
 #include "Data/Structs/CombatTypes.h"
 #include "Data/Enums/GameEnums.h"
+#include "GameplayTagContainer.h"
 #include "PlayerData.generated.h"
 
 class UAttributeSet;
@@ -111,7 +112,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FName CharacterID;
 	
-
+	/** @brief 캐릭터의 소속 태그 (예: Unit.Faction.Friendly.Player) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Data")
+	FGameplayTag FactionTag;
 protected:
 	
 
