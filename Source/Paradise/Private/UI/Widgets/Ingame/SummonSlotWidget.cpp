@@ -67,7 +67,7 @@ void USummonSlotWidget::UpdateSlotInfo(UTexture2D* IconTexture, int32 InCost)
 	// 2. 버튼 처리
 	if (Btn_SummonAction)
 	{
-		// ★ 핵심: 무조건 활성화 (데이터 없어도 눌러서 애니메이션 테스트 가능하게)
+		// 테스트용: 무조건 활성화 (데이터 없어도 눌러서 애니메이션 테스트 가능하게)
 		Btn_SummonAction->SetIsEnabled(true);
 	}
 
@@ -103,6 +103,24 @@ void USummonSlotWidget::UpdateSlotInfo(UTexture2D* IconTexture, int32 InCost)
 //		Text_CostValue->SetText(FText::AsNumber(InCost));
 //		Text_CostValue->SetVisibility(ESlateVisibility::HitTestInvisible);
 //	}
+}
+
+void USummonSlotWidget::ScheduleReveal(UTexture2D* IconTexture, int32 InCost, float DelayTime)
+{
+	// 1. 기존 타이머 리셋 및 데이터 임시 저장 (캡슐화)
+	GetWorld()->GetTimerManager().ClearTimer(RevealTimerHandle);
+	PendingIcon = IconTexture;
+	PendingCost = InCost;
+
+	// 2. 당겨질 때 '빈 칸'으로 보이도록 UI 강제 숨김 처리
+	if (Img_SummonIcon) Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
+	if (Text_CostValue) Text_CostValue->SetVisibility(ESlateVisibility::Hidden);
+
+	// 아직 비어있는 칸이므로 클릭을 막아 연타 버그를 예방합니다.
+	if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
+
+	// 3. 타이머 가동 (DelayTime 초 뒤에 OnRevealTimerFinished 호출)
+	GetWorld()->GetTimerManager().SetTimer(RevealTimerHandle, this, &USummonSlotWidget::OnRevealTimerFinished, DelayTime, false);
 }
 
 void USummonSlotWidget::PlayIntroAnimation()
@@ -156,6 +174,16 @@ void USummonSlotWidget::OnSummonButtonClicked()
 	{
 		OnSlotClicked.Broadcast(SlotIndex);
 	}
+}
+
+void USummonSlotWidget::OnRevealTimerFinished()
+{
+	// 지연 시간이 만료되었으므로, 저장해둔 임시 데이터로 UI를 실제 갱신하고 애니메이션을 재생합니다.
+	UpdateSlotInfo(PendingIcon, PendingCost);
+	PlayIntroAnimation();
+
+	// 피드백 복구: 다시 선명하게 만듦
+	if (Img_SummonIcon) Img_SummonIcon->SetOpacity(1.0f);
 }
 
 //void USummonSlotWidget::UpdateCooldownVisual()

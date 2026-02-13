@@ -41,6 +41,9 @@ void USummonControlPanel::NativeConstruct()
 			SummonSlots[i]->OnSlotClicked.AddDynamic(this, &USummonControlPanel::HandleSlotClickRequest);
 		}
 	}
+	// 3. (추가) 시간표 배열 초기화 - 처음에는 딜레이 없이 즉시 다 보이도록 0.0f 할당
+	SlotRevealTimes.Init(0.0f, SummonSlots.Num());
+	NextAvailableRefillTime = 0.0f;
 
 	InitComponents();
 }
@@ -185,14 +188,34 @@ void USummonControlPanel::HandleSlotClickRequest(int32 SlotIndex)
 {
 	if (CachedSummonComponent.IsValid())
 	{
-		// ★ [추가] 클릭한 인덱스를 기억해둡니다 (애니메이션 재생용)
 		LastClickedSlotIndex = SlotIndex;
-
 		bool bSuccess = CachedSummonComponent->RequestPurchase(SlotIndex);
 
-		if (!bSuccess)
+		if (bSuccess)
 		{
-			// 실패하면 초기화
+			// (추가) 구매 성공 시 시간표 배열도 왼쪽으로 당기고, 새 슬롯의 등장 시간을 추가
+			if (SlotRevealTimes.IsValidIndex(SlotIndex))
+			{
+				SlotRevealTimes.RemoveAt(SlotIndex);
+
+				float CurrentTime = GetWorld()->GetTimeSeconds();
+
+				// 1. 만약 대기열이 비어있다면(앞에 기다리는 놈이 없다면), 기준 시간은 '지금'
+				// 2. 만약 앞에 기다리는 놈이 있다면, 기준 시간은 '앞사람이 끝나는 시간'
+				if (NextAvailableRefillTime < CurrentTime)
+				{
+					NextAvailableRefillTime = CurrentTime;
+				}
+
+				// 기준 시간에 1초(SlotRefillDelay)를 더해서 내 번호표로 만듦
+				NextAvailableRefillTime += SlotRefillDelay;
+
+				// 배열 맨 끝(빈자리)에 내 번호표를 등록
+				SlotRevealTimes.Add(NextAvailableRefillTime);
+			}
+		}
+		else
+		{
 			LastClickedSlotIndex = -1;
 			UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 구매 실패: %d"), SlotIndex);
 		}

@@ -217,15 +217,20 @@ void UInGameHUDWidget::OnJoystickInput(FVector2D InputVector)
 	// 조이스틱 입력이 오면 폰(캐릭터)에게 이동 명령 전달
 	if (APawn* OwnedPawn = GetOwningPlayerPawn())
 	{
+		// 조이스틱에서 넘어온 순수 입력값을 90도 회전하여 보정
+		FVector2D TransformedInput;
+		TransformedInput.X = InputVector.Y;
+		TransformedInput.Y = -InputVector.X;
+
 		const FRotator ControlRot = GetOwningPlayer()->GetControlRotation();
 		const FRotator YawRot(0, ControlRot.Yaw, 0);
 
 		const FVector ForwardDir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
 		const FVector RightDir = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
-		// InputVector.Y에 -1.0f를 곱해서 '위로 드래그' = '전진'이 되도록 수정
-		OwnedPawn->AddMovementInput(ForwardDir, InputVector.Y * -1.0f);
-		OwnedPawn->AddMovementInput(RightDir, InputVector.X);
+		// 보정된 벡터(TransformedInput)를 기준으로 캐릭터 이동 적용
+		OwnedPawn->AddMovementInput(ForwardDir, TransformedInput.Y * -1.0f);
+		OwnedPawn->AddMovementInput(RightDir, TransformedInput.X);
 	}
 }
 

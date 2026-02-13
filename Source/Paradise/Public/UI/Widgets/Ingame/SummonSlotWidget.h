@@ -51,6 +51,15 @@ public:
 	void UpdateSlotInfo(UTexture2D* IconTexture, int32 InCost);
 
 	/**
+	 * @brief 딜레이를 가지고 슬롯 정보를 갱신하도록 예약합니다. (데이터 주도적 설계)
+	 * @param IconTexture 예약할 아이콘
+	 * @param InCost 예약할 소환 비용
+	 * @param DelayTime 몇 초 뒤에 등장할 것인가
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
+	void ScheduleReveal(UTexture2D* IconTexture, int32 InCost, float DelayTime);
+
+	/**
 	 * @brief 슬롯 등장 애니메이션을 재생합니다.
 	 * @details 새로 추가된 슬롯임을 강조할 때 호출합니다.
 	 */
@@ -79,6 +88,10 @@ private:
 	/** @brief 버튼 클릭 시 발생할 이벤트 핸들러 */
 	UFUNCTION()
 	void OnSummonButtonClicked();
+
+	/** @brief 예약된 지연 시간이 끝났을 때 호출되어 실제로 화면에 표시하는 핸들러 */
+	UFUNCTION()
+	void OnRevealTimerFinished();
 
 	///**
 	// * @brief 타이머에 의해 주기적으로 호출되어 쿨타임 UI를 갱신합니다.
@@ -146,6 +159,16 @@ public:
 private:
 	/** @brief 이 슬롯의 고유 인덱스 (0~4) */
 	int32 SlotIndex = -1;
+
+	/** @brief 지연 등장 시 사용할 임시 아이콘 데이터 (캡슐화) */
+	UPROPERTY()
+	TObjectPtr<UTexture2D> PendingIcon = nullptr;
+
+	/** @brief 지연 등장 시 사용할 임시 코스트 데이터 (캡슐화) */
+	int32 PendingCost = 0;
+
+	/** @brief 지연 등장을 제어하는 엔진 타이머 핸들 */
+	FTimerHandle RevealTimerHandle;
 
 	///** @brief 최대 쿨타임 변수 */
 	//UPROPERTY()

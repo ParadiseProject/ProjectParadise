@@ -104,7 +104,21 @@ private:
 #pragma endregion 위젯 바인딩
 
 #pragma region 내부 데이터
+protected:
+	/**
+	 * @brief 빈 슬롯이 채워질 때까지의 대기 시간 (초 단위)
+	 * @details 에디터에서 자유롭게 조절할 수 있습니다 (Data-Driven).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paradise|UI", meta = (ClampMin = "0.0"))
+	float SlotRefillDelay = 1.0f;
+
 private:
+	/** @brief 다음 리필이 허용되는 절대 시간 (앞 슬롯의 리필이 끝나야 다음 리필 시작) */
+	float NextAvailableRefillTime = 0.0f;
+
+	/** @brief 각 슬롯이 화면에 등장해도 되는 '절대 시간'을 기억하는 배열 */
+	TArray<float> SlotRevealTimes;
+
 	/** @brief 슬롯 위젯의 빠른 접근을 위한 캐싱 배열 */
 	UPROPERTY()
 	TArray<TObjectPtr<USummonSlotWidget>> SummonSlots;

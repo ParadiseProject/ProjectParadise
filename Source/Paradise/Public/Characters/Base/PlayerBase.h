@@ -114,6 +114,8 @@ protected:
 	 */
 	void ResetHitActors() { HitActors.Empty(); }
 
+public:
+	//26.02.13 담당자: 최지원 (임시로 개발 편의상 Public으로 옮겨 놓음)
 	/**
 	 * @brief 입력 액션이 들어오면 ASC로 신호를 보내는 배달부 함수
 	 * @param InputId : 어떤 키인가? (Enum)
