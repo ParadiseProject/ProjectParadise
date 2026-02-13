@@ -47,31 +47,62 @@ void USummonSlotWidget::InitSlot(int32 InIndex)
 
 void USummonSlotWidget::UpdateSlotInfo(UTexture2D* IconTexture, int32 InCost)
 {
+	// =================================================================
+	// [임시 하드코딩] 데이터가 없어도 무조건 보이게 강제 설정
+	// =================================================================
+
 	// 1. 아이콘 처리
 	if (Img_SummonIcon)
 	{
+		// 텍스처가 있으면 넣고, 없으면 그냥 흰색 네모라도 뜨게 둠
 		if (IconTexture)
 		{
 			Img_SummonIcon->SetBrushFromTexture(IconTexture);
-			Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
-
-			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(true);
 		}
-		else
-		{
-			// 아이콘이 없으면 숨김 (혹은 빈 슬롯 이미지)
-			Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
 
-			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
-		}
+		// ★ 핵심: 조건 없이 무조건 보이게 설정 (Hidden 처리 삭제함)
+		Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 
-	// 2. 텍스트 처리
+	// 2. 버튼 처리
+	if (Btn_SummonAction)
+	{
+		// ★ 핵심: 무조건 활성화 (데이터 없어도 눌러서 애니메이션 테스트 가능하게)
+		Btn_SummonAction->SetIsEnabled(true);
+	}
+
+	// 3. 텍스트 처리
 	if (Text_CostValue)
 	{
 		Text_CostValue->SetText(FText::AsNumber(InCost));
 		Text_CostValue->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
+
+//	// 1. 아이콘 처리
+//	if (Img_SummonIcon)
+//	
+//			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(true);
+//		{
+//		if (IconTexture)
+//		{
+//			Img_SummonIcon->SetBrushFromTexture(IconTexture);
+//			Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
+//}
+//		else
+//		{
+//			// 아이콘이 없으면 숨김 (혹은 빈 슬롯 이미지)
+//			Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
+//
+//			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
+//		}
+//	}
+//
+//	// 2. 텍스트 처리
+//	if (Text_CostValue)
+//	{
+//		Text_CostValue->SetText(FText::AsNumber(InCost));
+//		Text_CostValue->SetVisibility(ESlateVisibility::HitTestInvisible);
+//	}
 }
 
 void USummonSlotWidget::PlayIntroAnimation()
@@ -80,6 +111,15 @@ void USummonSlotWidget::PlayIntroAnimation()
 	{
 		// 처음부터 재생 (Forward), 1배속, 루프 없음
 		PlayAnimation(Anim_Intro, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f);
+	}
+}
+
+void USummonSlotWidget::PlayShiftAnimation()
+{
+	if (Anim_Shift)
+	{
+		// 처음부터 1배속으로 재생
+		PlayAnimation(Anim_Shift, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f);
 	}
 }
 

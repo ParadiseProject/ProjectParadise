@@ -57,6 +57,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
 	void PlayIntroAnimation();
 
+	/**
+	 * @brief 옆에서 당겨져 오는(Shift) 애니메이션을 재생합니다.
+	 * @details 빈자리를 채울 때 사용됩니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Paradise|Animation")
+	void PlayShiftAnimation();
+
 	///**
 	// * @brief 쿨타임 상태를 갱신합니다. (GAS로부터 호출 권장)
 	// * @param CurrentTime 남은 시간
@@ -122,6 +129,12 @@ private:
 	 */
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	TObjectPtr<UWidgetAnimation> Anim_Intro = nullptr;
+
+	/**
+	 * @brief 당기기 애니메이션 (에디터에서 이름 'Anim_Shift'로 생성 필수).
+	 */
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	TObjectPtr<UWidgetAnimation> Anim_Shift = nullptr;
 #pragma endregion 위젯 바인딩
 
 #pragma region 데이터

@@ -117,5 +117,8 @@ private:
 
 	/** @brief 재시도용 타이머 핸들 */
 	FTimerHandle TimerHandle_InitCost;
+
+	/** @brief 애니메이션 재생을 위해 마지막으로 클릭한 슬롯 인덱스를 기억합니다. */
+	int32 LastClickedSlotIndex = -1;
 #pragma endregion 내부 데이터
 };

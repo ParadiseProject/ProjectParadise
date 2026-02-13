@@ -144,17 +144,38 @@ void USummonControlPanel::HandleSummonSlotsUpdate(const TArray<FSummonSlotInfo>&
 			UTexture2D* LoadedIcon = Slots[i].FamiliarIcon.LoadSynchronous();
 			int32 Cost = Slots[i].FamiliarCost;
 
+			// 데이터가 있으면 가져오고, 없어도 그냥 0/null로 밀어넣음
+			if (Slots.IsValidIndex(i))
+			{
+				LoadedIcon = Slots[i].FamiliarIcon.LoadSynchronous();
+				Cost = Slots[i].FamiliarCost;
+			}
+
 			SummonSlots[i]->UpdateSlotInfo(LoadedIcon, Cost);
 		}
 	}
-
-	// 2. ★ [핵심] 마지막 슬롯 애니메이션 (Append 효과)
-	// Shift & Append 로직상 마지막 슬롯(Index 4)은 항상 '새로 들어온 유닛'입니다.
-	int32 LastIndex = SummonSlots.Num() - 1;
-	if (SummonSlots.IsValidIndex(LastIndex) && SummonSlots[LastIndex])
+	// 2. [애니메이션 재생 분기 처리]
+	if (LastClickedSlotIndex >= 0)
 	{
-		// 마지막 슬롯만 튀어나오게 하여 "추가됨"을 강조
-		SummonSlots[LastIndex]->PlayIntroAnimation();
+		// A. 내가 누른 슬롯부터 마지막 직전 슬롯까지는 "당겨오기(Shift)" 애니메이션
+		// 예: 2번을 눌렀으면 2, 3번 위젯이 당겨지는 애니메이션을 재생함
+		for (int32 i = LastClickedSlotIndex; i < SummonSlots.Num() - 1; ++i)
+		{
+			if (SummonSlots.IsValidIndex(i) && SummonSlots[i])
+			{
+				SummonSlots[i]->PlayShiftAnimation();
+			}
+		}
+
+		// B. 맨 마지막 슬롯은 "새로 등장(Intro)" 애니메이션
+		int32 LastIndex = SummonSlots.Num() - 1;
+		if (SummonSlots.IsValidIndex(LastIndex) && SummonSlots[LastIndex])
+		{
+			SummonSlots[LastIndex]->PlayIntroAnimation();
+		}
+
+		// 애니메이션 처리 끝났으므로 인덱스 초기화
+		LastClickedSlotIndex = -1;
 	}
 }
 #pragma endregion 시스템 초기화
@@ -164,14 +185,16 @@ void USummonControlPanel::HandleSlotClickRequest(int32 SlotIndex)
 {
 	if (CachedSummonComponent.IsValid())
 	{
-		// MVC: View(Panel) -> Controller(Component) 요청
-		// 성공 여부에 따른 UI 갱신은 Delegate(HandleSummonSlotsUpdate)가 처리
+		// ★ [추가] 클릭한 인덱스를 기억해둡니다 (애니메이션 재생용)
+		LastClickedSlotIndex = SlotIndex;
+
 		bool bSuccess = CachedSummonComponent->RequestPurchase(SlotIndex);
 
 		if (!bSuccess)
 		{
+			// 실패하면 초기화
+			LastClickedSlotIndex = -1;
 			UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 구매 실패: %d"), SlotIndex);
-			// 여기에 실패 피드백 (예: 흔들림 애니메이션) 추가 가능
 		}
 	}
 }
