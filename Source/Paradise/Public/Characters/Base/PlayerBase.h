@@ -91,14 +91,7 @@ public:
 	 * @param InPlayerData 이 육체를 제어할 데이터 주체(영혼) 액터
 	 */
 	void InitializePlayer(APlayerData* InPlayerData);
-	/*
-	 * @brief GAS 필수 인터페이스 
-	 */
 
-	/*
-	 * @brief 애니메이션 노티파이에서 매 프레임 호출할 함수
-	 */
-	void CheckHit();
 
 protected:
 
@@ -108,11 +101,6 @@ protected:
 	 */
 	UFUNCTION()
 	void OnMoveInput(const FInputActionValue& InValue);
-
-	/*
-	 * @brief 공격이 새로 시작될 때 목록 비우기 (NotifyBegin 같은 곳에서 호출 필요, 혹은 몽타주 시작 시)
-	 */
-	void ResetHitActors() { HitActors.Empty(); }
 
 	/**
 	 * @brief 입력 액션이 들어오면 ASC로 신호를 보내는 배달부 함수
@@ -178,10 +166,4 @@ protected:
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	FName WeaponSocketName;
-
-	/*
-	 * @brief 이미 때린 적을 중복 타격하지 않게 저장하는 목록
-	 */
-	UPROPERTY()
-	TArray<AActor*> HitActors;
 };

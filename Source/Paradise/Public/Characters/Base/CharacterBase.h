@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
 #include "Interfaces/CombatInterface.h"
+#include "GameplayTagContainer.h"
 #include "CharacterBase.generated.h"
 
 class UAbilitySystemComponent;
@@ -22,10 +23,14 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// 2. 인터페이스 구현 (가상 함수) -> 자식들이 override 할 필요 없이 여기서 공통 처리
+	/*
+	 * @brief GAS 필수 인터페이스
+	 */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 
-	// 3. 어트리뷰트 셋 Getter (선택 사항이지만 추천)
+	/*
+	 * @brief AttributeSet Getter
+	 */
 	UAttributeSet* GetAttributeSet() const { return AttributeSet; }
 
 	/**
@@ -59,11 +64,33 @@ public:
 	UFUNCTION(BlueprintCallable, Exec, Category = "Debug")
 	void TestKillSelf();
 
+	/*
+	 * @brief 공격 판정 수행 (공용)
+	 * @param SocketName : 판정의 기준이 될 소켓 이름 (예: hand_r, Jaw, WeaponTip)
+	 * @param AttackRadius : 공격 반경 (기본 50cm)
+	 * @param DamageTag : GAS 이벤트 태그 (기본: Event.Montage.Hit)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void CheckHit(FName SocketName, float AttackRadius = 50.0f);
+
+	/*
+	 * @brief 새로운 공격이 시작될 때 타격 목록 초기화
+	 * @details 몽타주 시작이나 AnimNotifyState_Trail의 Begin 등에서 호출
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void ResetHitActors();
+
+	/**
+	 * @brief 상대방이 적대적인지(공격 대상인지) 확인합니다.
+	 * @param Target 확인할 대상 캐릭터
+	 * @return true면 적군(타격 가능), false면 아군(타격 불가)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	bool IsHostile(ACharacterBase* Target) const;
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
 	
 	/*
 	 * @brief Hit 이펙트를 적용 시키는 함수 (마테리얼 변화)
@@ -71,13 +98,11 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void PlayHitFlash();
 
-
 	/*
 	 * @brief Hit 이펙트를 리셋 시키는 함수 (마테리얼 변화)
 	*/
 	UFUNCTION(BlueprintCallable)
 	void ResetHitFlash();
-
 
 	/* 
 	 * @brief DamagePopup(데미지위젯)을 스폰(오브젝트 풀링)시키는 함수  
@@ -88,11 +113,12 @@ protected:
 
 
 public:
-	/* @brief 피아식별 ID (0: 플레이어, 1: 적, 2: 중립 등)
-	 * @details GAS 타겟팅이나 투사체 충돌 처리 시 사용
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status")
-	uint8 TeamID = 0;
+	/** * @brief 소속 진영 태그
+		 * @details 데이터 테이블에서 로드되어 부여되며, 피아식별(IsHostile) 및 GAS 타겟팅에 사용됩니다.
+		 * 예: Unit.Faction.Friendly.Player, Unit.Faction.Enemy
+		 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status")
+	FGameplayTag FactionTag;
 
 protected:
 	/*
@@ -105,7 +131,6 @@ protected:
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UWidgetComponent> HealthWidget = nullptr;
-
 
 	/*
 	 * @brief 데미지팝업위젯 액터 할당예정 (클래스타입도 해당 UI타입으로 변경예정)
@@ -124,6 +149,13 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UAttributeSet> AttributeSet;
+
+	/*
+	 * @brief 이미 때린 적을 중복 타격하지 않게 저장하는 목록
+	 * @details 공격 시작 시(ResetHitActors) 비워줘야 함
+	 */
+	UPROPERTY()
+	TArray<AActor*> HitActors;
 private:
 		
 	/*
