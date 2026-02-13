@@ -32,6 +32,8 @@ public:
 	// Sets default values for this component's properties
 	UEquipmentComponent();
 
+	void TestEquip(APlayerBase* Char, EEquipmentSlot Slot, FName ItemID);
+
 	/**
 	 * @brief 인게임 스폰 시, 인벤토리 시스템의 데이터를 받아와 외형을 초기화합니다.
 	 * @details 캐릭터 스폰 시 호출되며, 내부적으로 InventorySystem을 조회하여 장비 캐시를 갱신하고 메쉬를 생성합니다.
@@ -81,16 +83,10 @@ public:
 private:
 
 	/**
-	 * @brief (내부함수) 무기 액터를 스폰하고 캐릭터 소켓에 부착합니다.
-	 * @details 기존 무기가 있다면 파괴하고 새 무기를 생성합니다.
-	 */
-	void AttachWeaponActor(APlayerBase* Char, FName ItemID);
-
-	/**
 	 * @brief (내부함수) 캐릭터의 스켈레탈 메시(방어구)를 교체합니다.
 	 * @details 투구, 갑옷, 신발 등 부위별로 메시를 SetSkeletalMesh 합니다.
 	 */
-	void SetArmorMesh(APlayerBase* Char, EEquipmentSlot Slot, FName ItemID);
+	void SetEquipmentMesh(APlayerBase* Char, EEquipmentSlot Slot, FName ItemID);
 		
 protected:
 

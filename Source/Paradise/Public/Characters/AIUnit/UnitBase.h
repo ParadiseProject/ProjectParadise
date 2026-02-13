@@ -33,7 +33,9 @@ public:
 
 	void SetUnitID(FName InID) { UnitID = InID; }
 	FName GetUnitID() const { return UnitID; }
-
+	FGameplayTag GetFactionTag()const {
+		return FactionTag;
+	}
 	virtual void Die()override;
 
 	UFUNCTION(BlueprintCallable, Category = "Unit|Logic")

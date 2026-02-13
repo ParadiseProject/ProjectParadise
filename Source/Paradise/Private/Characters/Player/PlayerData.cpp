@@ -12,6 +12,8 @@
 
 APlayerData::APlayerData()
 {
+	PrimaryActorTick.bCanEverTick = false;
+
 	bReplicates = false; 
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));

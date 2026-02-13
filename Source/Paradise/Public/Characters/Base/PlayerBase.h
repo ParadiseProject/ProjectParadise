@@ -29,6 +29,12 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void BeginPlay() override;
+
+	/**
+	 * @brief 생성자에서 컴포넌트를 생성합니다.
+	 */
+	void InitializeComponents();
+
 	/**
 	 * @brief 슬롯에 해당하는 스켈레탈 메쉬 컴포넌트를 반환합니다.
 	 * @details EquipmentComponent에서 외형 변경 시 호출합니다.
@@ -127,6 +133,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
 	TObjectPtr<USkeletalMeshComponent> BootsMesh= nullptr;
 
+	/** 
+	  * @brief 무기 전용 메쉬 컴포넌트
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual|Weapon")
+	TObjectPtr<USkeletalMeshComponent> WeaponMesh = nullptr;
+
 	/*
 	 * @brief 입력 액션 Move
 	 */
@@ -138,27 +150,27 @@ protected:
 	 * @brief 전투 스킬(GAS)용 입력 설정 데이터 에셋
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<class UParadiseInputConfig> InputConfig;
+	TObjectPtr<class UParadiseInputConfig> InputConfig = nullptr;
 
 	/*
 	 * @brief 스프링암 컴포넌트
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	TObjectPtr<class USpringArmComponent> CameraBoom;
+	TObjectPtr<class USpringArmComponent> CameraBoom = nullptr;
 
 
 	/*
 	 * @brief 카메라 컴포넌트
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	TObjectPtr<class UCameraComponent> FollowCamera;
+	TObjectPtr<class UCameraComponent> FollowCamera = nullptr;
 
 	
 	/*
 	 * @brief 클래스 타입 변경예정 ,실제 데이터를 가진 액터
 	 */
 	UPROPERTY()
-	TWeakObjectPtr<class APlayerData> LinkedPlayerData;
+	TWeakObjectPtr<class APlayerData> LinkedPlayerData = nullptr;
 
 	/*
 	 * @brief 무기 붙일 소켓 이름
