@@ -19,19 +19,19 @@ struct FSummonSlotInfo
 
 	/** @brief 데이터 테이블 행 이름 (유닛 ID) */
 	UPROPERTY(BlueprintReadOnly, Category = "Summon")
-	FName FamiliarID;
+	FName FamiliarID = NAME_None;
 
 	/** @brief 소환에 책정된 가격 */
 	UPROPERTY(BlueprintReadOnly, Category = "Summon")
-	int32 FamiliarCost;
+	int32 FamiliarCost = 0;
 
 	/** @brief UI 아이콘 (Assets 테이블에서 로드해서 UI에 전달) */
 	UPROPERTY(BlueprintReadOnly, Category = "Summon")
-	TSoftObjectPtr<UTexture2D> FamiliarIcon; // FUnitBaseAssets에 Icon이 있다고 가정하거나 추가 필요
+	TSoftObjectPtr<UTexture2D> FamiliarIcon = nullptr; // FUnitBaseAssets에 Icon이 있다고 가정하거나 추가 필요
 
 	/** @brief 빈 슬롯인지 여부 */
 	UPROPERTY(BlueprintReadOnly, Category = "Summon")
-	bool bIsSoldOut = true;
+	bool bIsSoldOut = false;
 };
 
 /** @brief 슬롯 정보가 갱신되었을 때 UI에 알리는 델리게이트 */
@@ -84,12 +84,6 @@ protected:
 	 */
 	UFUNCTION()
 	void ConsumeSpecificSlot(int32 SlotIndex);
-
-	/** * @brief 특정 슬롯을 다시 채워주는 내부 함수 (타이머에 의해 호출됨)
-	 * @param SlotIndex 리필할 슬롯 번호
-	 */
-	UFUNCTION()
-	void RefillSpecificSlot(int32 SlotIndex);
 
 	/** @brief 랜덤 유닛을 하나 생성하여 슬롯 정보를 반환함 
 	* @return 생성된 슬롯 정보 구조체 -> RefreshAllSlots함수에서 반복문으로 배열 생성

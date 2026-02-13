@@ -151,64 +151,18 @@ void UFamiliarSummonComponent::ConsumeSpecificSlot(int32 SlotIndex)
 	}
 }
 
-//	FSummonSlotInfo& SlotInfo = CurrentSlots[SlotIndex];
-//
-//	//슬롯 비우기
-//	SlotInfo.bIsSoldOut = true;
-//	SlotInfo.FamiliarID = FName("None"); // 혹은 비어있음 표시
-//	//SlotInfo.Icon = nullptr;	//아직 없음
-//
-//	// UI 갱신 (비어있는 상태 보여주기)
-//	OnSummonSlotsUpdated.Broadcast(CurrentSlots);
-//
-//	//  쿨타임 타이머 시작 (RefillTimer)
-//	if (GetWorld())
-//	{
-//		FTimerDelegate TimerDel;
-//		// 어떤 슬롯(SlotIndex)을 채울지 파라미터로 전달
-//		TimerDel.BindUFunction(this, FName("RefillSpecificSlot"), SlotIndex);
-//
-//		// 기존 타이머가 있다면 초기화 후 재설정
-//		GetWorld()->GetTimerManager().SetTimer(RefillTimers[SlotIndex], TimerDel, RefillCooldownTime, false);
-//	}
-//
-//	UE_LOG(LogTemp, Log, TEXT("✅ 소환 성공! 슬롯[%d] 쿨타임 시작 (%.1f초)"), SlotIndex, RefillCooldownTime);
-//
-//}
-
-//슬롯 채우기 
-void UFamiliarSummonComponent::RefillSpecificSlot(int32 SlotIndex)
-{
-	//if (!CurrentSlots.IsValidIndex(SlotIndex)) return;
-
-	//UParadiseGameInstance* GI = Cast<UParadiseGameInstance>(GetWorld()->GetGameInstance());
-	//if (!GI || !GI->FamiliarStatsDataTable || !GI->FamiliarAssetsDataTable) return;
-
-	//// 1. 새로운 랜덤 유닛 생성
-	//CurrentSlots[SlotIndex] = GenerateRandomSlot(GI->FamiliarStatsDataTable, GI->FamiliarAssetsDataTable);
-
-	//// 2. UI 갱신 알림 (새로 채워진 모습 보여주기)
-	//OnSummonSlotsUpdated.Broadcast(CurrentSlots);
-
-	//UE_LOG(LogTemp, Log, TEXT("🔄 슬롯[%d] 리필 완료!"), SlotIndex);
-
-	//// 방금 채워진 슬롯의 정보를 가져옴
-	//const FSummonSlotInfo& NewSlot = CurrentSlots[SlotIndex];
-
-	//// 로그 출력 (예: 🔄 [리필 완료] 슬롯[1] -> 유닛: Wolf_01 | 가격: 50)
-	//UE_LOG(LogTemp, Warning, TEXT("🔄 [리필 완료] 슬롯[%d] -> 유닛: %s | 가격: %d"),
-	//	SlotIndex + 1, *NewSlot.FamiliarID.ToString(), NewSlot.FamiliarCost);
-}
-
 //슬롯을 랜덤으로 for문으로 5번 돌림
 FSummonSlotInfo UFamiliarSummonComponent::GenerateRandomSlot(UDataTable* StatsTable, UDataTable* AssetsTable)
 {
+	//빈 슬롯 구조체 생성
 	FSummonSlotInfo NewSlot;
 	TArray<FName> RowNames = StatsTable->GetRowNames();
 
+	//0부터 (배열크기-1) 사이의 랜덤 인덱스 생성
 	int32 RandomIndex = FMath::RandRange(0, RowNames.Num() - 1);
 	FName SelectedID = RowNames[RandomIndex];
 
+	//데이터테이블
 	FFamiliarStats* Stats = StatsTable->FindRow<FFamiliarStats>(SelectedID, TEXT(""));
 	FFamiliarAssets* Assets = AssetsTable->FindRow<FFamiliarAssets>(SelectedID, TEXT(""));
 
@@ -217,7 +171,6 @@ FSummonSlotInfo UFamiliarSummonComponent::GenerateRandomSlot(UDataTable* StatsTa
 		NewSlot.FamiliarID = SelectedID;
 		NewSlot.FamiliarCost = Stats->SummonCost;
 		//NewSlot.UnitIcon = Stats->UnitIcon; // 필요시
-		NewSlot.bIsSoldOut = false;
 	}
 	return NewSlot;
 }
