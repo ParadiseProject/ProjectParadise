@@ -75,7 +75,6 @@ void UActionControlPanel::OnAttackButtonClicked()
 {
 	if (CachedPlayer.IsValid())
 	{
-		// 어떤 버튼이든 이 함수 하나로 해결!
 		CachedPlayer->SendAbilityInputToASC(EInputID::Attack, true);
 	}
 }
@@ -84,7 +83,6 @@ void UActionControlPanel::ProcessAbilityInput(EInputID InputID)
 {
 	if (CachedPlayer.IsValid())
 	{
-		// 어떤 버튼이든 이 함수 하나로 해결!
 		CachedPlayer->SendAbilityInputToASC(InputID, true);
 	}
 }

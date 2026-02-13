@@ -137,31 +137,57 @@ void USummonControlPanel::HandleCostUpdate(float CurrentCost, float MaxCost)
 }
 void USummonControlPanel::HandleSummonSlotsUpdate(const TArray<FSummonSlotInfo>& Slots)
 {
-	// 1. 모든 슬롯 데이터 갱신 (Shift 효과)
-	// 배열 전체를 덮어쓰므로, 3번이 2번으로 가면 2번 슬롯 이미지가 3번 유닛으로 바뀜 -> 이동한 것처럼 보임
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+
+	// 1. 시간표 갱신
+	if (LastClickedSlotIndex >= 0 && SlotRevealTimes.IsValidIndex(LastClickedSlotIndex))
+	{
+		SlotRevealTimes.RemoveAt(LastClickedSlotIndex);
+
+		if (NextAvailableRefillTime < CurrentTime)
+		{
+			NextAvailableRefillTime = CurrentTime;
+		}
+		NextAvailableRefillTime += SlotRefillDelay;
+		SlotRevealTimes.Add(NextAvailableRefillTime);
+
+		// ★ 최적화: O(N²) → O(N) 개선
+		int32 ExcessCount = SlotRevealTimes.Num() - Slots.Num();
+		if (ExcessCount > 0)
+		{
+			SlotRevealTimes.RemoveAt(0, ExcessCount);  // 한 번에 여러 개 제거
+		}
+	}
+
+	// 2. UI 갱신 (중복 제거)
 	for (int32 i = 0; i < SummonSlots.Num(); ++i)
 	{
-		if (SummonSlots.IsValidIndex(i) && SummonSlots[i] && Slots.IsValidIndex(i))
+		if (!SummonSlots.IsValidIndex(i) || !SummonSlots[i] || !Slots.IsValidIndex(i))
+			continue;
+
+		// ★ 중복 로딩 제거
+		UTexture2D* LoadedIcon = nullptr;
+		if (!Slots[i].FamiliarIcon.IsNull())
 		{
-			// 동기 로드 (아이콘은 가벼운 에셋이라 가정)
-			UTexture2D* LoadedIcon = Slots[i].FamiliarIcon.LoadSynchronous();
-			int32 Cost = Slots[i].FamiliarCost;
+			LoadedIcon = Slots[i].FamiliarIcon.LoadSynchronous();
+		}
+		int32 Cost = Slots[i].FamiliarCost;
 
-			// 데이터가 있으면 가져오고, 없어도 그냥 0/null로 밀어넣음
-			if (Slots.IsValidIndex(i))
-			{
-				LoadedIcon = Slots[i].FamiliarIcon.LoadSynchronous();
-				Cost = Slots[i].FamiliarCost;
-			}
-
+		// 시간표 체크 후 UI 업데이트
+		if (SlotRevealTimes.IsValidIndex(i) && CurrentTime < SlotRevealTimes[i])
+		{
+			float TimeLeft = SlotRevealTimes[i] - CurrentTime;
+			SummonSlots[i]->ScheduleReveal(LoadedIcon, Cost, TimeLeft);
+		}
+		else
+		{
 			SummonSlots[i]->UpdateSlotInfo(LoadedIcon, Cost);
 		}
 	}
-	// 2. [애니메이션 재생 분기 처리]
+
+	// 3. 애니메이션
 	if (LastClickedSlotIndex >= 0)
 	{
-		// A. 내가 누른 슬롯부터 마지막 직전 슬롯까지는 "당겨오기(Shift)" 애니메이션
-		// 예: 2번을 눌렀으면 2, 3번 위젯이 당겨지는 애니메이션을 재생함
 		for (int32 i = LastClickedSlotIndex; i < SummonSlots.Num() - 1; ++i)
 		{
 			if (SummonSlots.IsValidIndex(i) && SummonSlots[i])
@@ -169,15 +195,6 @@ void USummonControlPanel::HandleSummonSlotsUpdate(const TArray<FSummonSlotInfo>&
 				SummonSlots[i]->PlayShiftAnimation();
 			}
 		}
-
-		// B. 맨 마지막 슬롯은 "새로 등장(Intro)" 애니메이션
-		int32 LastIndex = SummonSlots.Num() - 1;
-		if (SummonSlots.IsValidIndex(LastIndex) && SummonSlots[LastIndex])
-		{
-			SummonSlots[LastIndex]->PlayIntroAnimation();
-		}
-
-		// 애니메이션 처리 끝났으므로 인덱스 초기화
 		LastClickedSlotIndex = -1;
 	}
 }
@@ -191,35 +208,48 @@ void USummonControlPanel::HandleSlotClickRequest(int32 SlotIndex)
 		LastClickedSlotIndex = SlotIndex;
 		bool bSuccess = CachedSummonComponent->RequestPurchase(SlotIndex);
 
-		if (bSuccess)
-		{
-			// (추가) 구매 성공 시 시간표 배열도 왼쪽으로 당기고, 새 슬롯의 등장 시간을 추가
-			if (SlotRevealTimes.IsValidIndex(SlotIndex))
-			{
-				SlotRevealTimes.RemoveAt(SlotIndex);
-
-				float CurrentTime = GetWorld()->GetTimeSeconds();
-
-				// 1. 만약 대기열이 비어있다면(앞에 기다리는 놈이 없다면), 기준 시간은 '지금'
-				// 2. 만약 앞에 기다리는 놈이 있다면, 기준 시간은 '앞사람이 끝나는 시간'
-				if (NextAvailableRefillTime < CurrentTime)
-				{
-					NextAvailableRefillTime = CurrentTime;
-				}
-
-				// 기준 시간에 1초(SlotRefillDelay)를 더해서 내 번호표로 만듦
-				NextAvailableRefillTime += SlotRefillDelay;
-
-				// 배열 맨 끝(빈자리)에 내 번호표를 등록
-				SlotRevealTimes.Add(NextAvailableRefillTime);
-			}
-		}
-		else
+		if (!bSuccess)
 		{
 			LastClickedSlotIndex = -1;
 			UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 구매 실패: %d"), SlotIndex);
 		}
+		// ★ SlotRevealTimes 조작 코드 전부 삭제 (146-163줄 제거)
 	}
+
+	//if (CachedSummonComponent.IsValid())
+	//{
+	//	LastClickedSlotIndex = SlotIndex;
+	//	bool bSuccess = CachedSummonComponent->RequestPurchase(SlotIndex);
+
+	//	if (bSuccess)
+	//	{
+	//		// (추가) 구매 성공 시 시간표 배열도 왼쪽으로 당기고, 새 슬롯의 등장 시간을 추가
+	//		if (SlotRevealTimes.IsValidIndex(SlotIndex))
+	//		{
+	//			SlotRevealTimes.RemoveAt(SlotIndex);
+
+	//			float CurrentTime = GetWorld()->GetTimeSeconds();
+
+	//			// 1. 만약 대기열이 비어있다면(앞에 기다리는 놈이 없다면), 기준 시간은 '지금'
+	//			// 2. 만약 앞에 기다리는 놈이 있다면, 기준 시간은 '앞사람이 끝나는 시간'
+	//			if (NextAvailableRefillTime < CurrentTime)
+	//			{
+	//				NextAvailableRefillTime = CurrentTime;
+	//			}
+
+	//			// 기준 시간에 1초(SlotRefillDelay)를 더해서 내 번호표로 만듦
+	//			NextAvailableRefillTime += SlotRefillDelay;
+
+	//			// 배열 맨 끝(빈자리)에 내 번호표를 등록
+	//			SlotRevealTimes.Add(NextAvailableRefillTime);
+	//		}
+	//	}
+	//	else
+	//	{
+	//		LastClickedSlotIndex = -1;
+	//		UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 구매 실패: %d"), SlotIndex);
+	//	}
+	//}
 }
 #pragma endregion 입력 처리
 	
