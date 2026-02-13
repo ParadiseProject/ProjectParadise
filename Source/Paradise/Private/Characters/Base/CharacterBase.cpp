@@ -117,6 +117,11 @@ bool ACharacterBase::IsHostile(ACharacterBase* Target) const
 {
 	if (!Target) return false;
 
+	// 🚨 [디버그용 로그] 누구와 누구의 태그를 비교하는지 확인
+	UE_LOG(LogTemp, Warning, TEXT("⚔️ [IsHostile 판정] 공격자(%s) 태그: %s  VS  피격자(%s) 태그: %s"),
+		*GetName(), *this->FactionTag.ToString(),
+		*Target->GetName(), *Target->FactionTag.ToString());
+
 	// 태그가 완전히 똑같으면 무조건 아군
 	if (this->FactionTag == Target->FactionTag) return false;
 

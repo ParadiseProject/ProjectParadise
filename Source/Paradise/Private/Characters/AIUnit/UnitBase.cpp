@@ -79,7 +79,7 @@ void AUnitBase::InitializeUnit(FAIUnitStats* InStats, FAIUnitAssets* InAssets)
 
 	if (InStats)
 	{
-		// ✅ [Status] AttributeSet 초기화 (HP, MP, 공격력 등)
+		// AttributeSet 초기화 (HP, MP, 공격력 등)
 		if (UBaseAttributeSet* BaseSet = Cast<UBaseAttributeSet>(AttributeSet))
 		{
 			BaseSet->InitMaxHealth(InStats->BaseMaxHP);
@@ -89,8 +89,9 @@ void AUnitBase::InitializeUnit(FAIUnitStats* InStats, FAIUnitAssets* InAssets)
 			// ... 나머지 스탯 초기화
 		}
 
-		// ✅ [Tag] 소속 태그 적용 (데이터 테이블 -> 멤버 변수)
+		// 소속 태그 적용
 		this->FactionTag = InStats->FactionTag;
+		UE_LOG(LogTemp, Warning, TEXT("✅ [%s] FactionTag 할당 완료: %s"), *GetName(), *this->FactionTag.ToString());
 
 		// ⭐ 중요: GAS 시스템에도 태그 등록 (타겟팅/필터링용)
 		if (AbilitySystemComponent && FactionTag.IsValid())
