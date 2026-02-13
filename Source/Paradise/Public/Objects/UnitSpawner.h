@@ -47,12 +47,6 @@ protected:
 	TSubclassOf<class AUnitBase> UnitClass;
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
-	class UDataTable* StatsDataTable;
-
-	UPROPERTY(EditAnywhere, Category = "Spawning")
-	class UDataTable* AssetsDataTable;
-
-	UPROPERTY(EditAnywhere, Category = "Spawning")
 	FVector SpawnExtent = FVector(500.f, 500.f, 0.f);
 
 	/** ⭐ 이제 UHT가 FWaveConfig를 정상적으로 인식합니다 */
