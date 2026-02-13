@@ -33,5 +33,5 @@ void UBTService_CheckTargetDeath::TickNode(UBehaviorTreeComponent& OwnerComp, ui
 			BB->ClearValue(TargetActorKey.SelectedKeyName);
 			UE_LOG(LogTemp, Log, TEXT("Target is Dead. Clearing Blackboard Key."));
 		}
-	}
+	} 
 }
