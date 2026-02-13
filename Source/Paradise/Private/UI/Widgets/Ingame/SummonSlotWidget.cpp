@@ -30,6 +30,11 @@ void USummonSlotWidget::NativeConstruct()
 void USummonSlotWidget::NativeDestruct()
 {
 	//StopCooldownTimer();
+	if (Btn_SummonAction)
+	{
+		// 델리게이트 해제는 안전하게
+		Btn_SummonAction->OnClicked().RemoveAll(this);
+	}
 	Super::NativeDestruct();
 }
 #pragma endregion 생명주기
@@ -40,33 +45,42 @@ void USummonSlotWidget::InitSlot(int32 InIndex)
 	SlotIndex = InIndex;
 }
 
-void USummonSlotWidget::UpdateSummonData(UTexture2D* IconTexture, float InMaxCooldown, int32 InCost)
+void USummonSlotWidget::UpdateSlotInfo(UTexture2D* IconTexture, int32 InCost)
 {
-	/*StopCooldownTimer();
-	MaxCooldownTime = InMaxCooldown;*/
-
+	// 1. 아이콘 처리
 	if (Img_SummonIcon)
 	{
 		if (IconTexture)
 		{
 			Img_SummonIcon->SetBrushFromTexture(IconTexture);
-			Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible); // 클릭 통과
-			
+			Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
+
 			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(true);
 		}
-		//else
-		//{
-		//	Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
-		//	// 데이터가 없으면 비활성화 (빈 슬롯)
-		//	if(Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
-		//}
+		else
+		{
+			// 아이콘이 없으면 숨김 (혹은 빈 슬롯 이미지)
+			Img_SummonIcon->SetVisibility(ESlateVisibility::Hidden);
+
+			if (Btn_SummonAction) Btn_SummonAction->SetIsEnabled(false);
+		}
 	}
+
+	// 2. 텍스트 처리
 	if (Text_CostValue)
 	{
 		Text_CostValue->SetText(FText::AsNumber(InCost));
 		Text_CostValue->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
+}
 
+void USummonSlotWidget::PlayIntroAnimation()
+{
+	if (Anim_Intro)
+	{
+		// 처음부터 재생 (Forward), 1배속, 루프 없음
+		PlayAnimation(Anim_Intro, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f);
+	}
 }
 
 //void USummonSlotWidget::RefreshCooldown(float CurrentTime, float MaxTime)

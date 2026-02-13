@@ -134,27 +134,27 @@ void USummonControlPanel::HandleCostUpdate(float CurrentCost, float MaxCost)
 }
 void USummonControlPanel::HandleSummonSlotsUpdate(const TArray<FSummonSlotInfo>& Slots)
 {
-	// Data-Driven: 컴포넌트의 데이터 변경사항을 UI에 반영
-	for (int32 i = 0; i < Slots.Num(); ++i)
+	// 1. 모든 슬롯 데이터 갱신 (Shift 효과)
+	// 배열 전체를 덮어쓰므로, 3번이 2번으로 가면 2번 슬롯 이미지가 3번 유닛으로 바뀜 -> 이동한 것처럼 보임
+	for (int32 i = 0; i < SummonSlots.Num(); ++i)
 	{
-		if (SummonSlots.IsValidIndex(i) && SummonSlots[i])
+		if (SummonSlots.IsValidIndex(i) && SummonSlots[i] && Slots.IsValidIndex(i))
 		{
-			// FSummonSlotInfo에 아이콘이 TSoftObjectPtr이라고 가정
+			// 동기 로드 (아이콘은 가벼운 에셋이라 가정)
 			UTexture2D* LoadedIcon = Slots[i].FamiliarIcon.LoadSynchronous();
+			int32 Cost = Slots[i].FamiliarCost;
 
-			// SoldOut 상태라면 아이콘을 null로 처리하거나 별도 로직 적용
-			if (Slots[i].bIsSoldOut)
-			{
-				SummonSlots[i]->UpdateSummonData(nullptr, 0.0f, 0);
-
-				//SummonSlots[i]->RefreshCooldown(3.0f, 3.0f);
-			}
-			else
-			{
-				// TODO: 쿨타임 정보는 별도로 관리된다면 인자 수정 필요. 현재는 0.0f로 설정.
-				SummonSlots[i]->UpdateSummonData(LoadedIcon, 0.0f, Slots[i].FamiliarCost);
-			}
+			SummonSlots[i]->UpdateSlotInfo(LoadedIcon, Cost);
 		}
+	}
+
+	// 2. ★ [핵심] 마지막 슬롯 애니메이션 (Append 효과)
+	// Shift & Append 로직상 마지막 슬롯(Index 4)은 항상 '새로 들어온 유닛'입니다.
+	int32 LastIndex = SummonSlots.Num() - 1;
+	if (SummonSlots.IsValidIndex(LastIndex) && SummonSlots[LastIndex])
+	{
+		// 마지막 슬롯만 튀어나오게 하여 "추가됨"을 강조
+		SummonSlots[LastIndex]->PlayIntroAnimation();
 	}
 }
 #pragma endregion 시스템 초기화
@@ -164,43 +164,35 @@ void USummonControlPanel::HandleSlotClickRequest(int32 SlotIndex)
 {
 	if (CachedSummonComponent.IsValid())
 	{
-		// 컴포넌트 내부에서 CostManageComponent를 통해 코스트를 차감함
+		// MVC: View(Panel) -> Controller(Component) 요청
+		// 성공 여부에 따른 UI 갱신은 Delegate(HandleSummonSlotsUpdate)가 처리
 		bool bSuccess = CachedSummonComponent->RequestPurchase(SlotIndex);
 
-		if (bSuccess)
+		if (!bSuccess)
 		{
-			UE_LOG(LogTemp, Log, TEXT("[SummonPanel] 슬롯 %d 구매 요청 성공"), SlotIndex);
-			// 성공 시 UI 업데이트는 HandleSummonSlotsUpdate 델리게이트를 통해 자동으로 처리됨 (Data-Driven)
+			UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 구매 실패: %d"), SlotIndex);
+			// 여기에 실패 피드백 (예: 흔들림 애니메이션) 추가 가능
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[SummonPanel] 슬롯 %d 구매 요청 실패 (코스트 부족 등)"), SlotIndex);
-			// 실패 피드백 (예: 흔들림 애니메이션 등) 추가 가능
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[SummonPanel] SummonComponent가 연결되지 않았습니다."));
 	}
 }
 #pragma endregion 입력 처리
 
 #pragma region 외부 인터페이스 구현
-void USummonControlPanel::SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown, int32 InCost)
+void USummonControlPanel::SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, int32 InCost)
 {
 	if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
 	{
-		SummonSlots[SlotIndex]->UpdateSummonData(Icon, MaxCooldown, InCost);
+		SummonSlots[SlotIndex]->UpdateSlotInfo(Icon, InCost);
 	}
 }
 
-void USummonControlPanel::UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime)
-{
-	//if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
-	//{
-	//	//SummonSlots[SlotIndex]->RefreshCooldown(CurrentTime, MaxTime);
-	//}
-}
+//void USummonControlPanel::UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime)
+//{
+//	//if (SummonSlots.IsValidIndex(SlotIndex) && SummonSlots[SlotIndex])
+//	//{
+//	//	//SummonSlots[SlotIndex]->RefreshCooldown(CurrentTime, MaxTime);
+//	//}
+//}
 void USummonControlPanel::UpdateCostDisplay(float CurrentCost, float MaxCost)
 {
 	if (CostWidget)

@@ -18,7 +18,7 @@ struct FSummonSlotInfo;
 /**
  * @class USummonControlPanel
  * @brief 하단 중앙에 배치되는 소환수 슬롯들의 컨테이너입니다.
- * @details 배열을 사용해 슬롯을 관리하며, 확장성을 고려했습니다.
+ * @details Component(Model)의 데이터를 감지하여 SlotWidget(View)을 갱신합니다.
  */
 UCLASS()
 class PARADISE_API USummonControlPanel : public UUserWidget
@@ -61,17 +61,16 @@ public:
 	 * @brief 특정 인덱스의 소환수 슬롯 데이터를 갱신합니다.
 	 * @param SlotIndex 슬롯 번호 (0 ~ N)
 	 * @param Icon 아이콘 텍스처
-	 * @param MaxCooldown 최대 쿨타임
 	 * @param InCost 소환 비용
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, float MaxCooldown, int32 InCost);
+	void SetSummonSlotData(int32 SlotIndex, UTexture2D* Icon, int32 InCost);
 
-	/**
-	 * @brief 특정 슬롯의 쿨타임 상태를 업데이트합니다.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
-	void UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime);
+	///**
+	// * @brief 특정 슬롯의 쿨타임 상태를 업데이트합니다.
+	// */
+	//UFUNCTION(BlueprintCallable, Category = "Paradise|UI")
+	//void UpdateSummonCooldown(int32 SlotIndex, float CurrentTime, float MaxTime);
 
 	/** 
 	 * @brief 현재 코스트 상태를 패널 내의 코스트 위젯에 전달합니다.
