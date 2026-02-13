@@ -17,6 +17,11 @@ UEquipmentComponent::UEquipmentComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UEquipmentComponent::TestEquip(APlayerBase* Char, EEquipmentSlot Slot, FName ItemID)
+{
+	SetEquipmentMesh(Char, Slot, ItemID);
+}
+
 
 void UEquipmentComponent::TestEquippedItem(EEquipmentSlot Slot, FName ItemID)
 {

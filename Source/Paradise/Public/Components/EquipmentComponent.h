@@ -32,6 +32,8 @@ public:
 	// Sets default values for this component's properties
 	UEquipmentComponent();
 
+	void TestEquip(APlayerBase* Char, EEquipmentSlot Slot, FName ItemID);
+
 	/**
 	 * @brief 인게임 스폰 시, 인벤토리 시스템의 데이터를 받아와 외형을 초기화합니다.
 	 * @details 캐릭터 스폰 시 호출되며, 내부적으로 InventorySystem을 조회하여 장비 캐시를 갱신하고 메쉬를 생성합니다.

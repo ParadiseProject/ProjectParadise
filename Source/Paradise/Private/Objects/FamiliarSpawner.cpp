@@ -52,7 +52,10 @@ void AFamiliarSpawner::SpawnFamiliarByID(FName UnitID)
 
 				if (AIC)
 				{
-					AIC->Possess(NewUnit);
+					if (AIC->GetPawn() != NewUnit)
+					{
+						AIC->Possess(NewUnit);
+					}
 
 					if (!AssetData->BehaviorTree.IsNull())
 					{

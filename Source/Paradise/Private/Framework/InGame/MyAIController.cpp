@@ -51,31 +51,48 @@ void AMyAIController::OnPossess(APawn* InPawn)
 
         if (SelfUnit && GI)
         {
-            // 1. 사거리 데이터 로드
+            // 1. 사거리 데이터 로드 (기존 동일)
             FEnemyStats* MyStats = GI->GetDataTableRow<FEnemyStats>(GI->EnemyStatsDataTable, SelfUnit->GetUnitID());
             if (MyStats)
             {
                 Blackboard->SetValueAsFloat(TEXT("TargetAttackRange"), MyStats->AttackRange);
             }
 
-            // 2. 적대적인 기지만 찾아내기
+            // 2. 적대적인 기지 찾기 (로그 강화)
             TArray<AActor*> FoundBases;
             UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHomeBase::StaticClass(), FoundBases);
+
+            UE_LOG(LogTemp, Log, TEXT("🔍 [%s] 주변 기지 검색 시작 (총 %d개 발견)"), *SelfUnit->GetName(), FoundBases.Num());
 
             for (AActor* Actor : FoundBases)
             {
                 AHomeBase* HomeBase = Cast<AHomeBase>(Actor);
                 if (HomeBase)
                 {
-                    if (SelfUnit->IsEnemy(HomeBase))
+                    // [디버그] 태그 및 적대 관계 확인 로그
+                    // GetFactionTag() 함수가 없다면 FactionTag 변수를 직접 사용하세요.
+                    FGameplayTag MyTag = SelfUnit->GetFactionTag();
+                    FGameplayTag BaseTag = HomeBase->GetFactionTag();
+                    bool bIsEnemyResult = SelfUnit->IsEnemy(HomeBase);
+
+                    UE_LOG(LogTemp, Warning, TEXT("   👉 [Check] 나: %s(%s) vs 기지: %s(%s) | 적대판정: %s"),
+                        *SelfUnit->GetName(),
+                        *MyTag.ToString(),
+                        *HomeBase->GetName(),
+                        *BaseTag.ToString(),
+                        bIsEnemyResult ? TEXT("TRUE (공격대상)") : TEXT("FALSE (아군/중립)")
+                    );
+
+                    if (bIsEnemyResult)
                     {
                         Blackboard->SetValueAsObject(TEXT("HomeBaseActor"), HomeBase);
-                        UE_LOG(LogTemp, Log, TEXT("🚀 [%s] Target Base Found: %s"), *SelfUnit->GetName(), *HomeBase->GetName());
-                        break;
+                        UE_LOG(LogTemp, Error, TEXT("🚀 [%s] 타겟 확정! 공격하러 갑니다 -> %s"), *SelfUnit->GetName(), *HomeBase->GetName());
+                        break; // 타겟을 찾았으니 루프 종료
                     }
                 }
             }
         }
+
         RunBehaviorTree(BTAsset);
     }
 }
