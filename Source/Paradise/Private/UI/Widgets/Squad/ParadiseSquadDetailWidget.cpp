@@ -45,8 +45,18 @@ void UParadiseSquadDetailWidget::ShowInfo(const FSquadItemUIData& InData, bool b
 	// 2. 설명/레벨
 	if (Text_Desc)
 	{
-		FString LevelText = (InData.Level > 0) ? FString::Printf(TEXT("Lv.%d"), InData.Level) : TEXT("");
-		Text_Desc->SetText(FText::FromString(LevelText));
+		if (bIsUnit)
+		{
+			// 유닛 슬롯이면 레벨을 무조건 숨김
+			Text_Desc->SetText(FText::GetEmpty());
+		}
+		else
+		{
+			// 캐릭터 슬롯이면 레벨 표시 (레벨이 0이하라도 강제로 1로 표시하여 0번 슬롯 버그 해결)
+			int32 DisplayLevel = FMath::Max(1, InData.Level);
+			FString LevelText = FString::Printf(TEXT("Lv.%d"), DisplayLevel);
+			Text_Desc->SetText(FText::FromString(LevelText));
+		}
 	}
 
 	if (HBox_ButtonRoot)
@@ -122,6 +132,10 @@ void UParadiseSquadDetailWidget::ClearInfo()
 	FSquadItemUIData EmptyData;
 	// 빈 정보 보여주고, 문맥 false(버튼 숨김), 유닛 아님 처리
 	ShowInfo(EmptyData, false, false);
+
+	if (Text_Name) Text_Name->SetText(FText::GetEmpty());
+	if (Text_Desc) Text_Desc->SetText(FText::GetEmpty());
+	if (HBox_ButtonRoot) HBox_ButtonRoot->SetVisibility(ESlateVisibility::Collapsed);
 }
 #pragma endregion 공개 함수
 

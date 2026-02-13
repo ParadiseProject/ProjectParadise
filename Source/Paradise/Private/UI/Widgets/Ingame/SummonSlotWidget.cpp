@@ -60,7 +60,7 @@ void USummonSlotWidget::UpdateSlotInfo(UTexture2D* IconTexture, int32 InCost)
 			Img_SummonIcon->SetBrushFromTexture(IconTexture);
 		}
 
-		// ★ 핵심: 조건 없이 무조건 보이게 설정 (Hidden 처리 삭제함)
+		// 조건 없이 무조건 보이게 설정 (Hidden 처리 삭제함)
 		Img_SummonIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 
