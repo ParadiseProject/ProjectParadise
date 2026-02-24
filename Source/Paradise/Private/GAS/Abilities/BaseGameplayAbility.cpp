@@ -90,7 +90,7 @@ UAbilityTask_PlayMontageAndWait* UBaseGameplayAbility::PlayMontageAndWaitCallbac
 {
 	if (!MontageToPlay) return nullptr;
 
-	// 몽타주 재생 태스크 생성
+	// 몽타주 재생 태스크 생성 
 	UAbilityTask_PlayMontageAndWait* MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 		this, TaskInstanceName, MontageToPlay, 1.0f, NAME_None, false
 	);
