@@ -238,8 +238,4 @@ public:
 	FOnSquadBackRequested OnBackRequested;
 #pragma endregion 델리게이트
 
-private:
-	UPROPERTY()
-	bool bAutoSaveOnBack = true;
-
 };
