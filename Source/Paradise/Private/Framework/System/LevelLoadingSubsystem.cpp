@@ -167,7 +167,7 @@ void ULevelLoadingSubsystem::BeginAsyncLoading()
 	UWorld* World = GetWorld();
 	if (!World || !LoadingWidgetClass) return;
 
-	// ✅ 이전 타이머 명시적 정리 후 초기화
+	// 이전 타이머 명시적 정리 후 초기화
 	World->GetTimerManager().ClearTimer(ProgressTimerHandle);
 	TotalElapsedTime = 0.0f;
 
@@ -179,10 +179,10 @@ void ULevelLoadingSubsystem::BeginAsyncLoading()
 	{
 		CurrentLoadingWidget->AddToViewport(9999);
 
-		// ✅ Progress=1 유지 → 로딩 컨텐츠 완전히 표시
+		// Progress=1 유지 → 로딩 컨텐츠 완전히 표시
 		CurrentLoadingWidget->InitAsCovered();
 
-		// ✅ 배경/텍스트 세팅
+		// 배경/텍스트 세팅
 		CurrentLoadingWidget->InitLoadingImage(OriginLevelName, TargetLevelName, PendingLoadingImage);
 		CurrentLoadingWidget->SetLoadingText(PendingStageName, PendingStageDesc);
 	}

@@ -36,7 +36,7 @@ void UBTService_CheckAttackRange::TickNode(UBehaviorTreeComponent& OwnerComp, ui
 
 	// 1. 사거리 값 꺼내기 및 액션 이름 설정
 	float AttackRange = 0.0f;
-	FString ActionName = TEXT("평타"); // 로그 출력을 위한 이름
+	//FString ActionName = TEXT("평타"); // 로그 출력을 위한 이름
 
 	if (ActionIndex == -1)
 	{
@@ -45,7 +45,7 @@ void UBTService_CheckAttackRange::TickNode(UBehaviorTreeComponent& OwnerComp, ui
 	else
 	{
 		AttackRange = BossChar->GetSkillActionData(ActionIndex).Stats.AttackRange;
-		ActionName = FString::Printf(TEXT("%d번 스킬"), ActionIndex);
+		//ActionName = FString::Printf(TEXT("%d번 스킬"), ActionIndex);
 	}
 
 	//콜라이더 반경(Radius)

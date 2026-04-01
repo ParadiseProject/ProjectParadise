@@ -128,9 +128,9 @@ FGachaResult UGachaSubsystem::PickItemFromRarity(EItemRarity TargetRarity) const
 
 	if (FilteredPool.IsEmpty())
 	{
-		UE_LOG(LogTemp, Error,
+		/*UE_LOG(LogTemp, Error,
 			TEXT("❌ [GachaSubsystem] 배너 타입[%d]에 맞는 항목이 풀에 없습니다. 데이터 테이블을 확인하세요."),
-			static_cast<int32>(CurrentBannerType));
+			static_cast<int32>(CurrentBannerType));*/
 		Result.PulledItemID = NAME_None;
 		return Result;
 	}

@@ -94,8 +94,8 @@ void UObjectPoolSubsystem::PreSpawnPool(UClass* Class, UWorld* World, int32 Coun
 		}
 	}
 
-	UE_LOG(LogParadiseObjectPool, Log, TEXT("[ObjectPool] %s 클래스 %d개 사전 스폰(Pre-spawn) 완료!"), *Class->GetName(), Count);
-}//
+	//UE_LOG(LogParadiseObjectPool, Log, TEXT("[ObjectPool] %s 클래스 %d개 사전 스폰(Pre-spawn) 완료!"), *Class->GetName(), Count);
+}
 #pragma endregion 풀 초기화 구현
 
 void UObjectPoolSubsystem::ReturnToPool(AActor* InActor)

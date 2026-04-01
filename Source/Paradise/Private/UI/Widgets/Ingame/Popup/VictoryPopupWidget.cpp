@@ -173,7 +173,7 @@ void UVictoryPopupWidget::ExecuteNextStage()
 	// 유효성 검사 (맵 에셋이 반드시 있어야 함)
 	if (!NextAssets || NextAssets->MapAsset.IsNull())
 	{
-		UE_LOG(LogTemp, Error, TEXT("[VictoryPopup] 다음 스테이지(%s)의 MapAsset 정보를 찾을 수 없습니다!"), *CachedNextStageID.ToString());
+		//UE_LOG(LogTemp, Error, TEXT("[VictoryPopup] 다음 스테이지(%s)의 MapAsset 정보를 찾을 수 없습니다!"), *CachedNextStageID.ToString());
 		return;
 	}
 
@@ -183,7 +183,7 @@ void UVictoryPopupWidget::ExecuteNextStage()
 	if (UStageSubsystem* StageSubsystem = GI->GetSubsystem<UStageSubsystem>())
 	{
 		StageSubsystem->SetSelectedStageID(CachedNextStageID);
-		UE_LOG(LogTemp, Log, TEXT("✅ [VictoryPopup] StageSubsystem ID 업데이트 완료: %s"), *CachedNextStageID.ToString());
+		//UE_LOG(LogTemp, Log, TEXT("✅ [VictoryPopup] StageSubsystem ID 업데이트 완료: %s"), *CachedNextStageID.ToString());
 	}
 
 	// 4. 로딩 서브시스템 호출

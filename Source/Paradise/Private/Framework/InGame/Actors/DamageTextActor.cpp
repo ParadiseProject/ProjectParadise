@@ -115,7 +115,7 @@ void ADamageTextActor::ReturnSelfToPool()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[DamageTextActor] ObjectPoolSubsystem을 찾을 수 없어 직접 파괴합니다."));
+			//UE_LOG(LogTemp, Warning, TEXT("[DamageTextActor] ObjectPoolSubsystem을 찾을 수 없어 직접 파괴합니다."));
 			Destroy();
 		}
 	}

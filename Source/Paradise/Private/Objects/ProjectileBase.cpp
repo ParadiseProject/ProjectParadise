@@ -156,7 +156,7 @@ void AProjectileBase::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, 
 	if (HitActors.Contains(OtherActor)) return;
 
 	// 🌟 [여기로 로그 이동!] 여기까지 살아남았다면 이건 진짜 적(플레이어)입니다!
-	UE_LOG(LogTemp, Warning, TEXT("💥 [진짜 명중!] 투사체가 적(%s)을 맞췄습니다!"), *OtherActor->GetName());
+	//UE_LOG(LogTemp, Warning, TEXT("💥 [진짜 명중!] 투사체가 적(%s)을 맞췄습니다!"), *OtherActor->GetName());
 
 	// 타격 명단 등록 및 데미지 적용
 	HitActors.Add(OtherActor);

@@ -799,7 +799,7 @@ void UParadiseSquadMainWidget::HandleSellAction()
 	//인벤토리에서 선택해둔 아이템(고유 식별자)이 있는지 확인
 	if (!PendingSelection.InstanceUID.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("⚠️ [SquadMain] 판매할 아이템이 선택되지 않았습니다."));
+		//UE_LOG(LogTemp, Warning, TEXT("⚠️ [SquadMain] 판매할 아이템이 선택되지 않았습니다."));
 		return;
 	}
 

@@ -85,8 +85,8 @@ void UUltimateEffectComponent::PlayUltimateEffect(float Duration)
 {
 	if (!CachedPPVolume.IsValid())
 	{
-		UE_LOG(LogTemp, Error,
-			TEXT("❌ [UltimateEffect] CachedPPVolume 이 없습니다! 레벨 배치 및 태그를 확인하세요."));
+		/*UE_LOG(LogTemp, Error,
+			TEXT("❌ [UltimateEffect] CachedPPVolume 이 없습니다! 레벨 배치 및 태그를 확인하세요."));*/
 		return;
 	}
 
@@ -95,8 +95,8 @@ void UUltimateEffectComponent::PlayUltimateEffect(float Duration)
 	bIsPlaying = true;
 	SetComponentTickEnabled(true);
 
-	UE_LOG(LogTemp, Log,
-		TEXT("🌟 [UltimateEffect] 궁극기 화면 연출 시작! (지속: %.1f초)"), TotalDuration);
+	/*UE_LOG(LogTemp, Log,
+		TEXT("🌟 [UltimateEffect] 궁극기 화면 연출 시작! (지속: %.1f초)"), TotalDuration);*/
 }
 
 void UUltimateEffectComponent::StopUltimateEffect()
@@ -109,7 +109,7 @@ void UUltimateEffectComponent::StopUltimateEffect()
 	}
 
 	SetComponentTickEnabled(false);
-	UE_LOG(LogTemp, Log, TEXT("🌟 [UltimateEffect] 궁극기 화면 연출 종료."));
+	//UE_LOG(LogTemp, Log, TEXT("🌟 [UltimateEffect] 궁극기 화면 연출 종료."));
 }
 #pragma endregion 외부 인터페이스 구현
 

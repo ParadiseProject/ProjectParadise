@@ -317,9 +317,9 @@ void ALobbyPlayerController::CheatSellItem(FName ItemID, int32 QuantityToSell)
 			// 2. 보유하지 않은 아이템일 경우 거부
 			if (!bFound)
 			{
-				FString Msg = FString::Printf(TEXT("[Cheat] 실패: 인벤토리에 [%s] 아이템이 없습니다!"), *ItemID.ToString());
+				//FString Msg = FString::Printf(TEXT("[Cheat] 실패: 인벤토리에 [%s] 아이템이 없습니다!"), *ItemID.ToString());
 				//UE_LOG(LogTemp, Error, TEXT("%s"), *Msg);
-				if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, Msg);
+				//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, Msg);
 				return;
 			}
 
@@ -327,16 +327,16 @@ void ALobbyPlayerController::CheatSellItem(FName ItemID, int32 QuantityToSell)
 			FString ErrorMsg;
 			if (InvenSys->SellItem(TargetUID, QuantityToSell, ErrorMsg))
 			{
-				FString Msg = FString::Printf(TEXT("[Cheat] 성공: [%s] 아이템을 %d개 판매했습니다!"), *ItemID.ToString(), QuantityToSell);
+				//FString Msg = FString::Printf(TEXT("[Cheat] 성공: [%s] 아이템을 %d개 판매했습니다!"), *ItemID.ToString(), QuantityToSell);
 				//UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg);
-				if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, Msg);
+				//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, Msg);
 			}
 			else
 			{
 				// 실패 시 (누군가 장착 중이거나 갯수 부족 등) ErrorMsg를 화면에 띄워줍니다.
-				FString Msg = FString::Printf(TEXT("[Cheat] 판매 거부: %s"), *ErrorMsg);
+				//FString Msg = FString::Printf(TEXT("[Cheat] 판매 거부: %s"), *ErrorMsg);
 				//UE_LOG(LogTemp, Error, TEXT("%s"), *Msg);
-				if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, Msg);
+				//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, Msg);
 			}
 		}
 	}

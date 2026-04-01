@@ -177,7 +177,7 @@ void UInventorySystem::AddCharacter(FName CharacterID)
 			//방금 생성한 무기의 GUID를 이용해 캐릭터에게 장착
 			EquipItemToCharacter(NewCharacter.CharacterUID, NewWeapon.ItemUID);
 
-			UE_LOG(LogParadiseInventory, Log, TEXT("⚔️ [%s] 영입! 기본 무기(%s)가 자동 장착되었습니다."), *CharacterID.ToString(), *DefaultWeaponID.ToString());
+			//UE_LOG(LogParadiseInventory, Log, TEXT("⚔️ [%s] 영입! 기본 무기(%s)가 자동 장착되었습니다."), *CharacterID.ToString(), *DefaultWeaponID.ToString());
 		}
 	}
 
