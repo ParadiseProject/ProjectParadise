@@ -29,100 +29,127 @@ void UBTService_LaneTargeting::TickNode(UBehaviorTreeComponent& OwnerComp, uint8
 	if (!BBComp || !AICon || !AICon->GetPawn()) return;
 
 	APawn* ControlledPawn = AICon->GetPawn();
-	AUnitBase* MyUnit = Cast<AUnitBase>(ControlledPawn); // 내 유닛 캐싱
-	FVector MyLocation = ControlledPawn->GetActorLocation();
-
+	AUnitBase* MyUnit = Cast<AUnitBase>(ControlledPawn);
 	if (!MyUnit) return;
 
-	AActor* ExistingTarget = Cast<AActor>(BBComp->GetValueAsObject(TargetActorKey.SelectedKeyName));
-	AUnitBase* ExistingEnemy = Cast<AUnitBase>(ExistingTarget); // 기지가 아닌 실제 적 유닛인지 확인
+	FVector MyLocation = ControlledPawn->GetActorLocation();
 
+	AActor* ExistingTarget = Cast<AActor>(BBComp->GetValueAsObject(TargetActorKey.SelectedKeyName));
+	AUnitBase* ExistingEnemy = Cast<AUnitBase>(ExistingTarget);
+
+	bool bNeedSearch = true; // 새로 탐색을 해야 하는가?
+
+	// 1. 기존 타겟 유지 검사 (록온)
 	if (ExistingEnemy && !ExistingEnemy->IsDead())
 	{
-		// 적이 아직 내 탐색 반경(SearchRadius) 안에 있다면 한눈팔지 않음!
 		if (MyUnit->GetDistanceTo(ExistingEnemy) <= SearchRadius)
 		{
-			// 🚨 로그: 타겟 유지 중 (록온)
-			// 너무 많이 뜨면 화면을 가릴 수 있으므로, 필요시 주석 처리하세요.
-			// if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Cyan, FString::Printf(TEXT("[%s] 🔒 타겟 록온 유지: %s"), *MyUnit->GetName(), *ExistingEnemy->GetName()));
-			return; // 아래의 SphereOverlap 색적 로직을 아예 돌리지 않고 종료
+			// 내 반경 안에 이미 물고 있는 적이 있다면, 색적을 건너뜀 (return 하지 않고 플래그만 변경!)
+			bNeedSearch = false;
 		}
 	}
 
-	// 1. 반경 내 액터 탐색 (Sphere Overlap)
-	TArray<AActor*> OutActors;
-	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(ControlledPawn);
-
-	UKismetSystemLibrary::SphereOverlapActors(
-		GetWorld(),
-		MyLocation,
-		SearchRadius,
-		TargetObjectTypes,
-		nullptr,
-		ActorsToIgnore,
-		OutActors
-	);
-
-	AActor* ClosestEnemy = nullptr;
-	float MinDistanceSq = MAX_flt;
-
-	// 2. 가장 가까운 '적군'이면서 '살아있는' 액터 찾기
-	for (AActor* OverlappedActor : OutActors)
+	// 2. 주변 탐색 (새로운 적을 찾아야 할 때만 실행)
+	if (bNeedSearch)
 	{
-		AUnitBase* TargetUnit = Cast<AUnitBase>(OverlappedActor);
+		TArray<AActor*> OutActors;
+		TArray<AActor*> ActorsToIgnore;
+		ActorsToIgnore.Add(ControlledPawn);
 
-		// 유닛이 아니거나, 죽었거나, 내 편(IsEnemy가 false)이라면 무시
-		if (!TargetUnit || TargetUnit->IsDead() || !MyUnit->IsEnemy(TargetUnit))
+		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), MyLocation, SearchRadius, TargetObjectTypes, nullptr, ActorsToIgnore, OutActors);
+
+		AActor* ClosestEnemy = nullptr;
+		float MinDistanceSq = MAX_flt;
+
+		for (AActor* OverlappedActor : OutActors)
 		{
-			continue;
-		}
+			AUnitBase* TargetUnit = Cast<AUnitBase>(OverlappedActor);
+			if (!TargetUnit || TargetUnit->IsDead() || !MyUnit->IsEnemy(TargetUnit)) continue;
 
-		float DistanceSq = FVector::DistSquared(MyLocation, OverlappedActor->GetActorLocation());
-		if (DistanceSq < MinDistanceSq)
-		{
-			MinDistanceSq = DistanceSq;
-			ClosestEnemy = OverlappedActor;
-		}
-	}
-
-	// 3. 상황에 따른 타겟 설정
-	if (ClosestEnemy)
-	{
-		// 범위 내에 적군 유닛이 발견됨
-		BBComp->SetValueAsObject(TargetActorKey.SelectedKeyName, ClosestEnemy);
-
-		// 🚨 로그: 새로운 적 포착
-		//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, FString::Printf(TEXT("[%s] 🎯 새 타겟 포착: %s"), *MyUnit->GetName(), *ClosestEnemy->GetName()));
-	}
-	else
-	{
-		// 범위 내에 적군 유닛이 없음 -> 적 기지로 타겟 복구
-		AActor* EnemyBase = Cast<AActor>(BBComp->GetValueAsObject(EnemyBaseKey.SelectedKeyName));
-
-		if (!EnemyBase)
-		{
-			// 블랙보드에 기지가 없다면 월드에서 검색하여 캐싱
-			TArray<AActor*> FoundBases;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHomeBase::StaticClass(), FoundBases);
-
-			for (AActor* BaseActor : FoundBases)
+			float DistanceSq = FVector::DistSquared(MyLocation, OverlappedActor->GetActorLocation());
+			if (DistanceSq < MinDistanceSq)
 			{
-				AHomeBase* HomeBase = Cast<AHomeBase>(BaseActor);
-				// 기지도 적군 기지인지 확인 (IsEnemy 활용)
-				if (HomeBase && MyUnit->IsEnemy(HomeBase))
-				{
-					EnemyBase = HomeBase;
-					BBComp->SetValueAsObject(EnemyBaseKey.SelectedKeyName, EnemyBase);
-					break;
-				}
+				MinDistanceSq = DistanceSq;
+				ClosestEnemy = OverlappedActor;
 			}
 		}
 
-		BBComp->SetValueAsObject(TargetActorKey.SelectedKeyName, EnemyBase);
-
-
-		// 🚨 로그: 주변에 적이 없어서 기지를 바라봄
-		//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Silver, FString::Printf(TEXT("[%s] 🏠 주변 적 없음. 기지 타겟팅: %s"), *MyUnit->GetName(), EnemyBase ? *EnemyBase->GetName() : TEXT("None")));
+		if (ClosestEnemy)
+		{
+			BBComp->SetValueAsObject(TargetActorKey.SelectedKeyName, ClosestEnemy);
+		}
+		else
+		{
+			AActor* EnemyBase = Cast<AActor>(BBComp->GetValueAsObject(EnemyBaseKey.SelectedKeyName));
+			if (!EnemyBase)
+			{
+				TArray<AActor*> FoundBases;
+				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHomeBase::StaticClass(), FoundBases);
+				for (AActor* BaseActor : FoundBases)
+				{
+					AHomeBase* HomeBase = Cast<AHomeBase>(BaseActor);
+					if (HomeBase && MyUnit->IsEnemy(HomeBase))
+					{
+						EnemyBase = HomeBase;
+						BBComp->SetValueAsObject(EnemyBaseKey.SelectedKeyName, EnemyBase);
+						break;
+					}
+				}
+			}
+			BBComp->SetValueAsObject(TargetActorKey.SelectedKeyName, EnemyBase);
+		}
 	}
+
+	// =========================================================
+	// 🚨 3. [핵심] 모든 상황에서 무조건 마지막에 실행되는 사거리 체크
+	// =========================================================
+	AActor* FinalTarget = Cast<AActor>(BBComp->GetValueAsObject(TargetActorKey.SelectedKeyName));
+	if (FinalTarget)
+	{
+		// 유닛(MyUnit)에서 직접 사거리를 가져옵니다!
+		float AttackRange = MyUnit->GetAttackRange();
+
+		// 혹시라도 사거리 데이터가 안 들어왔을 때를 대비한 방어 코드
+		if (AttackRange <= 0.0f) AttackRange = 150.0f;
+
+		// =========================================================
+			// 🚨 [수정] Z축 높이 오차를 없앤 완벽한 2D 수평 사거리 계산
+			// =========================================================
+
+			// 기존 코드: float CenterDist = MyUnit->GetDistanceTo(FinalTarget); (3D 거리라 오차 발생)
+
+			// 수정 코드: Z축을 무시하고 바닥(XY 평면)을 기준으로 한 수평 거리만 잽니다.
+		float CenterDist = MyUnit->GetHorizontalDistanceTo(FinalTarget);
+
+		float MyRadius = MyUnit->GetSimpleCollisionRadius();
+		float TargetRadius = FinalTarget->GetSimpleCollisionRadius();
+
+		// 이제 맞닿으면 정확하게 0(또는 거의 0에 가까운 소수점)이 나옵니다!
+		float EdgeDist = FMath::Max(0.0f, CenterDist - MyRadius - TargetRadius);
+
+		// 사거리 진입 여부 판단 (오차 허용치 30.0f)
+		float AllowedRange = AttackRange + 30.0f;
+		bool bInRange = EdgeDist <= AllowedRange;
+
+		// 블랙보드 업데이트
+		BBComp->SetValueAsBool(FName("bIsTargetInRange"), bInRange);
+
+		// =========================================================
+		// 🚨 [디버그 로그] 사거리 계산 결과 실시간 확인
+		// =========================================================
+		//if (GEngine)
+		//{
+		//	FString LogMsg = FString::Printf(TEXT("[%s] 🎯 대상: %s | 내사거리: %.1f | 실제거리(Edge): %.1f | 허용거리: %.1f | 결과: %s"),
+		//		*MyUnit->GetName(),
+		//		*FinalTarget->GetName(),
+		//		AttackRange,
+		//		EdgeDist,
+		//		AllowedRange,
+		//		bInRange ? TEXT("TRUE (사거리 안)") : TEXT("FALSE (사거리 밖)"));
+
+		//	// 범위 안이면 초록색, 밖이면 주황색으로 0.5초간 출력
+		//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, bInRange ? FColor::Green : FColor::Orange, LogMsg);
+		//}
+	}
+
 }

@@ -39,19 +39,36 @@ void UBTService_CalcLaneTarget::TickNode(UBehaviorTreeComponent& OwnerComp, uint
 
 	}
 
-	// 3. 목표 좌표 계산 (레인 Y축 고정)
+	// 3. 목표 좌표 계산
 	FVector MoveTarget;
 	if (CurrentTarget)
 	{
-		// [수정된 부분] 타겟이 적 기지(HomeBase)라면 레인을 유지하며 진진
 		if (Cast<AHomeBase>(CurrentTarget))
 		{
+			// 기지는 거대하므로 기존처럼 레인 유지하며 직진
 			MoveTarget = FVector(CurrentTarget->GetActorLocation().X, AssignedLaneY, MyLoc.Z);
 		}
 		else
 		{
-			// 타겟이 실제 적 유닛(UnitBase)이라면, 사거리가 닿아야 하므로 레인을 무시하고 직접 다가감!
-			MoveTarget = CurrentTarget->GetActorLocation();
+			// =========================================================
+			// 🚨 [수정] 겹침 방지: 타겟의 정중앙이 아닌 사거리 끝부분으로 이동
+			// =========================================================
+			FVector TargetLoc = CurrentTarget->GetActorLocation();
+
+			// 1. 타겟에서 내 유닛을 향하는 방향(Direction) 벡터를 구함
+			FVector DirToMe = (MyLoc - TargetLoc).GetSafeNormal();
+
+			// 2. 타겟 중심으로부터 어느 정도 떨어져서 멈출 것인가? (내 사거리의 80% 지점)
+			// 100%로 잡으면 오차 때문에 타격이 안 될 수 있으므로 80%~90%가 적당합니다.
+			float StopDistance = AICon->GetPawn()->GetSimpleCollisionRadius() + CurrentTarget->GetSimpleCollisionRadius();
+			AUnitBase* MyUnit = Cast<AUnitBase>(AICon->GetPawn());
+			if (MyUnit)
+			{
+				StopDistance += (MyUnit->GetAttackRange() * 0.8f);
+			}
+
+			// 3. 타겟 위치에서 내 방향으로 StopDistance만큼 당겨온 좌표가 최종 목적지!
+			MoveTarget = TargetLoc + (DirToMe * StopDistance);
 		}
 	}
 	else
@@ -59,17 +76,10 @@ void UBTService_CalcLaneTarget::TickNode(UBehaviorTreeComponent& OwnerComp, uint
 		MoveTarget = MyLoc;
 	}
 
-	BBComp->SetValueAsVector(MoveDestinationKey.SelectedKeyName, MoveTarget);
-	APawn* ControlledPawn = AICon->GetPawn();
-	float CurrentSpeed = ControlledPawn->GetVelocity().Size();
-
-	if (CurrentSpeed < 10.0f) // 속도가 0에 가까울 때(멈췄을 때)만 출력
+	// 기존처럼 블랙보드 갱신하기 전에, 의미 있는 거리 변화가 있을 때만 갱신 (경련 방지)
+	FVector OldMoveTarget = BBComp->GetValueAsVector(MoveDestinationKey.SelectedKeyName);
+	if (FVector::Dist(OldMoveTarget, MoveTarget) > 50.0f)
 	{
-		FString TargetStr = CurrentTarget ? CurrentTarget->GetName() : TEXT("없음(NULL)");
-		FString Msg = FString::Printf(TEXT("🛑 [%s] 멈춤! | 타겟: %s | 목표좌표: X=%.0f, Y=%.0f"),
-			*ControlledPawn->GetName(), *TargetStr, MoveTarget.X, MoveTarget.Y);
-
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, Msg);
+		BBComp->SetValueAsVector(MoveDestinationKey.SelectedKeyName, MoveTarget);
 	}
-	
 }
