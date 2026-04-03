@@ -30,61 +30,59 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 
 	ACharacterBase* ClosestEnemy = nullptr;
 	float MinDistance = SearchRadius;
+	float PenetrationMargin = -125.0f;
 
-	// [1단계] 현재 타겟의 거리를 측정하여 비교의 '기준점'으로 삼습니다. (바로 return 하지 않음!)
+	// [1단계] 현재 타겟 거리 체크 로그
 	if (IsValid(CurrentTarget) && !CurrentTarget->IsDead())
 	{
-		float CenterDist = FVector::Dist(SelfUnit->GetActorLocation(), CurrentTarget->GetActorLocation());
-		float MyRadius = SelfUnit->GetCapsuleComponent()->GetScaledCapsuleRadius();
-		float TargetRadius = CurrentTarget->GetCapsuleComponent()->GetScaledCapsuleRadius();
-		float SurfaceDist = FMath::Max(0.0f, CenterDist - MyRadius - TargetRadius);
+		FBox TargetBox = CurrentTarget->GetComponentsBoundingBox(true);
+		FVector ClosestPointOnTarget = TargetBox.GetClosestPointTo(SelfUnit->GetActorLocation());
+
+		float SurfaceDist = FVector::Dist2D(SelfUnit->GetActorLocation(), ClosestPointOnTarget);
+		SurfaceDist -= (SelfUnit->GetCapsuleComponent()->GetScaledCapsuleRadius() + PenetrationMargin);
+		SurfaceDist = FMath::Max(0.0f, SurfaceDist);
+
+		// 🔍 로그: 기존 타겟과의 거리 출력
+		UE_LOG(LogTemp, Log, TEXT("[BT_Service] 현재 타겟(%s)과의 표면 거리: %.2f"), *CurrentTarget->GetName(), SurfaceDist);
 
 		if (SurfaceDist < SearchRadius)
 		{
 			MinDistance = SurfaceDist;
-			ClosestEnemy = CurrentTarget; // 일단 현재 타겟을 가장 가까운 적으로 임시 지정
+			ClosestEnemy = CurrentTarget;
 		}
 	}
 
-	// [2단계] 월드 내 모든 적을 탐색하며 '더 가까운 적'이 있는지 검사합니다.
+	// [2단계] 주변 적 탐색 로그
 	for (TActorIterator<ACharacterBase> It(GetWorld()); It; ++It)
 	{
 		ACharacterBase* OtherChar = *It;
-
-		// 무시할 대상들
-		if (OtherChar->IsA<AHomeBase>()) continue;
 		if (!IsValid(OtherChar) || OtherChar == SelfUnit || OtherChar->IsDead()) continue;
-		if (OtherChar == ClosestEnemy) continue; // 이미 1단계에서 계산한 현재 타겟은 건너뜀
+		if (OtherChar == ClosestEnemy) continue;
 
 		if (SelfUnit->IsHostile(OtherChar))
 		{
-			float CenterToCenterDistance = FVector::Dist(SelfUnit->GetActorLocation(), OtherChar->GetActorLocation());
-			float MyRadius = SelfUnit->GetCapsuleComponent()->GetScaledCapsuleRadius();
-			float TargetRadius = OtherChar->GetCapsuleComponent()->GetScaledCapsuleRadius();
-			float SurfaceDistance = FMath::Max(0.0f, CenterToCenterDistance - MyRadius - TargetRadius);
+			FBox TargetBox = OtherChar->GetComponentsBoundingBox(true);
+			FVector ClosestPointOnTarget = TargetBox.GetClosestPointTo(SelfUnit->GetActorLocation());
 
-			// 🚨 [핵심] 핑퐁(Ping-Pong) 방지 로직
-			// 타겟이 없는 상태였다면 그냥 갱신하고, 기존 타겟이 있었다면 기존 타겟보다 '50 유닛' 이상 더 가까워야만 타겟을 바꿉니다.
+			float SurfaceDistance = FVector::Dist2D(SelfUnit->GetActorLocation(), ClosestPointOnTarget);
+			SurfaceDistance -= (SelfUnit->GetCapsuleComponent()->GetScaledCapsuleRadius() + PenetrationMargin);
+			SurfaceDistance = FMath::Max(0.0f, SurfaceDistance);
+
 			float SwitchThreshold = (ClosestEnemy == CurrentTarget && CurrentTarget != nullptr) ? (MinDistance - 50.0f) : MinDistance;
 
 			if (SurfaceDistance < SwitchThreshold)
 			{
+				// 🔍 로그: 새로운 더 가까운 적 발견 시 출력
+				UE_LOG(LogTemp, Warning, TEXT("[BT_Service] 더 가까운 적 발견! 새 대상: %s (거리: %.2f)"), *OtherChar->GetName(), SurfaceDistance);
 				MinDistance = SurfaceDistance;
-				ClosestEnemy = OtherChar; // 더 가까운 적으로 갱신!
+				ClosestEnemy = OtherChar;
 			}
 		}
 	}
 
-	// [3단계] 탐색 결과 반영 (타겟이 유지되었거나 더 가까운 놈으로 변경됨)
+	// [3단계] 최종 결과 반영 및 사거리 체크 로그
 	if (ClosestEnemy)
 	{
-		// 타겟이 바뀌었는지 체크 (디버그 로그)
-		if (CurrentTarget != nullptr && CurrentTarget != ClosestEnemy)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("🔄 [타겟 변경] 나(%s) : 더 가까운 적(%s, 거리: %.1f)을 발견하여 타겟을 변경합니다!"),
-				*SelfUnit->GetName(), *ClosestEnemy->GetName(), MinDistance);
-		}
-
 		BB->SetValueAsObject(TargetActorKey.SelectedKeyName, ClosestEnemy);
 		BB->SetValueAsFloat(FName("DistanceToTarget"), MinDistance);
 
@@ -92,30 +90,23 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 
 		if (MinDistance <= MyAttackRange)
 		{
-			// 🚨 사거리 진입 감시 로그 추가!
-			UE_LOG(LogTemp, Error, TEXT("🟢 [서비스] %s ➔ %s : 사거리 진입 성공! (거리: %.1f / 사거리: %.1f) ➔ bIsInRange = TRUE 설정!"),
+			// 🔍 로그: 공격 사거리 진입 성공 (초록색 느낌)
+			UE_LOG(LogTemp, Error, TEXT("[BT_Service] %s ➔ %s : 사거리 진입! (거리: %.1f <= 사거리: %.1f)"),
 				*SelfUnit->GetName(), *ClosestEnemy->GetName(), MinDistance, MyAttackRange);
 
 			BB->SetValueAsBool(FName("bIsInRange"), true);
-			BB->SetValueAsVector(FName("TargetLocation"), SelfUnit->GetActorLocation()); // 제자리 정지
-
-			// 🚨 [추가됨] 사거리 안에 들어와 멈췄을 때는 현재 타겟을 확실하게 쳐다봅니다.
+			BB->SetValueAsVector(FName("TargetLocation"), SelfUnit->GetActorLocation());
 			AIC->SetFocus(ClosestEnemy);
 		}
 		else
 		{
-			// 🚨 사거리 밖 감시 로그 추가!
-			UE_LOG(LogTemp, Warning, TEXT("🔴 [서비스] %s ➔ %s : 아직 멉니다.. (거리: %.1f / 사거리: %.1f) ➔ bIsInRange = FALSE 설정!"),
+			// 🔍 로그: 아직 사거리 밖 (노란색 느낌)
+			UE_LOG(LogTemp, Warning, TEXT("[BT_Service] %s ➔ %s : 접근 중... (거리: %.1f / 사거리: %.1f)"),
 				*SelfUnit->GetName(), *ClosestEnemy->GetName(), MinDistance, MyAttackRange);
 
 			BB->SetValueAsBool(FName("bIsInRange"), false);
+			AIC->SetFocus(ClosestEnemy);
 
-			// 🚨 [추가됨 핵심!] 사거리 밖이라 적을 향해 "이동"해야 하므로, 기존 시선 고정을 완벽히 풉니다!
-			// 이렇게 해야 이전 타겟을 보면서 걷거나 옆으로 걷지 않고 가야할 방향을 올바르게 보고 뛰어갑니다.
-			AIC->ClearFocus(EAIFocusPriority::Gameplay);
-			AIC->ClearFocus(EAIFocusPriority::Move);
-
-			// 뭉침 방지 분산 로직 (Surround Logic)
 			FVector RandomOffset = FMath::VRand();
 			RandomOffset.Z = 0.0f;
 			RandomOffset.Normalize();
@@ -128,18 +119,21 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 	{
 		// [4단계] 주변에 적 유닛이 없는 경우 (기지 이동 로직)
 
-		// 🚨 [여기에 추가!] 이전 타겟을 계속 바라보며 이동하는 현상(게걸음) 강제 해제
-		AIC->ClearFocus(EAIFocusPriority::Gameplay);
-		AIC->ClearFocus(EAIFocusPriority::Move);
+		// 🚨 [수정 핵심 2] 기지로 갈 때도 기존 시선(타겟)을 푸는 ClearFocus를 완전히 삭제합니다.
+		// (코드 지움)
 
 		BB->SetValueAsObject(TargetActorKey.SelectedKeyName, nullptr);
 		BB->ClearValue(FName("DistanceToTarget"));
-
-		// 🚨 적이 아예 없으므로 공격 불가(false) 처리 (안전장치)
 		BB->SetValueAsBool(FName("bIsInRange"), false);
 
 		FVector CurrentTargetLoc = BB->GetValueAsVector(FName("TargetLocation"));
 		AActor* DestBase = Cast<AActor>(BB->GetValueAsObject(FName("EnemyBaseActor")));
+
+		// 🚨 [수정 핵심 3] 적이 없어서 기지로 향할 때는 시선을 기지(DestBase)로 고정합니다.
+		if (DestBase)
+		{
+			AIC->SetFocus(DestBase);
+		}
 
 		if (DestBase && CurrentTargetLoc != FVector::ZeroVector)
 		{

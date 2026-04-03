@@ -51,7 +51,7 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	UAbilitySystemComponent* ASC = MyUnit->GetAbilitySystemComponent();
 	if (!ASC)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ [공격 태스크] %s : ASC(어빌리티 컴포넌트)를 찾을 수 없습니다!"), *MyUnit->GetName());
+		//UE_LOG(LogTemp, Error, TEXT("❌ [공격 태스크] %s : ASC(어빌리티 컴포넌트)를 찾을 수 없습니다!"), *MyUnit->GetName());
 		return EBTNodeResult::Failed;
 	}
 
@@ -61,12 +61,12 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	if (ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag)))
 	{
 		// 발동 성공
-		UE_LOG(LogTemp, Log, TEXT("⚔️ [공격 태스크] %s : 어빌리티 발동 성공! (Succeeded)"), *MyUnit->GetName());
+		//UE_LOG(LogTemp, Log, TEXT("⚔️ [공격 태스크] %s : 어빌리티 발동 성공! (Succeeded)"), *MyUnit->GetName());
 		return EBTNodeResult::Succeeded;
 	}
 
 	// 🚨 [로그 추가] 어빌리티 발동 실패 로그
-	UE_LOG(LogTemp, Error, TEXT("❌ [공격 태스크] %s : 어빌리티 발동 실패!! (Failed) ➔ 쿨타임 중이거나 마나가 없거나, 태그가 잘못되었을 수 있습니다!"), *MyUnit->GetName());
+	//UE_LOG(LogTemp, Error, TEXT("❌ [공격 태스크] %s : 어빌리티 발동 실패!! (Failed) ➔ 쿨타임 중이거나 마나가 없거나, 태그가 잘못되었을 수 있습니다!"), *MyUnit->GetName());
 
 	return EBTNodeResult::Failed;
 }
