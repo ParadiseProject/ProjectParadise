@@ -68,6 +68,7 @@ void APlayerBase::PossessedBy(AController* NewController)
 
         //캐릭터 움직임: 내가 직접 조작
         GetCharacterMovement()->MaxWalkSpeed = 600.f;
+        GetCharacterMovement()->SetAvoidanceEnabled(false);
     }
     else
     {
@@ -75,7 +76,7 @@ void APlayerBase::PossessedBy(AController* NewController)
         // 1. 카메라 끄기 (리소스 절약 & 화면 겹침 방지)
         CameraBoom->SetActive(false);
         FollowCamera->SetActive(false);
-
+        GetCharacterMovement()->SetAvoidanceEnabled(true);
 
     }
 }

@@ -92,20 +92,28 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 
 		if (MinDistance <= MyAttackRange)
 		{
-			// 🚨 [여기에 추가 1] 사거리 진입 감시 로그 추가!
+			// 🚨 사거리 진입 감시 로그 추가!
 			UE_LOG(LogTemp, Error, TEXT("🟢 [서비스] %s ➔ %s : 사거리 진입 성공! (거리: %.1f / 사거리: %.1f) ➔ bIsInRange = TRUE 설정!"),
 				*SelfUnit->GetName(), *ClosestEnemy->GetName(), MinDistance, MyAttackRange);
 
 			BB->SetValueAsBool(FName("bIsInRange"), true);
 			BB->SetValueAsVector(FName("TargetLocation"), SelfUnit->GetActorLocation()); // 제자리 정지
+
+			// 🚨 [추가됨] 사거리 안에 들어와 멈췄을 때는 현재 타겟을 확실하게 쳐다봅니다.
+			AIC->SetFocus(ClosestEnemy);
 		}
 		else
 		{
-			// 🚨 [여기에 추가 2] 사거리 밖 감시 로그 추가!
+			// 🚨 사거리 밖 감시 로그 추가!
 			UE_LOG(LogTemp, Warning, TEXT("🔴 [서비스] %s ➔ %s : 아직 멉니다.. (거리: %.1f / 사거리: %.1f) ➔ bIsInRange = FALSE 설정!"),
 				*SelfUnit->GetName(), *ClosestEnemy->GetName(), MinDistance, MyAttackRange);
 
 			BB->SetValueAsBool(FName("bIsInRange"), false);
+
+			// 🚨 [추가됨 핵심!] 사거리 밖이라 적을 향해 "이동"해야 하므로, 기존 시선 고정을 완벽히 풉니다!
+			// 이렇게 해야 이전 타겟을 보면서 걷거나 옆으로 걷지 않고 가야할 방향을 올바르게 보고 뛰어갑니다.
+			AIC->ClearFocus(EAIFocusPriority::Gameplay);
+			AIC->ClearFocus(EAIFocusPriority::Move);
 
 			// 뭉침 방지 분산 로직 (Surround Logic)
 			FVector RandomOffset = FMath::VRand();
@@ -119,10 +127,15 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 	else
 	{
 		// [4단계] 주변에 적 유닛이 없는 경우 (기지 이동 로직)
+
+		// 🚨 [여기에 추가!] 이전 타겟을 계속 바라보며 이동하는 현상(게걸음) 강제 해제
+		AIC->ClearFocus(EAIFocusPriority::Gameplay);
+		AIC->ClearFocus(EAIFocusPriority::Move);
+
 		BB->SetValueAsObject(TargetActorKey.SelectedKeyName, nullptr);
 		BB->ClearValue(FName("DistanceToTarget"));
 
-		// 🚨 [여기에 추가 3] 적이 아예 없으므로 공격 불가(false) 처리 (안전장치)
+		// 🚨 적이 아예 없으므로 공격 불가(false) 처리 (안전장치)
 		BB->SetValueAsBool(FName("bIsInRange"), false);
 
 		FVector CurrentTargetLoc = BB->GetValueAsVector(FName("TargetLocation"));
